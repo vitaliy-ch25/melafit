@@ -96,7 +96,6 @@ def cost(p: np.ndarray[np.float64],
 
 def rsquared(Y: np.ndarray[np.float64],
              y: np.ndarray[np.float64]) -> np.float64:
-    
     """
     R2 goodness of fit
 
