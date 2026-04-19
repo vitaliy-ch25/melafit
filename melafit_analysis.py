@@ -6,14 +6,14 @@ import datetime as dt
 import matplotlib.pyplot as plt
 from matplotlib import dates
 
-data_path = "/mnt/c/Daten/MelDel/Data/"
+data_path = "./data/"
 result_path = "./results/"
-result_filename = "result.csv"
+result_filename = "results.csv"
 
 popup_figures = False
 
 os.makedirs(result_path, exist_ok=True)
-data = pd.read_excel(data_path + "MelDel_edited.xlsx")
+data = pd.read_excel(data_path + "dummy_data.xlsx")
 with open(result_path + result_filename, "w") as file:
     pass
 
@@ -183,7 +183,6 @@ def fit(time_fit: np.ndarray[np.float64],
 
 # Enforce correct data types
 data.Patient = data.Patient.astype(int, errors="ignore")
-data.Num = data.Num.astype(int, errors="ignore")
 data.Date = pd.to_datetime(data.Date, dayfirst=True, errors="coerce").dt.date
 data.Time = pd.to_datetime(data.Time.astype(str), errors="coerce").dt.time
 data.Mel = data.Mel.astype(float, errors="ignore")
@@ -210,6 +209,7 @@ for patient in patients:
 
         print(pat_data)
 
+        # Check and fix errors in timestamps
         idiff = np.diff(pat_data.Cumtime) < 0
 
         if any(idiff):
@@ -221,7 +221,8 @@ for patient in patients:
                 row.Cumtime += 1.0
                 pat_data.iloc[i[0]+1] = row
                 print(f"Corrected one timestamp for patient {patient}")
-                
+
+        # Prepare data for curve fitting and visualization of results        
         step = 1.0 / (24*60) # 1 minute
         step_curve = pd.Timedelta(1, "minute")
         mel_time = np.arange(pat_data.Cumtime.min(), pat_data.Cumtime.max() + 1.1 * step, step)
@@ -229,25 +230,31 @@ for patient in patients:
         time_fit = pat_data.Cumtime
         data_fit = pat_data.Mel
 
+        # Fit BSBCF curve to raw data
         res = fit(time_fit, data_fit)
 
         print(res.x)
 
+        # Compute BSBCF curve resampled to one minute resolution
         mel_curve = bsbcf(t=mel_time, phi=res.x[0], b=res.x[1], H=res.x[2], c=res.x[3], v=res.x[4], m=res.x[5])
         mel_curve_time = np.arange(pat_data.Timestamp.min(), pat_data.Timestamp.max() + 2 * step_curve, step_curve)
         mel_curve_time = mel_curve_time[0:len(mel_curve)]
 
         fitted_curve = bsbcf(t=time_fit, phi=res.x[0], b=res.x[1], H=res.x[2], c=res.x[3], v=res.x[4], m=res.x[5])
+        
+        # Compute goodness of fit with fitted curve and raw data
         r2 = rsquared(data_fit, fitted_curve)
         
         print(f"R2={r2:.3f}")
 
+        # Save results to a .csv table
         with open(result_path + result_filename, "a") as file:
             file.write(f"SubjID={patient}, {data.Timestamp[0]}, " +
                        f"amplitude={res.x[2]}, width={res.x[3]}, " + 
                        f"skewness={res.x[4]}, bimodality={res.x[5]}, " +
                        f"R2={r2}\n")
 
+        # Visualize results
         plt.close("all")
         plt.figure(figsize=(24, 8))
         plt.plot(mel_curve_time, mel_curve)
