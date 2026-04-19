@@ -4,7 +4,7 @@
 
 ## Overview
 
-`melafit` is a Python library designed for high-precision modeling of 24-hour melatonin secretion. While standard cosinor or harmonic analysis often fails to capture the physiological nuances of the melatonin "wave," `melafit` implements the **bimodal skewed baseline cosine function**. This approach accounts for the characteristic baseline, asymmetry and dual peaks often seen in high-resolution endocrine data.
+`melafit` is a Python library designed for high-precision modeling of 24-hour melatonin secretion. While standard cosinor or harmonic analysis fails to capture the physiological nuances of the melatonin "wave," `melafit` implements the **bimodal skewed baseline cosine function**. This approach accounts for the characteristic baseline, asymmetry and dual peaks often seen in high-resolution melatonin data.
 
 Furthermore, the library utilizes a **specialized cost function** developed to overcome common optimization hurdles (local minima), ensuring stable convergence even when working with sparse or incomplete time series.
 
