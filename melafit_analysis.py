@@ -25,7 +25,7 @@ def bsbcf(t: np.ndarray[np.float64],
           v: np.float64,
           m: np.float64) -> np.ndarray[np.float64]:
     """
-    Skewed bimodal baseline cosine function
+    Bimodal skewed baseline cosine function (Van Someren & Nagtegaal, 2007)
 
     Parameters
     ----------
@@ -65,7 +65,22 @@ def cost(p: np.ndarray[np.float64],
          t: np.ndarray[np.float64],
          y: np.ndarray[np.float64]) -> np.float64:
     """
-    Cost function for melatonin fitting
+    Cost function for melatonin fitting, penalizes the trivial solution when
+    all model values = 0 (Gabel et al., 2017)
+
+    Parameters
+    ----------
+        p : Numpy array of floats
+            Function parameter vector
+        t : Numpy array of floats
+            X-values for curve fitting (time)
+        y: Numpy array of floats
+            Y-values for curve fitting (melatonin levels)
+
+    Returns
+    -------
+        val : float
+            Value of the cost function
     """
 
     phi = p[0]
@@ -77,14 +92,25 @@ def cost(p: np.ndarray[np.float64],
 
     y_ = bsbcf(t, phi, b, H, c, v, m)
 
-    # 2014116 GHOST - penalizes the trivial solution when all model values = 0
     return np.nanmean(np.square(y - y_)) / np.var(y_)
 
 def rsquared(Y: np.ndarray[np.float64],
-             y: np.ndarray[np.float64]) -> np.ndarray[np.float64]:
+             y: np.ndarray[np.float64]) -> np.float64:
     
     """
     R2 goodness of fit
+
+    Parameters
+    ----------
+        Y : Numpy array of floats
+            Reference values
+        y : Numpy array of floats
+            Fitted values
+
+    Returns
+    -------
+        r2 : float
+            R2 value
     """
 
     err = Y - y
@@ -98,6 +124,20 @@ def fit(time_fit: np.ndarray[np.float64],
         cost: callable=cost) -> np.ndarray[np.float64]:
     """
     Melatonin data fitting routine
+
+    Parameters
+    ----------
+        time_fit : Numpy array of floats
+            X-values for curve fitting (time)
+        data_fit : Numpy array of floats
+            Y-values for curve fitting (melatonin levels)
+        cost : callable
+            Cost function for curve fitting (defaults to `cost`)
+
+    Returns
+    -------
+        res : Numpy array of floats
+            Parameters of the fitted function
     """
 
     minx = data_fit.min()

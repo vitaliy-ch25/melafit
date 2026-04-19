@@ -20,6 +20,7 @@ conda env create -f melafit.yml
 
 # Activate the environment
 conda activate melafit
+```
 
 Note: A full-fledged Python package will be available soon.
 
