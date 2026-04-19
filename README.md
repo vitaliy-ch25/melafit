@@ -8,6 +8,21 @@
 
 Furthermore, the library utilizes a **specialized cost function** developed to overcome common optimization hurdles (local minima), ensuring stable convergence even when working with sparse or incomplete time series.
 
+## Installation
+
+### Using Conda or Miniconda (Recommended)
+
+To ensure all dependencies (Python 3.12, NumPy, SciPy, Pandas, etc.) are correctly configured, you can create a dedicated environment using the provided `melafit.yml` file:
+
+```bash
+# Create the environment from the yaml file
+conda env create -f melafit.yml
+
+# Activate the environment
+conda activate melafit
+
+Note: A full-fledged Python package will be available soon.
+
 ## Key Features
 
 * **Bimodal Waveform Fitting:** Implementation of the Nagtegaal & Van Someren model for superior physiological accuracy.
