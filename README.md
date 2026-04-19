@@ -36,7 +36,7 @@ Note: A full-fledged Python package will be available soon.
 If you use `melafit` in your research, please cite the following foundational publications:
 
 ### Human-Readable
-1. **Van Someren, E. J., & Nagtegaal, E. (2007).** Improving melatonin circadian phase estimates. *Sleep Medicine*, 8(6), 590-601. [https://doi.org/10.1016/j.sleep.2007.03.010]
+1. **Van Someren, E. J., & Nagtegaal, E. (2007).** Improving melatonin circadian phase estimates. *Sleep Medicine*, 8(6), 590-601. [https://doi.org/10.1016/j.sleep.2007.03.012]
 2. **Gabel, V., et al. (2017).** Differential impact in young and older individuals of blue-enriched white light on circadian physiology and alertness during sustained wakefulness. *Scientific Reports*, 7(1), 7620. [https://doi.org/10.1038/s41598-017-07060-8]
 
 ### BibTeX
