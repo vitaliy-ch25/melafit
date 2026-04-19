@@ -37,7 +37,7 @@ If you use `melafit` in your research, please cite the following foundational pu
 
 ### Human-Readable
 1. **Van Someren, E. J., & Nagtegaal, E. (2007).** Improving melatonin circadian phase estimates. *Sleep Medicine*, 8(6), 590-601. [https://doi.org/10.1016/j.sleep.2007.03.012]
-2. **Gabel, V., et al. (2017).** Differential impact in young and older individuals of blue-enriched white light on circadian physiology and alertness during sustained wakefulness. *Scientific Reports*, 7(1), 7620. [https://doi.org/10.1038/s41598-017-07060-8]
+2. **Gabel, V., et al. (2017).** Differential impact in young and older individuals of blue-enriched white light on circadian physiology and alertness during sustained wakefulness. *Scientific Reports*, 7, 7620. [https://doi.org/10.1038/s41598-017-07060-8]
 
 ### BibTeX
 ```bibtex
@@ -57,7 +57,6 @@ If you use `melafit` in your research, please cite the following foundational pu
   author={Gabel, Virginie and Reichert, Carolin F and Maire, Micheline and Schmidt, Christina and Schlangen, Luc JM and Kolodyazhniy, Vitaliy and Garbazza, Corrado and Cajochen, Christian and Viola, Antoine U},
   journal={Scientific Reports},
   volume={7},
-  number={1},
   pages={7620},
   year={2017},
   publisher={Nature Publishing Group}
