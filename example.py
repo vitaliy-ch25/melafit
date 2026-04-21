@@ -97,8 +97,8 @@ for patient in patients:
         # Visualize results
         plt.close("all")
         plt.figure(figsize=(24, 8))
-        plt.plot(mel_curve_time, mel_curve)
-        plt.plot(pat_data.Timestamp, pat_data.Mel)
+        plt.scatter(pat_data.Timestamp, pat_data.Mel, c='b')
+        plt.plot(mel_curve_time, mel_curve, 'g-')
         plt.xlabel("Time, hh:mm")
         plt.gca().xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
         plt.ylabel("Concentration, pg/ml")
