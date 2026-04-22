@@ -1,3 +1,6 @@
+[tool.setuptools]
+packages = ["melafit"]
+
 [project]
 name = "melafit"
 version = "0.0.1"
