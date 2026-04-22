@@ -4,7 +4,7 @@
 
 ## Overview
 
-`melafit` is a Python library designed for high-precision modeling of 24-hour melatonin secretion. While standard cosinor or harmonic analysis fails to capture the physiological nuances of the melatonin "wave," `melafit` implements the **bimodal skewed baseline cosine function**. This approach accounts for the characteristic baseline, asymmetry and dual peaks often seen in high-resolution melatonin data.
+`melafit` is a Python library designed for high-precision modeling of 24-hour melatonin secretion. While standard cosinor or harmonic analysis fail to capture the physiological nuances of the melatonin "wave," `melafit` implements the **bimodal skewed baseline cosine function**. This approach accounts for the characteristic baseline, asymmetry and dual peaks often seen in high-resolution melatonin data.
 
 Furthermore, the library utilizes a **specialized cost function** developed to overcome common optimization hurdles (local minima), ensuring stable convergence even when working with sparse or incomplete time series.
 
@@ -12,7 +12,7 @@ Furthermore, the library utilizes a **specialized cost function** developed to o
 
 ### Using Conda or Miniconda (Recommended)
 
-To ensure all dependencies (Python 3.12, NumPy, SciPy, Pandas, etc.) are correctly configured, you can create a dedicated environment using the provided `melafit.yml` file:
+To ensure all dependencies (Python 3.12, NumPy, SciPy, Pandas, etc.) are correctly configured, you can create a dedicated Python virtual environment using the provided `melafit.yml` file:
 
 ```bash
 # Create the environment from the yaml file
@@ -22,7 +22,11 @@ conda env create -f melafit.yml
 conda activate melafit
 ```
 
-Note: A full-fledged Python package will be available soon.
+This will create a fully functional analysis environment, including a number of supporting data manipulation and analysis packages (`numpy`, `scipy`, `pandas`, `openpyxl` and `matplotlib`).
+
+## Getting Started
+
+A code example and some dummy data demonstrating melatonin profile curve fitting with this package are included in ./examples/example.py and ./data/dummy_data.xlsx. Copy the sample script to you working directory and start from there. If you have performed the steps above as described, your script will 'see' all the required packages from any location. Simply make sure to use the virtual environment `melafit` you created.
 
 ## Key Features
 
