@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-import scipy.optimize as opt
 import numpy as np
 import datetime as dt
 import matplotlib.pyplot as plt
@@ -9,17 +8,15 @@ from melafit.fitting import bsbcf, fit, rsquared
 
 data_path = "./data/"
 result_path = "./results/"
-result_filename = "results.csv"
+result_filename = "results.xlsx"
 
-popup_figures = False
+popup_figures = True
 
 # Create folder for analysis results
 os.makedirs(result_path, exist_ok=True)
 
-# Read data from Excel file
+# Read data from Excel spreadsheet
 data = pd.read_excel(data_path + "dummy_data.xlsx")
-with open(result_path + result_filename, "w") as file:
-    pass
 
 # Enforce correct data types
 data.Patient = data.Patient.astype(int, errors="ignore")
@@ -31,6 +28,7 @@ data.Mel = data.Mel.astype(float, errors="ignore")
 data["Timestamp"] = data.apply(lambda x: dt.datetime.combine(x.Date, x.Time), axis=1)
 
 patients = np.unique(data.Patient)
+results = pd.DataFrame()
 
 for patient in patients:
 
@@ -87,16 +85,22 @@ for patient in patients:
         
         print(f"R2={r2:.3f}")
 
-        # Save results to a .csv table
-        with open(result_path + result_filename, "a") as file:
-            file.write(f"SubjID={patient}, {data.Timestamp[0]}, " +
-                       f"amplitude={res.x[2]}, width={res.x[3]}, " + 
-                       f"skewness={res.x[4]}, bimodality={res.x[5]}, " +
-                       f"R2={r2}\n")
+        # Save results
+        results = pd.concat([results, pd.DataFrame(
+            [[patient, data.Timestamp[0], res.x[0], res.x[1], res.x[2],
+              res.x[3], res.x[4], res.x[5], r2]],
+            columns=["SubjID", "Start", "Phase", "Baseline", "Height",
+                     "Width", "Skewness", "Bimodality", "R2"]
+        )], ignore_index=True)
+        # Note: the phase parameter is the parameter 'phi' of the fitted BSBCF
+        # curve. For circadian phase, other derived measures must be used,
+        # e.g. the midpoint between melatonin onset and offset times or the
+        # center of gravity of the fitted curve, as e.g. in
+        # Gabel et al. (2017) [https://doi.org/10.1038/s41598-017-07060-8]
 
         # Visualize results
         plt.close("all")
-        plt.figure(figsize=(24, 8))
+        plt.figure(figsize=(12, 5))
         plt.scatter(pat_data.Timestamp, pat_data.Mel, c='b')
         plt.plot(mel_curve_time, mel_curve, 'g-')
         plt.xlabel("Time, hh:mm")
@@ -111,3 +115,8 @@ for patient in patients:
 
     except Exception:
         print(f"Error processing data for patient {patient}")
+
+# Save results to Excel spreadsheet
+results.set_index("SubjID", inplace=True)
+results.sort_index(inplace=True)
+results.to_excel(result_path + result_filename)
