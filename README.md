@@ -65,3 +65,8 @@ If you use `melafit` in your research, please cite the following foundational pu
   year={2017},
   publisher={Nature Publishing Group}
 }
+```
+
+## Authors
+* Vitaliy Kolodyazhniy
+* Christian Cajochen
