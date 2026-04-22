@@ -8,4 +8,7 @@ dependencies:
   - scipy
   - pandas
   - openpyxl
-  - matplotlib  
+  - matplotlib
+  - pip
+  - pip:
+    - git+https://github.com/vitaliy-ch25/melafit  

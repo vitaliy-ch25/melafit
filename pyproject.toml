@@ -1,0 +1,6 @@
+[project]
+name = "melafit"
+version = "0.0.1"
+
+[project.urls]
+Homepage = "https://github.com/vitaliy-ch25/melafit"
