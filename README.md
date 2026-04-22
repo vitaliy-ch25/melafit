@@ -12,7 +12,7 @@ Furthermore, the library utilizes a **specialized cost function** developed to o
 
 ### Using Conda or Miniconda (Recommended)
 
-To ensure all dependencies (Python 3.12, NumPy, SciPy, Pandas, etc.) are correctly configured, you can create a dedicated environment using the provided `melafit.yml` file:
+To ensure all dependencies (Python 3.12, NumPy, SciPy, Pandas, etc.) are correctly configured, you can create a dedicated Python virtual environment using the provided `melafit.yml` file:
 
 ```bash
 # Create the environment from the yaml file
@@ -22,7 +22,11 @@ conda env create -f melafit.yml
 conda activate melafit
 ```
 
-This will create a fully functional analysis environment, including a number of supporting data manipulation and analysis packages (`numpy`, `scipy`, `pandas`, `openpyxl` and `matplotlib`). A code example demonstrating melatonin profile curve fitting with this package is also included in ./examples/example.py.
+This will create a fully functional analysis environment, including a number of supporting data manipulation and analysis packages (`numpy`, `scipy`, `pandas`, `openpyxl` and `matplotlib`).
+
+## Getting Started
+
+A code example and some dummy data demonstrating melatonin profile curve fitting with this package are included in ./examples/example.py and ./data/dummy_data.xlsx. Copy the sample script to you working directory and start from there. If you have performed the steps above as described, your script will 'see' all the required packages from any location. Simply make sure to use the virtual environment `melafit` you created.
 
 ## Key Features
 
