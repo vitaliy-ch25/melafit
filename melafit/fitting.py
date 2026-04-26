@@ -2,31 +2,14 @@ import scipy.optimize as opt
 import numpy as np
 
 def bsbcf(t: np.ndarray[np.float64],
-          phi: np.float64,
-          b: np.float64,
-          H: np.float64,
-          c: np.float64,
-          v: np.float64,
-          m: np.float64) -> np.ndarray[np.float64]:
+          p: np.ndarray[np.float64]) -> np.ndarray[np.float64]:
     """
     Bimodal skewed baseline cosine function (Van Someren & Nagtegaal, 2007)
 
     Parameters
     ----------
-        t : Numpy array of floats
-            Cumulative time in days
-        phi : float
-            phase [-0.5 0.5], 0.5 = 12h
-        b : float
-            Baseline >=0
-        H : float
-            Height >0
-        c : float
-            Width [-1,1)
-        v : float
-            Skewness [-0.5 0.5]
-        m : float
-            Bimodality [0 1)
+        p : Numpy array of floats
+            BSBCF parameters phi, b, H, c, v, m
 
     Returns
     -------
@@ -34,6 +17,13 @@ def bsbcf(t: np.ndarray[np.float64],
             Values of the BSBCF function for the respective time points
     """
     
+    phi = p[0]
+    b = p[1]
+    H = p[2]
+    c = p[3]
+    v = p[4]
+    m = p[5]
+
     phi = 2 * np.pi * phi
     t = 2 * np.pi * t
 
