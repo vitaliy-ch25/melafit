@@ -68,5 +68,5 @@ If you use `melafit` in your research, please cite the following foundational pu
 ```
 
 ## Authors
-* Vitaliy Kolodyazhniy
-* Christian Cajochen
+* Vitaliy Kolodyazhniy – Lead Developer
+* Christian Cajochen – Scientific Lead
