@@ -57,14 +57,7 @@ def cost(p: np.ndarray[np.float64],
             Value of the cost function
     """
 
-    phi = p[0]
-    b = p[1]
-    H = p[2]
-    c = p[3]
-    v = p[4]
-    m = p[5]
-
-    y_ = bsbcf(t, phi, b, H, c, v, m)
+    y_ = bsbcf(t, p)
 
     return np.nanmean(np.square(y - y_)) / np.var(y_)
 
