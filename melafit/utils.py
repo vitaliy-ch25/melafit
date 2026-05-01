@@ -20,7 +20,7 @@ def read_data(data_pathname: str) -> pd.DataFrame:
     return data
 
 def prepare_part_data(data: pd.DataFrame,
-                      participant: str | np.int64) -> pd.DataFrame:
+                      participant: str | int) -> pd.DataFrame:
     """
     Prepare one participant's data for analysis
 
@@ -78,7 +78,7 @@ def compute_wave(tmin: np.float64,
         tmin : float
             Start time (1.0 = 24 hours)
         tmax : float
-            Stop time (inclusive, 1.0 = 24 hours))
+            Stop time (inclusive, 1.0 = 24 hours)
         dt_minutes : float
             Time increment in minutes
         f : callable
@@ -97,3 +97,113 @@ def compute_wave(tmin: np.float64,
     curve_val = f(t=time_curve, p=p)
 
     return curve_val
+
+def day_profile(data: pd.Series,
+                binsize: int = 60,
+                double: bool = False, 
+                stderr: bool = False,
+                repfirst: bool = False)->tuple[pd.Series, pd.Series]:
+    """
+    Compute averaged day profile of a (quasi-)periodic time series
+
+    Parameters
+    ----------
+        data : pandas Series
+            Time series data
+        binsize : int
+            Bin size in minutes (defaults to 60)
+        double: bool
+            Prepare data for double plot (defaults to False)
+        stderr : bool
+            Compute standard errors per bin (defaults to False)
+        repfirst : bool
+            Add first bin at 00:00 to the end (defaults to False)
+
+    Returns
+    -------
+        profile : tuple[pd.Series, pd.Series]
+            Bin averages and standard errors with index in hours (0..24)
+    """
+
+    # Bin data, ensure centering of the data points around bin centers
+    smpstr=str(binsize)+'min'
+    profile = data.shift(0.5, freq=smpstr).resample(smpstr).mean()
+    profile = profile.groupby(profile.index.hour + profile.index.minute/60)
+
+    # Compute average profile and standard deviations for each bin
+    profile_mean = profile.mean()
+    profile_std = profile.std()
+    
+    # If standard errors requested, compute these from std's and bin counts
+    if stderr:
+        profile_std  = profile_std / np.sqrt(profile.count())
+
+    # Concatenate results
+    profile = pd.DataFrame(data=pd.concat([profile_mean, profile_std],
+                                          axis=1))
+    
+    # Prepare data for double plot if requested
+    if double:
+        profile = profile.append([profile])
+        
+    # Add first bin at 00:00 to the end
+    if repfirst:
+        profile = pd.concat([profile, pd.DataFrame(profile.iloc[0,:]).T])
+    
+    # Split returned results up for maximum flexibility
+    return profile.iloc[:,0], profile.iloc[:,1]
+
+def phase_to_string(phase: np.float64) -> str:
+    """
+    Convert phase representation of time (0.0 to 1.0) to string
+
+    Parameters
+    ----------
+        phase : float
+            Time as phase (0.0 to 1.0, 1.0 = 24h)
+
+    Returns
+    -------
+        string : str
+            String representation of phase
+    """
+
+    td = pd.Timedelta(days=phase)
+    td_in_seconds = td.total_seconds()
+
+    hours, remainder = divmod(td_in_seconds, 3600)
+    minutes, _ = divmod(remainder, 60)
+    hours = int(hours)
+    minutes = int(minutes)
+
+    if hours < 10:
+        hours = "0{}".format(hours)
+
+    if minutes < 10:
+        minutes = "0{}".format(minutes)
+
+    string = "{}:{}".format(hours, minutes)        
+
+    return string
+
+def abs_threshold(values: np.ndarray[np.float64],
+                  thresh_rel: np.float64) -> np.float64:
+    """
+    Compute absolute threshold from relative threshold
+
+    Parameters
+    ----------
+        values : Numpy array of floats
+            Waveform values
+
+    Returns
+    -------
+        thresh_abs : float
+            Absolute threshold
+    """
+
+    baseline = np.min(values)
+    range = np.max(values) - baseline
+    thresh_abs = baseline + thresh_rel * range
+
+    return thresh_abs
