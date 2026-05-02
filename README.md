@@ -26,7 +26,7 @@ This will create a fully functional analysis environment, including a number of 
 
 ## Getting Started
 
-A code example and some dummy data demonstrating melatonin profile curve fitting with this package are included in `./examples/example.py` and `./data/dummy_data.xlsx`. Copy the sample script to you working directory and start from there. If you have performed the steps above as described, your script will 'see' all the required packages from any location. Simply make sure to use the virtual environment `melafit` you created.
+A code example and some dummy data demonstrating melatonin profile curve fitting with this package are included in `./examples/example.py` and `./data/dummy_data.xlsx`. Copy the sample script to your working directory and start from there. If you have performed the steps above as described, your script will 'see' all the required packages from any location. Simply make sure to use the virtual environment `melafit` you created.
 
 ## Data preparation
 Follow the Excel table format and column naming conventions in `./data/dummy_data.xlsx`:

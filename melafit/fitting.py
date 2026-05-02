@@ -1,8 +1,8 @@
 import scipy.optimize as opt
 import numpy as np
 
-def bsbcf(t: np.ndarray[np.float64],
-          p: np.ndarray[np.float64]) -> np.ndarray[np.float64]:
+def bsbcf(t: np.ndarray,
+          p: np.ndarray) -> np.ndarray:
     """
     Bimodal skewed baseline cosine function (Van Someren & Nagtegaal, 2007)
 
@@ -37,9 +37,9 @@ def bsbcf(t: np.ndarray[np.float64],
 
     return bsbcf_val
 
-def cost(p: np.ndarray[np.float64],
-         t: np.ndarray[np.float64],
-         y: np.ndarray[np.float64],
+def cost(p: np.ndarray,
+         t: np.ndarray,
+         y: np.ndarray,
          f: callable) -> np.float64:
     """
     Cost function for melatonin fitting, penalizes the trivial solution when
@@ -54,6 +54,8 @@ def cost(p: np.ndarray[np.float64],
             X-values for curve fitting (time)
         y: Numpy array of floats
             Y-values for curve fitting (melatonin levels)
+        f : callable
+            Melatonin wave approximation function
 
     Returns
     -------
@@ -65,8 +67,8 @@ def cost(p: np.ndarray[np.float64],
 
     return np.nanmean(np.square(y - y_)) / np.var(y_)
 
-def rsquared(Y: np.ndarray[np.float64],
-             y: np.ndarray[np.float64]) -> np.float64:
+def rsquared(Y: np.ndarray,
+             y: np.ndarray) -> np.float64:
     """
     R2 goodness of fit
 
@@ -89,13 +91,13 @@ def rsquared(Y: np.ndarray[np.float64],
 
     return r2
 
-def fit(time_fit: np.ndarray[np.float64],
-        data_fit: np.ndarray[np.float64],
+def fit(time_fit: np.ndarray,
+        data_fit: np.ndarray,
         f: callable=bsbcf,
-        cost: callable=cost,
-        p0: np.ndarray[np.float64] = None,
-        lb: np.ndarray[np.float64] = None,
-        ub: np.ndarray[np.float64] = None) -> np.ndarray[np.float64]:
+        cost_f: callable=cost,
+        p0: np.ndarray = None,
+        lb: np.ndarray = None,
+        ub: np.ndarray = None) -> opt.OptimizeResult:
     """
     Melatonin data fitting routine
 
@@ -107,7 +109,7 @@ def fit(time_fit: np.ndarray[np.float64],
             Y-values for curve fitting (melatonin levels)
         f : callable
             Melatonin wave approximation function (defaults to `bsbcf`)
-        cost : callable
+        cost_f : callable
             Cost function for curve fitting (defaults to `cost`)
         p0 : Numpy array of floats
             Non-standard initial values for wave approximation function
@@ -121,13 +123,14 @@ def fit(time_fit: np.ndarray[np.float64],
 
     Returns
     -------
-        res : Numpy array of floats
-            Parameters of the fitted function
+        res : OptimizeResult
+            Optimization result including parameters of the fitted function
+            in the field `x`
     """
 
     minx = data_fit.min()
     maxx = data_fit.max()
-    range = (maxx - minx)
+    data_range = (maxx - minx)
 
     if f==bsbcf:
         if p0 is None:
@@ -146,7 +149,7 @@ def fit(time_fit: np.ndarray[np.float64],
             lb = [
                 -0.5, # phi
                 minx, # b
-                0.5 * range, # H
+                0.5 * data_range, # H
                 -1, # c
                 -1, # v
                 0 # m
@@ -157,7 +160,7 @@ def fit(time_fit: np.ndarray[np.float64],
             ub = [
                 0.5, # phi
                 maxx, # b
-                2 * range, # H
+                2 * data_range, # H
                 1 - 1e-6, # c
                 1, # v
                 1 - 1e-6 # m
@@ -171,7 +174,7 @@ def fit(time_fit: np.ndarray[np.float64],
                                   f"function '{f.__name__}' are not defined!")
 
     bounds = opt.Bounds(lb, ub)
-    res = opt.minimize(fun=cost,
+    res = opt.minimize(fun=cost_f,
                        args=(time_fit, data_fit, f),
                        x0=p0,
                        bounds=bounds)

@@ -1,9 +1,27 @@
 import numpy as np
 import pandas as pd
 import datetime as dt
-from melafit.fitting import *
 
 def read_data(data_pathname: str) -> pd.DataFrame:
+    """
+    Read data to be analyzed from an Excel spreadsheet.
+
+    Column must be named as follows:
+    * *Participant* for study participant ID
+    * *Date* for dates of the respective samples
+    * *Time* for sample timestamps 
+    * *Mel* for melatonin level values
+
+    Parameters
+    ----------
+        data_pathname : str
+            Pathname of the Excel spreadsheet file to read data from
+
+    Returns
+    -------
+        data : pandas DataFrame
+            Data for all participants read from the Excel table
+    """
 
     # Read data from Excel spreadsheet
     data = pd.read_excel(data_pathname)
@@ -48,8 +66,6 @@ def prepare_part_data(data: pd.DataFrame,
                             base.minute / (24*60) +
                             base.second / (24*60*60))
 
-    print(p_data)
-
     # Check and fix errors in timestamps
     idiff = np.diff(p_data.Timedays) < 0
 
@@ -57,10 +73,9 @@ def prepare_part_data(data: pd.DataFrame,
         ix = np.where(idiff)
         
         for i in ix:
-            row = p_data.iloc[i[0]+1]
-            row.Timestamp += pd.Timedelta(days=1)
-            row.Timedays += 1.0
-            p_data.iloc[i[0]+1] = row
+            idx = p_data.index[i[0]+1]  # get the actual index label
+            p_data.loc[idx, 'Timestamp'] += pd.Timedelta(days=1)
+            p_data.loc[idx, 'Timedays'] += 1.0
             print(f"Corrected one timestamp for participant {participant}")
 
     return p_data
@@ -69,7 +84,8 @@ def compute_wave(tmin: np.float64,
                  tmax: np.float64,
                  dt_minutes: np.float64,
                  f: callable,
-                 p: np.ndarray[np.float64]) -> np.ndarray[np.float64]:
+                 p: np.ndarray,
+                 full_wave: bool = True) -> np.ndarray:
     """
     Compute waveform resampled to given time resolution
 
@@ -85,12 +101,17 @@ def compute_wave(tmin: np.float64,
             Waveform function
         p : Numpy array of floats
             Waveform parameter vector
+        full_wave: bool
+            If True and (tmax-tmin) < 1.0, tmax = tmin + 1.0 
 
     Returns
     -------
         curve_val : Numpy array of floats
             Values of the waveform function for the respective time points
     """
+
+    if full_wave and ((tmax - tmin) < 1.0):
+        tmax = tmin + 1.0
 
     step = 1.0 / (dt_minutes * 24 * 60)
     time_curve = np.arange(tmin, tmax + 1.1 * step, step)
@@ -144,7 +165,7 @@ def day_profile(data: pd.Series,
     
     # Prepare data for double plot if requested
     if double:
-        profile = profile.append([profile])
+        profile = pd.concat([profile, profile])
         
     # Add first bin at 00:00 to the end
     if repfirst:
@@ -176,17 +197,11 @@ def phase_to_string(phase: np.float64) -> str:
     hours = int(hours)
     minutes = int(minutes)
 
-    if hours < 10:
-        hours = "0{}".format(hours)
-
-    if minutes < 10:
-        minutes = "0{}".format(minutes)
-
-    string = "{}:{}".format(hours, minutes)        
+    string = f"{hours:02d}:{minutes:02d}"
 
     return string
 
-def abs_threshold(values: np.ndarray[np.float64],
+def abs_threshold(values: np.ndarray,
                   thresh_rel: np.float64) -> np.float64:
     """
     Compute absolute threshold from relative threshold
@@ -195,6 +210,8 @@ def abs_threshold(values: np.ndarray[np.float64],
     ----------
         values : Numpy array of floats
             Waveform values
+        thresh_rel: float
+            Relative threshold, fraction of range peak-to-baseline (0 to 1)
 
     Returns
     -------
@@ -203,7 +220,7 @@ def abs_threshold(values: np.ndarray[np.float64],
     """
 
     baseline = np.min(values)
-    range = np.max(values) - baseline
-    thresh_abs = baseline + thresh_rel * range
+    val_range = np.max(values) - baseline
+    thresh_abs = baseline + thresh_rel * val_range
 
     return thresh_abs

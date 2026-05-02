@@ -34,6 +34,7 @@ for participant in participants:
     try:
         # Prepare one participant's data for analysis
         p_data = prepare_part_data(data, participant)
+        print(p_data)
 
         # Fit curve to raw data
         res = fit(p_data.Timedays, p_data.Mel, mel_func)
@@ -61,12 +62,10 @@ for participant in participants:
 
         # Print fitted parameters and goodness of fit
         print(res.x)
-        print(f"R2={r2:.3f}")
-        print(f"Midpoint={midpt_str}")
 
         # Save results
         results = pd.concat([results, pd.DataFrame(
-            [[participant, data.Timestamp[0],
+            [[participant, p_data.Timestamp.min(),
               res.x[0], res.x[1], res.x[2], res.x[3], res.x[4], res.x[5],
               ampl, dlmon_str, dlmoff_str, midpt_str, r2]],
             columns=["Participant", "Start",
@@ -74,7 +73,10 @@ for participant in participants:
                      "Amplitude", "DLMOn", "DLMOff", "Midpoint", "R2"]
         )], ignore_index=True)
 
-        func_name_cap = mel_func.__name__.upper() # Capitalized func name
+        res_str = (f"Start: {p_data.Timestamp.min()}, DLMOn={dlmon_str}, " +
+                   f"DLMOff={dlmoff_str}, Midpoint={midpt_str}, R2={r2:.3f}")
+        
+        print(res_str)
 
         # Visualize results
         plt.close("all")
@@ -85,9 +87,8 @@ for participant in participants:
         plt.xlabel("Time, hh:mm")
         plt.gca().xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
         plt.ylabel("Concentration, pg/ml")
-        plt.title(f"Start: {data.Timestamp[0]}, DLMOn={dlmon_str}, " +
-                  f"DLMOff={dlmoff_str}, Midpoint={midpt_str}, R2={r2:.3f}")
-        plt.legend(["Melatonin data", f"{func_name_cap} curve", "Threshold"])
+        plt.title(res_str)
+        plt.legend(["Melatonin data", f"{mel_func.__name__.upper()} curve", "Threshold"])
         plt.savefig(result_path + f"mel_data_{participant}.png")
         
         if popup_figures:
