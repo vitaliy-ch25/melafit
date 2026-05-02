@@ -102,7 +102,8 @@ def compute_wave(tmin: np.float64,
         p : Numpy array of floats
             Waveform parameter vector
         full_wave: bool
-            If True and (tmax-tmin) < 1.0, tmax = tmin + 1.0 
+            If True and (tmax-tmin) < 1.0, tmax = tmin + 1.0 (defaults to
+            True)
 
     Returns
     -------

@@ -24,6 +24,16 @@ conda activate melafit
 
 This will create a fully functional analysis environment, including a number of supporting data manipulation and analysis packages (`numpy`, `scipy`, `pandas`, `openpyxl` and `matplotlib`).
 
+## Updating
+
+In your terminal prompt, navigate to the directory you checked out your `melafit` package to, and run the following command:
+
+```bash
+conda env update -f melafit.yml --prune
+```
+
+This updates both the dependencies and the `melafit` package itself to the latest version.
+
 ## Getting Started
 
 A code example and some dummy data demonstrating melatonin profile curve fitting with this package are included in `./examples/example.py` and `./data/dummy_data.xlsx`. Copy the sample script to your working directory and start from there. If you have performed the steps above as described, your script will 'see' all the required packages from any location. Simply make sure to use the virtual environment `melafit` you created.
@@ -77,3 +87,33 @@ If you use `melafit` in your research, please cite the following foundational pu
 ## Authors
 * Vitaliy Kolodyazhniy – Lead Developer
 * Christian Cajochen – Scientific Lead
+
+## Revision History
+
+### v0.0.4
+- MIT license added
+- Improved and corrected type hints throughout
+- Fixed bug in `example.py`: participant start time now correctly derived
+  from participant's own data
+- Added updating instructions to README
+
+### v0.0.3
+- Flexible framework for fitting of arbitrary waveform functions with
+  customizable initial parameters and constraints
+- New module `markers`: melatonin midpoint, DLMOn and DLMOff computation
+- New module `utils`: `day_profile`, `phase_to_string`, `abs_threshold`,
+  `read_data`, `prepare_part_data`, `compute_wave`
+- Data preparation section added to README
+
+### v0.0.2
+- Improved input/output data format and column naming conventions
+- Dependencies added to `pyproject.toml`
+- Unified parameter vector `p` interface across all fitting routines
+
+### v0.0.1
+- Initial release: bimodal skewed baseline cosine function (`bsbcf`) and
+  robust cost function (Gabel et al., 2017)
+- Sample analysis script and dummy data included
+
+## License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
