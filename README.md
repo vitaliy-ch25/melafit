@@ -90,7 +90,10 @@ If you use `melafit` in your research, please cite the following foundational pu
 
 ## Revision History
 
-## Revision History
+### v0.0.6
+- New markers: melatonin area and centre of gravity (COG)
+- New utility function `time_to_phase()`
+- Improved docstrings and example script
 
 ### v0.0.5
 - Additional waveform functions: `bcf`, `sbcf` and `bbcf`
