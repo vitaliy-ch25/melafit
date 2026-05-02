@@ -90,6 +90,13 @@ If you use `melafit` in your research, please cite the following foundational pu
 
 ## Revision History
 
+## Revision History
+
+### v0.0.5
+- Additional waveform functions: `bcf`, `sbcf` and `bbcf`
+- Improved example script and docstrings
+- Revision history added to README
+
 ### v0.0.4
 - MIT license added
 - Improved and corrected type hints throughout
