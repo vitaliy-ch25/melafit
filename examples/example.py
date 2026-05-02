@@ -64,8 +64,8 @@ for mel_func in mel_funcs:
             # Find amplitude relative to baseline        
             ampl = amplitude(resampled_curve)
 
-            # Print fitted parameters
-            print(res.x)
+            # Print waveform function name and fitted parameters
+            print(f"Fitted function: {mel_func.__name__.upper()}, parameters: {res.x}")
 
             # Save results
             results = pd.concat([results, pd.DataFrame(
