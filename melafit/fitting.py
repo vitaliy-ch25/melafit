@@ -10,9 +10,9 @@ def bcf(t: np.ndarray,
     Parameters
     ----------
         t : Numpy array of floats
-            Time values for the bcf waveform
+            Time values for the BCF waveform
         p : Numpy array of floats
-            BSBCF parameters phi, b, H, c, v, m
+            BCF parameters phi, b, H, c
 
     Returns
     -------
@@ -42,9 +42,9 @@ def sbcf(t: np.ndarray,
     Parameters
     ----------
         t : Numpy array of floats
-            Time values for the sbcf waveform
+            Time values for the SBCF waveform
         p : Numpy array of floats
-            BCF parameters phi, b, H, c, v
+            SBCF parameters phi, b, H, c, v
     
     Returns
     -------
@@ -76,14 +76,14 @@ def bbcf(t: np.ndarray,
     Parameters
     ----------
         t : Numpy array of floats
-            Time values for the bbcf waveform
+            Time values for the BBCF waveform
         p : Numpy array of floats
-            BCF parameters phi, b, H, c, m
+            BBCF parameters phi, b, H, c, m
 
     Returns
     -------
         bbcf_val : Numpy array of floats
-            Values of the BCF function for the respective time points
+            Values of the BBCF function for the respective time points
     """
 
     phi = p[0]
