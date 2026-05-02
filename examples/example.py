@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import dates
 from melafit.fitting import bcf, sbcf, bbcf, bsbcf, fit, rsquared
-from melafit.markers import amplitude, midpoint
+from melafit.markers import amplitude, midpoint, area_cog
 from melafit.utils import read_data, prepare_part_data, compute_wave, phase_to_string
 
 data_path = "./data/"
@@ -55,11 +55,13 @@ for mel_func in mel_funcs:
 
             # Find melatonin onset, offset and midpoint as phase (from 0.0 to 1.0, 1.0 = 24h)
             midpt, dlmon, dlmoff, thresh_abs = midpoint(resampled_time, resampled_curve, thresh_dlmo)
+            area, cog = area_cog(resampled_time, resampled_curve)
 
             # Convert phase to string representation of time as HH:MM
             dlmon_str = phase_to_string(dlmon)
             dlmoff_str = phase_to_string(dlmoff)
             midpt_str = phase_to_string(midpt)
+            cog_str = phase_to_string(cog)
 
             # Find amplitude relative to baseline        
             ampl = amplitude(resampled_curve)
@@ -70,13 +72,13 @@ for mel_func in mel_funcs:
             # Save results
             results = pd.concat([results, pd.DataFrame(
                 [[participant, p_data.Timestamp.min(), res.x,
-                ampl, dlmon_str, dlmoff_str, midpt_str, r2]],
+                ampl, dlmon_str, dlmoff_str, midpt_str, area, cog_str, r2]],
                 columns=["Participant", "Start", "Curve_Params",
-                        "Amplitude", "DLMOn", "DLMOff", "Midpoint", "R2"]
+                        "Amplitude", "DLMOn", "DLMOff", "Midpoint", "Area", "COG", "R2"]
             )], ignore_index=True)
 
-            res_str = (f"Start: {p_data.Timestamp.min()}, DLMOn={dlmon_str}, " +
-                    f"DLMOff={dlmoff_str}, Midpoint={midpt_str}, R2={r2:.3f}")
+            res_str = (f"Date: {p_data.Timestamp.min().date()}, DLMOn={dlmon_str}, " +
+                    f"DLMOff={dlmoff_str}, Midpoint={midpt_str}, Area={area:.3f}, COG={cog_str}, R2={r2:.3f}")
             
             # Print markers and goodness of fit
             print(res_str)

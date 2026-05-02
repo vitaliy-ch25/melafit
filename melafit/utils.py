@@ -175,6 +175,33 @@ def day_profile(data: pd.Series,
     # Split returned results up for maximum flexibility
     return profile.iloc[:,0], profile.iloc[:,1]
 
+def time_to_phase(t: np.float64,
+                  hours: bool = False) -> np.float64:
+    """
+    Convert time values to phase representation (0.0 to 1.0, 1.0 = 24h)
+
+    Parameters
+    ----------
+        t : float
+            Time value (in days or hours)
+        hours: bool
+            If True, time value is in hours and will be converted to phase by
+            dividing by 24. If False, time value is in days (1.0 = 24h).
+            Defaults to False.
+
+    Returns
+    -------
+        phase : float
+            Time as phase (0.0 to 1.0, 1.0 = 24h)
+    """
+
+    if hours:
+        phase = np.modf(t / 24)[0]
+    else:
+        phase = np.modf(t)[0]
+    
+    return phase
+
 def phase_to_string(phase: np.float64) -> str:
     """
     Convert phase representation of time (0.0 to 1.0) to string
