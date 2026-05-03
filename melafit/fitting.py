@@ -4,7 +4,8 @@ import numpy as np
 def bcf(t: np.ndarray,
         p: np.ndarray) -> np.ndarray:
     """
-    Baseline cosine function [Ruf, 1992](https://doi.org/10.1076/brhm.27.2.153.12942)
+    Baseline cosine function
+    [Ruf, 1992](https://doi.org/10.1076/brhm.27.2.153.12942)
 
     Parameters
     ----------
@@ -35,8 +36,8 @@ def bcf(t: np.ndarray,
 def sbcf(t: np.ndarray,
          p: np.ndarray) -> np.ndarray:
     """
-    Skewed baseline cosine function [Van Someren & Nagtegaal, 2007]
-    (https://doi.org/10.1016/j.sleep.2007.03.012)
+    Skewed baseline cosine function
+    [Van Someren & Nagtegaal, 2007](https://doi.org/10.1016/j.sleep.2007.03.012)
 
     Parameters
     ----------
@@ -69,8 +70,8 @@ def sbcf(t: np.ndarray,
 def bbcf(t: np.ndarray,
          p: np.ndarray) -> np.ndarray:
     """
-    Bimodal baseline cosine function [Van Someren & Nagtegaal, 2007]
-    (https://doi.org/10.1016/j.sleep.2007.03.012)
+    Bimodal baseline cosine function
+    [Van Someren & Nagtegaal '07](https://doi.org/10.1016/j.sleep.2007.03.012)
 
     Parameters
     ----------
@@ -103,8 +104,8 @@ def bbcf(t: np.ndarray,
 def bsbcf(t: np.ndarray,
           p: np.ndarray) -> np.ndarray:
     """
-    Bimodal skewed baseline cosine function [Van Someren & Nagtegaal, 2007]
-    (https://doi.org/10.1016/j.sleep.2007.03.012)
+    Bimodal skewed baseline cosine function
+    [Van Someren & Nagtegaal, 2007](https://doi.org/10.1016/j.sleep.2007.03.012)
 
     Parameters
     ----------
@@ -144,9 +145,10 @@ def cost(p: np.ndarray,
          eps: np.float64 = 1e-8) -> np.float64:
     """
     Cost function for melatonin fitting, penalizes the trivial solution when
-    all model values = 0 [Gabel et al., 2017]
-    (https://doi.org/10.1038/s41598-017-07060-8). NOTE: the order of
-    parameters is pre-defined by the SciPy optimization routine
+    all model values = 0
+    [Gabel et al., 2017](https://doi.org/10.1038/s41598-017-07060-8)
+    NOTE: the order of parameters is pre-defined by the SciPy optimization
+    routine
 
     Parameters
     ----------
