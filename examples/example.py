@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import dates
 from melafit.fitting import bcf, sbcf, bbcf, bsbcf, fit, rsquared
 from melafit.markers import amplitude, midpoint, area_cog
-from melafit.utils import read_data, prepare_part_data, compute_wave, phase_to_string
+from melafit.utils import read_data, prepare_part_data, compute_wave, phase_to_string, phase_diff
 
 data_path = "./data/"
 result_path = "./results/"
@@ -50,7 +50,7 @@ for mel_func in mel_funcs:
             # Compute fitted curve resampled to one minute resolution, res.x contains the fitted func parameters
             resampled_curve = compute_wave(p_data.Timedays.min(), p_data.Timedays.max(), dt_minutes, mel_func, res.x)
             
-            # Generate pandas timestamps for plotting of the fitted curve
+            # Generate pandas timestamps for finding markers and plotting the fitted curve
             resampled_time = pd.date_range(p_data.Timestamp.min(), periods=len(resampled_curve), freq=pd.Timedelta(minutes=dt_minutes))
 
             # Find melatonin onset, offset and midpoint as phase (from 0.0 to 1.0, 1.0 = 24h)
@@ -74,21 +74,23 @@ for mel_func in mel_funcs:
                 [[participant, p_data.Timestamp.min(), res.x,
                 ampl, dlmon_str, dlmoff_str, midpt_str, area, cog_str, r2]],
                 columns=["Participant", "Start", "Curve_Params",
-                        "Amplitude", "DLMOn", "DLMOff", "Midpoint", "Area", "COG", "R2"]
+                         "Amplitude", "DLMOn", "DLMOff", "Midpoint", "Area", "COG", "R2"]
             )], ignore_index=True)
 
             res_str = (f"Date: {p_data.Timestamp.min().date()}, DLMOn={dlmon_str}, " +
-                    f"DLMOff={dlmoff_str}, Midpoint={midpt_str}, Area={area:.3f}, COG={cog_str}, R2={r2:.3f}")
+                       f"DLMOff={dlmoff_str}, Midpoint={midpt_str}, " +
+                       f"Area={area:.3f}, COG={cog_str}, R2={r2:.3f}")
             
             # Print markers and goodness of fit
             print(res_str)
+            print(f"Phase difference COG-Midpoint: {phase_to_string(phase_diff(cog, midpt))}")
 
             # Visualize results
             plt.close("all")
             plt.figure(figsize=(12, 5))
             plt.scatter(p_data.Timestamp, p_data.Mel, c='b') # Plot raw data
             plt.plot(resampled_time, resampled_curve, 'g') # Plot fitted curve
-            plt.plot(resampled_time, thresh_abs * np.ones(resampled_time.shape), 'r')
+            plt.plot(resampled_time, thresh_abs * np.ones(resampled_time.shape), 'r') # Plot threshold
             plt.xlabel("Time, hh:mm")
             plt.gca().xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
             plt.ylabel("Concentration, pg/ml")

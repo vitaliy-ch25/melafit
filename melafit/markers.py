@@ -77,7 +77,8 @@ def midpoint(times: pd.DatetimeIndex,
     return time_midpoint, time_on, time_off, thresh_abs
 
 def area_cog(times: pd.DatetimeIndex,
-             values: np.ndarray) -> tuple[np.float64, np.float64]:
+             values: np.ndarray,
+             baseline: np.float64 = None) -> tuple[np.float64, np.float64]:
     """
     Center of gravity of area under the curve
 
@@ -87,6 +88,9 @@ def area_cog(times: pd.DatetimeIndex,
             Datetime values
         values : Numpy array of floats
             Waveform values
+        baseline : float
+            Baseline for area computation. Equals to minimum of values if
+            None is given (default)
 
     Returns
     -------
@@ -96,6 +100,9 @@ def area_cog(times: pd.DatetimeIndex,
             Center of gravity of area under the curve as phase (from 0.0 to
             1.0, 1.0 = 24h)
     """
+
+    if baseline is None:
+        baseline = np.min(values)
     
     resampled_data = pd.Series(index=times, data=values)        
     d_profile = day_profile(resampled_data, binsize=1)[0]
@@ -103,10 +110,16 @@ def area_cog(times: pd.DatetimeIndex,
     times = d_profile.index.values / 24.0
     values = d_profile.values
 
+    idx_on = np.argwhere((values[:-1] <= baseline) &
+                         (values[1:] > baseline))[0][0]
+
+    times = np.concatenate([times[idx_on:], 1.0 + times[:idx_on]])
+    values = np.concatenate([values[idx_on:], values[:idx_on]])
+
     area = np.sum(values)
     cog = np.dot(values, times) / area
 
-    # Modulo 1 to get time in range 0.0 to 1.0 (1.0 = 24h)
+    # Convert COG to phase (from 0.0 to 1.0, 1.0 = 24h)
     cog = time_to_phase(cog)
 
     return area, cog
