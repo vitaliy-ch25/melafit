@@ -47,7 +47,7 @@ Follow the Excel table format and column naming conventions as in [./data/](http
 
 * **Bimodal Waveform Fitting:** Implementation of the Nagtegaal & Van Someren model for superior physiological accuracy.
 * **Optimized Convergence:** Leverages the robust cost function described in Gabel et al. (2017) to ensure reliable fits across diverse datasets.
-* **Sparse Data Support:** Capable of reconstructing full profiles and estimating circadian phase from limited data points, as well as determing dim light melatonin onset (DLMO) with partial data.
+* **Sparse Data Support:** Capable of reconstructing full profiles and estimating circadian phase from limited data points, as well as determining dim light melatonin onset (DLMO) with partial data.
 * **Research-Ready:** Direct derivation of phase markers from continuous, fitted waveforms.
 
 ## Scientific Foundations
