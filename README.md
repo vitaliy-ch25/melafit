@@ -90,8 +90,15 @@ If you use `melafit` in your research, please cite the following foundational pu
 
 ## Revision History
 
+### v0.0.7
+- Improved README: updated overview to reflect all waveform functions,
+  direct links to repo files
+- Fixed type hints and docstrings throughout
+- Fixed upper bound for `sbcf` parameter `v` in `fit()`
+
 ### v0.0.6
-- New markers: melatonin area and centre of gravity (COG)
+- New markers: melatonin `area_cog()` for area under the curve and
+  centre of gravity (COG)
 - New utility function `time_to_phase()`
 - Improved docstrings and example script
 
@@ -100,30 +107,16 @@ If you use `melafit` in your research, please cite the following foundational pu
 - Improved example script and docstrings
 - Revision history added to README
 
-### v0.0.4
-- MIT license added
-- Improved and corrected type hints throughout
-- Fixed bug in `example.py`: participant start time now correctly derived
-  from participant's own data
-- Added updating instructions to README
-
-### v0.0.3
-- Flexible framework for fitting of arbitrary waveform functions with
+### v0.0.1 – v0.0.4
+- Initial release: bimodal skewed baseline cosine function (`bsbcf`),
+  robust cost function (Gabel et al., 2017), sample script and dummy data
+- Flexible framework for fitting arbitrary waveform functions with
   customizable initial parameters and constraints
-- New module `markers`: melatonin midpoint, DLMOn and DLMOff computation
-- New module `utils`: `day_profile`, `phase_to_string`, `abs_threshold`,
-  `read_data`, `prepare_part_data`, `compute_wave`
-- Data preparation section added to README
-
-### v0.0.2
-- Improved input/output data format and column naming conventions
-- Dependencies added to `pyproject.toml`
-- Unified parameter vector `p` interface across all fitting routines
-
-### v0.0.1
-- Initial release: bimodal skewed baseline cosine function (`bsbcf`) and
-  robust cost function (Gabel et al., 2017)
-- Sample analysis script and dummy data included
+- New modules `markers` and `utils`: midpoint, DLMOn, DLMOff, amplitude,
+  `day_profile`, `phase_to_string`, `abs_threshold`, `read_data`,
+  `prepare_part_data`, `compute_wave`
+- Improved input/output format, dependencies and type hints
+- MIT license added
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
