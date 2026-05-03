@@ -22,7 +22,7 @@ def amplitude(values: np.ndarray) -> np.float64:
 
 def midpoint(times: pd.DatetimeIndex,
              values: np.ndarray,
-             thresh_rel: np.ndarray
+             thresh_rel: np.float64
              ) -> tuple[np.float64, np.float64, np.float64, np.float64]:
     """
     Compute melatonin midpoint, DLMOn and DLMOff times. NOTE: This function
@@ -48,8 +48,8 @@ def midpoint(times: pd.DatetimeIndex,
 
     See also
     --------
-         melafit.utils.compute_waveform: Compute waveform resampled to given
-         time resolution
+         melafit.utils.compute_wave: Compute waveform resampled to given time
+         resolution
     """
 
     resampled_data = pd.Series(index=times, data=values)        
@@ -83,8 +83,8 @@ def area_cog(times: pd.DatetimeIndex,
 
     Parameters
     ----------
-        times : Numpy array of floats
-            Time values (1.0 = 24h)
+        times : pandas DatetimeIndex
+            Datetime values
         values : Numpy array of floats
             Waveform values
 

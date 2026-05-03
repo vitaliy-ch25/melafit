@@ -289,7 +289,7 @@ def fit(time_fit: np.ndarray,
                 maxx, # b
                 2 * data_range, # H
                 1 - 1e-6, # c
-                1 - 1e-6 # v
+                1 # v
             ]
     elif f==bbcf:
         if p0 is None:
