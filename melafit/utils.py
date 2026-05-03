@@ -196,11 +196,12 @@ def time_to_phase(t: np.float64,
     """
 
     if hours:
-        phase = np.modf(t / 24)[0]
+        t = t / 24.0
+
+    if t < 0:
+        return np.ceil(-t) + t
     else:
-        phase = np.modf(t)[0]
-    
-    return phase
+        return t - np.floor(t)
 
 def phase_to_string(phase: np.float64) -> str:
     """
@@ -217,6 +218,12 @@ def phase_to_string(phase: np.float64) -> str:
             String representation of phase
     """
 
+    if phase < 0:
+        sign_str = "-"
+        phase = -phase
+    else:
+        sign_str = ""
+
     td = pd.Timedelta(days=phase)
     td_in_seconds = td.total_seconds()
 
@@ -225,7 +232,7 @@ def phase_to_string(phase: np.float64) -> str:
     hours = int(hours)
     minutes = int(minutes)
 
-    string = f"{hours:02d}:{minutes:02d}"
+    string = f"{sign_str}{hours:02d}:{minutes:02d}"
 
     return string
 
@@ -252,3 +259,36 @@ def abs_threshold(values: np.ndarray,
     thresh_abs = baseline + thresh_rel * val_range
 
     return thresh_abs
+
+def phase_diff(phase1: np.float64,
+               phase2: np.float64) -> np.float64:
+    """
+    Compute difference between two phases (0.0 to 1.0, 1.0 = 24h)
+
+    Parameters
+    ----------
+        phase1 : float
+            First time as phase (0.0 to 1.0, 1.0 = 24h)
+        phase2 : float
+            Second time as phase (0.0 to 1.0, 1.0 = 24h)
+
+    Returns
+    -------
+        dp : float
+            Difference between the two phases (0.0 to 1.0, 1.0 = 24h),
+            adjusted to be in the range -0.5 to 0.5 (i.e., -12h to 12h)
+    """
+
+    # Make sure we deal with phases in the range 0.0 to 1.0
+    phase1 = time_to_phase(phase1, hours=False)
+    phase2 = time_to_phase(phase2, hours=False)
+
+    dp = phase1 - phase2
+
+    # Adjust difference to be in the range -0.5 to 0.5 (i.e., -12h to 12h)
+    if dp < -0.5:
+        dp += 1.0
+    elif dp > 0.5:
+        dp -= 1.0
+
+    return dp
