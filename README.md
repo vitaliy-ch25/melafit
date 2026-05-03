@@ -12,13 +12,11 @@ Furthermore, the library utilizes a **specialized cost function** developed to o
 
 ### Using Conda or Miniconda (Recommended)
 
-To ensure all dependencies (Python 3.12, NumPy, SciPy, Pandas, etc.) are correctly configured, you can create a dedicated Python virtual environment using the provided [`melafit.yml`](https://github.com/vitaliy-ch25/melafit/blob/main/melafit.yml) file:
+To ensure all dependencies (Python 3.12, NumPy, SciPy, Pandas, etc.) are correctly configured, you can create a dedicated Python virtual environment using the provided [`melafit.yml`](https://github.com/vitaliy-ch25/melafit/blob/main/melafit.yml) file. Download the file [`melafit.yml`](https://github.com/vitaliy-ch25/melafit/blob/main/melafit.yml), navigate to the directory you downloaded it to, and execute the following commands in your terminal window:
 
 ```bash
-# Create the environment from the yaml file
 conda env create -f melafit.yml
 
-# Activate the environment
 conda activate melafit
 ```
 
@@ -36,10 +34,10 @@ This updates both the dependencies and the `melafit` package itself to the lates
 
 ## Getting Started
 
-A code example and some dummy data demonstrating melatonin profile curve fitting with this package are included in [./examples/example.py](https://github.com/vitaliy-ch25/melafit/blob/main/examples/example.py) and [./data/dummy_data.xlsx](https://github.com/vitaliy-ch25/melafit/blob/main/data/dummy_data.xlsx). Copy the sample script and data to your working directory and start from there. If you have performed the steps above as described, your script will 'see' all the required packages from any location. Simply make sure to use the virtual environment `melafit` you created.
+Code example and some dummy data demonstrating melatonin profile curve fitting with this package are included in [./examples/](https://github.com/vitaliy-ch25/melafit/blob/main/examples/) and [./data/](https://github.com/vitaliy-ch25/melafit/blob/main/data/). Copy sample scripts and datasets to your working directory and start from there. If you have performed the steps above as described, your script will 'see' all the required packages from any location. Simply make sure to use the virtual environment `melafit` you created.
 
 ## Data preparation
-Follow the Excel table format and column naming conventions in [./data/dummy_data.xlsx](https://github.com/vitaliy-ch25/melafit/blob/main/data/dummy_data.xlsx):
+Follow the Excel table format and column naming conventions as in [./data/](https://github.com/vitaliy-ch25/melafit/blob/main/data/):
 * *Participant* for study participant ID
 * *Date* for dates of the respective samples
 * *Time* for sample timestamps 
@@ -49,7 +47,7 @@ Follow the Excel table format and column naming conventions in [./data/dummy_dat
 
 * **Bimodal Waveform Fitting:** Implementation of the Nagtegaal & Van Someren model for superior physiological accuracy.
 * **Optimized Convergence:** Leverages the robust cost function described in Gabel et al. (2017) to ensure reliable fits across diverse datasets.
-* **Sparse Data Support:** Capable of reconstructing full profiles and estimating circadian phase from limited data points.
+* **Sparse Data Support:** Capable of reconstructing full profiles and estimating circadian phase from limited data points, as well as determing dim light melatonin onset (DLMO) with partial data.
 * **Research-Ready:** Direct derivation of phase markers from continuous, fitted waveforms.
 
 ## Scientific Foundations
@@ -99,11 +97,11 @@ in [Gabel et al. (2017)](https://doi.org/10.1038/s41598-017-07060-8), including:
 - Utilities: `read_data`, `prepare_part_data`, `compute_wave`,
   `day_profile`, `abs_threshold`, `time_to_phase`, `phase_to_string`,
   `phase_diff`
-- Improved `area_cog()`: optional baseline parameter, circular reordering
+- Fixed `area_cog()`: circular reordering, optional baseline parameter
 - Negative phase support in `time_to_phase()` and `phase_to_string()`
 - New `phase_diff()` utility for circular phase difference computation
 
-### Previous revisions (v0.0.1 – v0.0.7)
+### Early revisions (v0.0.1 – v0.0.7)
 - Initial package structure, sample script and dummy data
 - Iterative improvements to waveform functions, markers, utilities,
   docstrings, type hints and example script
