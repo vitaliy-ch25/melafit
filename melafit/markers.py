@@ -22,7 +22,8 @@ def amplitude(values: np.ndarray) -> np.float64:
 
 def midpoint(times: pd.DatetimeIndex,
              values: np.ndarray,
-             thresh_rel: np.float64
+             threshold: np.float64,
+             thresh_abs: bool = False
              ) -> tuple[np.float64, np.float64, np.float64, np.float64]:
     """
     Compute melatonin midpoint, DLMOn and DLMOff times. NOTE: This function
@@ -37,8 +38,12 @@ def midpoint(times: pd.DatetimeIndex,
             Datetime values
         values : Numpy array of floats
             Melatonin waveform values
-        thresh_rel: float
+        threshold: float
             Relative threshold, fraction of range peak-to-baseline (0 to 1)
+        thresh_abs: bool
+            If True, the given threshold is absolute. Otherwise, the absolute
+            threshold is computed from the given relative threshold and the
+            range of values (defaults to False)
 
     Returns
     -------
@@ -52,15 +57,16 @@ def midpoint(times: pd.DatetimeIndex,
          resolution
     """
 
-    resampled_data = pd.Series(index=times, data=values)        
-    d_profile = day_profile(resampled_data, binsize=1)[0]
+    data_series = pd.Series(index=times, data=values)        
+    d_profile = day_profile(data_series, binsize=1)[0]
 
-    thresh_abs = abs_threshold(values, thresh_rel)
+    if not thresh_abs:
+        threshold = abs_threshold(values, threshold)
 
-    idx_on = np.argwhere((d_profile.values[:-1] < thresh_abs) &
-                         (d_profile.values[1:] >= thresh_abs))[0]
-    idx_off = np.argwhere((d_profile.values[:-1] >= thresh_abs) &
-                          (d_profile.values[1:] < thresh_abs))[0]
+    idx_on = np.argwhere((d_profile.values[:-1] < threshold) &
+                         (d_profile.values[1:] >= threshold))[0]
+    idx_off = np.argwhere((d_profile.values[:-1] >= threshold) &
+                          (d_profile.values[1:] < threshold))[0]
 
     time_on = d_profile.index.values[idx_on][0] / 24.0
     time_off = d_profile.index.values[idx_off][0] / 24.0
@@ -74,11 +80,12 @@ def midpoint(times: pd.DatetimeIndex,
     time_on = time_to_phase(time_on)
     time_off = time_to_phase(time_off)
 
-    return time_midpoint, time_on, time_off, thresh_abs
+    return time_midpoint, time_on, time_off, threshold
 
 def area_cog(times: pd.DatetimeIndex,
              values: np.ndarray,
-             baseline: np.float64 = None) -> tuple[np.float64, np.float64]:
+             baseline: np.float64 | None = None
+             ) -> tuple[np.float64, np.float64]:
     """
     Center of gravity of area under the curve
 
@@ -88,7 +95,7 @@ def area_cog(times: pd.DatetimeIndex,
             Datetime values
         values : Numpy array of floats
             Waveform values
-        baseline : float
+        baseline : float or None
             Baseline for area computation. Equals to minimum of values if
             None is given (default)
 
@@ -104,8 +111,8 @@ def area_cog(times: pd.DatetimeIndex,
     if baseline is None:
         baseline = np.min(values)
     
-    resampled_data = pd.Series(index=times, data=values)        
-    d_profile = day_profile(resampled_data, binsize=1)[0]
+    data_series = pd.Series(index=times, data=values)
+    d_profile = day_profile(data_series, binsize=1)[0]
 
     times = d_profile.index.values / 24.0
     values = d_profile.values
