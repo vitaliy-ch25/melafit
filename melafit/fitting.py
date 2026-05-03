@@ -4,8 +4,7 @@ import numpy as np
 def bcf(t: np.ndarray,
         p: np.ndarray) -> np.ndarray:
     """
-    Baseline cosine function (Ruf, 1992)
-    [https://doi.org/10.1076/brhm.27.2.153.12942]
+    Baseline cosine function [Ruf, 1992](https://doi.org/10.1076/brhm.27.2.153.12942)
 
     Parameters
     ----------
@@ -36,8 +35,8 @@ def bcf(t: np.ndarray,
 def sbcf(t: np.ndarray,
          p: np.ndarray) -> np.ndarray:
     """
-    Skewed baseline cosine function (Van Someren & Nagtegaal, 2007)
-    [https://doi.org/10.1016/j.sleep.2007.03.012]
+    Skewed baseline cosine function [Van Someren & Nagtegaal, 2007]
+    (https://doi.org/10.1016/j.sleep.2007.03.012)
 
     Parameters
     ----------
@@ -70,8 +69,8 @@ def sbcf(t: np.ndarray,
 def bbcf(t: np.ndarray,
          p: np.ndarray) -> np.ndarray:
     """
-    Bimodal baseline cosine function (Van Someren & Nagtegaal, 2007)
-    [https://doi.org/10.1016/j.sleep.2007.03.012]
+    Bimodal baseline cosine function [Van Someren & Nagtegaal, 2007]
+    (https://doi.org/10.1016/j.sleep.2007.03.012)
 
     Parameters
     ----------
@@ -141,7 +140,8 @@ def bsbcf(t: np.ndarray,
 def cost(p: np.ndarray,
          t: np.ndarray,
          y: np.ndarray,
-         f: callable) -> np.float64:
+         f: callable,
+         eps: np.float64 = 1e-8) -> np.float64:
     """
     Cost function for melatonin fitting, penalizes the trivial solution when
     all model values = 0 [Gabel et al., 2017]
@@ -158,6 +158,8 @@ def cost(p: np.ndarray,
             Y-values for curve fitting (melatonin levels)
         f : callable
             Melatonin wave approximation function
+        eps : float
+            Small constant to avoid division by zero (defaults to 1e-8)
 
     Returns
     -------
@@ -167,7 +169,7 @@ def cost(p: np.ndarray,
 
     y_ = f(t, p)
 
-    return np.nanmean(np.square(y - y_)) / np.var(y_)
+    return np.nanmean(np.square(y - y_)) / (np.var(y_) + eps)
 
 def rsquared(Y: np.ndarray,
              y: np.ndarray) -> np.float64:
@@ -193,13 +195,155 @@ def rsquared(Y: np.ndarray,
 
     return r2
 
+def func_defaults(data_fit: np.ndarray,
+                  f: callable) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Default initial conditions and constraints for melatonin wave approximation
+    functions
+
+    Parameters
+    ----------
+        data_fit : Numpy array of floats
+            Y-values for curve fitting (melatonin levels)
+        f : callable
+            Melatonin wave approximation function
+
+    Returns
+    -------
+        p0 : Numpy array of floats or None
+            Initial guess for the function parameters
+        lb : Numpy array of floats or None
+            Lower bounds for the function parameters
+        ub : Numpy array of floats or None
+            Upper bounds for the function parameters
+    """
+
+    minx = np.min(data_fit)
+    maxx = np.max(data_fit)
+
+    data_range = (maxx - minx)
+
+    if f==bcf:
+        # Initial guess for BCF parameters
+        p0 = [
+            0, # phi
+            minx, # b
+            (maxx-minx), # H
+            0 # c
+        ]
+            
+        # Lower bounds for BCF parameters
+        lb = [
+            -0.5, # phi
+            minx, # b
+            0.5 * data_range, # H
+            -1 # c
+        ]
+
+        # Upper bounds for BCF parameters
+        ub = [
+            0.5, # phi
+            maxx, # b
+            2 * data_range, # H
+            1 - 1e-6 # c
+        ]
+    elif f==sbcf:
+        # Initial guess for SBCF parameters
+        p0 = [
+            0, # phi
+            minx, # b
+            (maxx-minx), # H
+            0, # c
+            0 # v
+        ]
+            
+        # Lower bounds for SBCF parameters
+        lb = [
+            -0.5, # phi
+            minx, # b
+            0.5 * data_range, # H
+            -1, # c
+            -1 # v
+        ]
+
+        # Upper bounds for SBCF parameters
+        ub = [
+            0.5, # phi
+            maxx, # b
+            2 * data_range, # H
+            1 - 1e-6, # c
+            1 # v
+        ]
+    elif f==bbcf:
+        # Initial guess for BBCF parameters
+        p0 = [
+            0, # phi
+            minx, # b
+            (maxx-minx), # H
+            0, # c
+            0 # m
+        ]
+        
+        # Lower bounds for BBCF parameters
+        lb = [
+            -0.5, # phi
+            minx, # b
+            0.5 * data_range, # H
+            -1, # c
+            0 # m
+        ]
+
+        # Upper bounds for BBCF parameters
+        ub = [
+            0.5, # phi
+            maxx, # b
+            2 * data_range, # H
+            1 - 1e-6, # c
+            1 - 1e-6 # m
+        ]
+    elif f==bsbcf:
+        # Initial guess for BSBCF parameters
+        p0 = [
+            0, # phi
+            minx, # b
+            (maxx-minx), # H
+            0, # c
+            0, # v
+            0 # m
+        ]
+            
+        # Lower bounds for BSBCF parameters
+        lb = [
+            -0.5, # phi
+            minx, # b
+            0.5 * data_range, # H
+            -1, # c
+            -1, # v
+            0 # m
+        ]
+
+        # Upper bounds for BSBCF parameters
+        ub = [
+            0.5, # phi
+            maxx, # b
+            2 * data_range, # H
+            1 - 1e-6, # c
+            1, # v
+            1 - 1e-6 # m
+        ]
+    else:
+        raise NotImplementedError(f"Constraints and initial conditions for " + 
+                                  f"function '{f.__name__}' are not defined!")
+    
+    return p0, lb, ub
+
 def fit(time_fit: np.ndarray,
         data_fit: np.ndarray,
         f: callable=bsbcf,
         cost_f: callable=cost,
-        p0: np.ndarray = None,
-        lb: np.ndarray = None,
-        ub: np.ndarray = None) -> opt.OptimizeResult:
+        p0: np.ndarray | None = None,
+        lb: np.ndarray | None = None,
+        ub: np.ndarray | None = None) -> opt.OptimizeResult:
     """
     Melatonin data fitting routine
 
@@ -213,13 +357,13 @@ def fit(time_fit: np.ndarray,
             Melatonin wave approximation function (defaults to `bsbcf`)
         cost_f : callable
             Cost function for curve fitting (defaults to `cost`)
-        p0 : Numpy array of floats
+        p0 : Numpy array of floats or None
             Non-standard initial values for wave approximation function
             (defaults to 'None')
-        lb : Numpy array of floats
+        lb : Numpy array of floats or None
             Non-standard lower bounds for wave approximation function
             parameters (defaults to 'None')
-        ub : Numpy array of floats
+        ub : Numpy array of floats or None
             Non-standard upper bounds for wave approximation function
             parameters (defaults to 'None')
 
@@ -230,138 +374,21 @@ def fit(time_fit: np.ndarray,
             in the field `x`
     """
 
-    minx = data_fit.min()
-    maxx = data_fit.max()
-    data_range = (maxx - minx)
+    _p0, _lb, _ub = func_defaults(data_fit, f)
 
-    if f==bcf:
-        if p0 is None:
-            # Initial guess for BCF parameters
-            p0 = [
-                0, # phi
-                minx, # b
-                (maxx-minx), # H
-                0 # c
-                ]
-            
-        if lb is None:
-            # Lower bounds for BCF parameters
-            lb = [
-                -0.5, # phi
-                minx, # b
-                0.5 * data_range, # H
-                -1 # c
-            ]
+    if p0 is not None:
+        _p0 = p0
 
-        if ub is None:
-            # Upper bounds for BCF parameters
-            ub = [
-                0.5, # phi
-                maxx, # b
-                2 * data_range, # H
-                1 - 1e-6 # c
-            ]
-    elif f==sbcf:
-        if p0 is None:
-            # Initial guess for SBCF parameters
-            p0 = [
-                0, # phi
-                minx, # b
-                (maxx-minx), # H
-                0, # c
-                0 # v
-                ]
-            
-        if lb is None:
-            # Lower bounds for SBCF parameters
-            lb = [
-                -0.5, # phi
-                minx, # b
-                0.5 * data_range, # H
-                -1, # c
-                -1 # v
-            ]
+    if lb is not None:
+        _lb = lb
 
-        if ub is None:
-            # Upper bounds for SBCF parameters
-            ub = [
-                0.5, # phi
-                maxx, # b
-                2 * data_range, # H
-                1 - 1e-6, # c
-                1 # v
-            ]
-    elif f==bbcf:
-        if p0 is None:
-            # Initial guess for BBCF parameters
-            p0 = [
-                0, # phi
-                minx, # b
-                (maxx-minx), # H
-                0, # c
-                0 # m
-                ]
-            
-        if lb is None:
-            # Lower bounds for BBCF parameters
-            lb = [
-                -0.5, # phi
-                minx, # b
-                0.5 * data_range, # H
-                -1, # c
-                0 # m
-            ]
+    if ub is not None:
+        _ub = ub
 
-        if ub is None:
-            # Upper bounds for BBCF parameters
-            ub = [
-                0.5, # phi
-                maxx, # b
-                2 * data_range, # H
-                1 - 1e-6, # c
-                1 - 1e-6 # m
-            ]
-    elif f==bsbcf:
-        if p0 is None:
-            # Initial guess for BSBCF parameters
-            p0 = [
-                0, # phi
-                minx, # b
-                (maxx-minx), # H
-                0, # c
-                0, # v
-                0 # m
-                ]
-            
-        if lb is None:
-            # Lower bounds for BSBCF parameters
-            lb = [
-                -0.5, # phi
-                minx, # b
-                0.5 * data_range, # H
-                -1, # c
-                -1, # v
-                0 # m
-            ]
-
-        if ub is None:
-            # Upper bounds for BSBCF parameters
-            ub = [
-                0.5, # phi
-                maxx, # b
-                2 * data_range, # H
-                1 - 1e-6, # c
-                1, # v
-                1 - 1e-6 # m
-            ]
-    elif (p0 is None) or (lb is None) or (ub is None):
-        raise NotImplementedError(f"Constraints or initial conditions for " + 
-                                  f"function '{f.__name__}' are not defined!")
-
-    bounds = opt.Bounds(lb, ub)
+    bounds = opt.Bounds(_lb, _ub)
     res = opt.minimize(fun=cost_f,
                        args=(time_fit, data_fit, f),
-                       x0=p0,
+                       x0=_p0,
                        bounds=bounds)
 
     return res
