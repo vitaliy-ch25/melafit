@@ -4,7 +4,7 @@ Python package for **high-precision 24h melatonin profile analysis.** Features a
 
 ## Overview
 
-`melafit` is a Python package designed for high-precision modeling of 24-hour melatonin secretion. While standard cosinor or harmonic analysis fail to capture the physiological nuances of the melatonin "wave," `melafit` implements several **baseline cosine functions** including bimodal, skewed and biomdal-skewed modifications. This approach accounts for the characteristic baseline, asymmetry and dual peaks often seen in high-resolution melatonin data.
+`melafit` is a Python package designed for high-precision modeling of 24-hour melatonin secretion. While standard cosinor or harmonic analysis fail to capture the physiological nuances of the melatonin "wave," `melafit` implements several **baseline cosine functions** including bimodal, skewed and bimodal-skewed modifications. This approach accounts for the characteristic baseline, asymmetry and dual peaks often seen in high-resolution melatonin data.
 
 Furthermore, the library utilizes a **specialized cost function** developed to overcome common optimization hurdles (trivial all-zero solutions), ensuring stable convergence even when working with sparse or incomplete time series.
 
@@ -57,8 +57,8 @@ Follow the Excel table format and column naming conventions in [./data/dummy_dat
 If you use `melafit` in your research, please cite the following foundational publications:
 
 ### Human-Readable
-1. **Van Someren, E. J., & Nagtegaal, E. (2007).** Improving melatonin circadian phase estimates. *Sleep Medicine*, 8(6), 590-601. [https://doi.org/10.1016/j.sleep.2007.03.012]
-2. **Gabel, V., et al. (2017).** Differential impact in young and older individuals of blue-enriched white light on circadian physiology and alertness during sustained wakefulness. *Scientific Reports*, 7, 7620. [https://doi.org/10.1038/s41598-017-07060-8]
+1. [Van Someren, E. J., & Nagtegaal, E. (2007). Improving melatonin circadian phase estimates. Sleep Medicine, 8(6), 590-601.](https://doi.org/10.1016/j.sleep.2007.03.012)
+2. [Gabel, V., et al. (2017). Differential impact in young and older individuals of blue-enriched white light on circadian physiology and alertness during sustained wakefulness. Scientific Reports, 7, 7620.](https://doi.org/10.1038/s41598-017-07060-8)
 
 ### BibTeX
 ```bibtex
@@ -90,33 +90,24 @@ If you use `melafit` in your research, please cite the following foundational pu
 
 ## Revision History
 
-### v0.0.7
-- Improved README: updated overview to reflect all waveform functions,
-  direct links to repo files
-- Fixed type hints and docstrings throughout
-- Fixed upper bound for `sbcf` parameter `v` in `fit()`
+### v0.0.8 — First feature-complete release
+Fully functional implementation of melatonin profile analysis as described
+in [Gabel et al. (2017)](https://doi.org/10.1038/s41598-017-07060-8), including:
+- Waveform functions: `bcf`, `sbcf`, `bbcf`, `bsbcf`
+- Robust cost function penalizing trivial all-zero solutions
+- Markers: `amplitude`, `midpoint`, `area_cog` (area and COG)
+- Utilities: `read_data`, `prepare_part_data`, `compute_wave`,
+  `day_profile`, `abs_threshold`, `time_to_phase`, `phase_to_string`,
+  `phase_diff`
+- Improved `area_cog()`: optional baseline parameter, circular reordering
+- Negative phase support in `time_to_phase()` and `phase_to_string()`
+- New `phase_diff()` utility for circular phase difference computation
 
-### v0.0.6
-- New markers: melatonin `area_cog()` for area under the curve and
-  centre of gravity (COG)
-- New utility function `time_to_phase()`
-- Improved docstrings and example script
-
-### v0.0.5
-- Additional waveform functions: `bcf`, `sbcf` and `bbcf`
-- Improved example script and docstrings
-- Revision history added to README
-
-### v0.0.1 – v0.0.4
-- Initial release: bimodal skewed baseline cosine function (`bsbcf`),
-  robust cost function (Gabel et al., 2017), sample script and dummy data
-- Flexible framework for fitting arbitrary waveform functions with
-  customizable initial parameters and constraints
-- New modules `markers` and `utils`: midpoint, DLMOn, DLMOff, amplitude,
-  `day_profile`, `phase_to_string`, `abs_threshold`, `read_data`,
-  `prepare_part_data`, `compute_wave`
-- Improved input/output format, dependencies and type hints
-- MIT license added
+### Previous revisions (v0.0.1 – v0.0.7)
+- Initial package structure, sample script and dummy data
+- Iterative improvements to waveform functions, markers, utilities,
+  docstrings, type hints and example script
+- MIT license, packaging metadata and README improvements
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

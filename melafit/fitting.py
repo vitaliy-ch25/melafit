@@ -104,8 +104,8 @@ def bbcf(t: np.ndarray,
 def bsbcf(t: np.ndarray,
           p: np.ndarray) -> np.ndarray:
     """
-    Bimodal skewed baseline cosine function (Van Someren & Nagtegaal, 2007)
-    [https://doi.org/10.1016/j.sleep.2007.03.012]
+    Bimodal skewed baseline cosine function [Van Someren & Nagtegaal, 2007]
+    (https://doi.org/10.1016/j.sleep.2007.03.012)
 
     Parameters
     ----------
@@ -144,8 +144,8 @@ def cost(p: np.ndarray,
          f: callable) -> np.float64:
     """
     Cost function for melatonin fitting, penalizes the trivial solution when
-    all model values = 0 (Gabel et al., 2017)
-    [https://doi.org/10.1038/s41598-017-07060-8]. NOTE: the order of
+    all model values = 0 [Gabel et al., 2017]
+    (https://doi.org/10.1038/s41598-017-07060-8). NOTE: the order of
     parameters is pre-defined by the SciPy optimization routine
 
     Parameters
