@@ -5,7 +5,7 @@ def bcf(t: np.ndarray,
         p: np.ndarray) -> np.ndarray:
     """
     Baseline cosine function
-    [Ruf, '92](https://doi.org/10.1076/brhm.27.2.153.12942)
+    [Ruf '92](https://doi.org/10.1076/brhm.27.2.153.12942)
 
     Parameters
     ----------
@@ -37,7 +37,7 @@ def sbcf(t: np.ndarray,
          p: np.ndarray) -> np.ndarray:
     """
     Skewed baseline cosine function
-    [Van Someren & Nagtegaal, '07](https://doi.org/10.1016/j.sleep.2007.03.012)
+    [Van Someren & Nagtegaal '07](https://doi.org/10.1016/j.sleep.2007.03.012)
 
     Parameters
     ----------
@@ -105,7 +105,7 @@ def bsbcf(t: np.ndarray,
           p: np.ndarray) -> np.ndarray:
     """
     Bimodal skewed baseline cosine function
-    [Van Someren & Nagtegaal, '07](https://doi.org/10.1016/j.sleep.2007.03.012)
+    [Van Someren & Nagtegaal '07](https://doi.org/10.1016/j.sleep.2007.03.012)
 
     Parameters
     ----------
@@ -146,7 +146,7 @@ def cost(p: np.ndarray,
     """
     Cost function for melatonin fitting, penalizes the trivial solution when
     all model values = 0
-    [Gabel et al., '17](https://doi.org/10.1038/s41598-017-07060-8)
+    [Gabel et al. '17](https://doi.org/10.1038/s41598-017-07060-8)
     NOTE: the order of parameters is pre-defined by the SciPy optimization
     routine
 
