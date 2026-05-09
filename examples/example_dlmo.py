@@ -44,11 +44,11 @@ for mel_func in mel_funcs:
 
             # Fit curve to raw data
             p0, lb, ub = func_defaults(p_data.Mel, mel_func)
-            # Set initial value, lower and upper bounds for curve peak width between -1 and 1
-            # to avoid very or very wide peaks, higher values = narrower peaks
-            p0[3] = 0
-            lb[3] = -0.5
-            ub[3] = 0.5
+            
+            # Modify the default initial value and default upper bound for curve height
+            # to allow for higher peaks in the data, can be adjusted as needed
+            p0[2] *= 4
+            ub[2] *= 4
             res = fit(p_data.Timedays, p_data.Mel, mel_func, p0=p0, lb=lb, ub=ub)
 
             # Compute goodness of fit with fitted curve and raw data

@@ -4,7 +4,7 @@ Python package for **high-precision 24h melatonin profile analysis.** Features a
 
 ## Overview
 
-`melafit` is a Python package designed for high-precision modeling of 24-hour melatonin secretion. While standard cosinor or harmonic analysis fail to capture the physiological nuances of the melatonin "wave," `melafit` implements several **baseline cosine functions** including bimodal, skewed and bimodal-skewed modifications. This approach accounts for the characteristic baseline, asymmetry and dual peaks often seen in high-resolution melatonin data.
+`melafit` is a Python package designed for high-precision modeling of 24-hour melatonin secretion. While standard cosinor or harmonic analyses fail to capture the physiological nuances of the melatonin "wave," `melafit` implements several **baseline cosine functions** including bimodal, skewed and bimodal-skewed modifications. This approach accounts for the characteristic baseline, asymmetry and dual peaks often seen in high-resolution melatonin data.
 
 Furthermore, the library utilizes a **specialized cost function** developed to overcome common optimization hurdles (trivial all-zero solutions), ensuring stable convergence even when working with sparse or incomplete time series.
 
@@ -103,7 +103,7 @@ If you use `melafit` in your research, please cite the following foundational pu
 - Full implementation of melatonin profile analysis as described in
   [Gabel et al. (2017)](https://doi.org/10.1038/s41598-017-07060-8)
 - Waveform functions: `bcf`, `sbcf`, `bbcf`, `bsbcf`
-- Markers: `amplitude`, `midpoint`, `area_cog`
+- Markers: `amplitude`, `midpoint`, `DLMOn`, `DLMOff`, `area`, `cog`
 - Utilities: `read_data`, `prepare_part_data`, `compute_wave`,
   `day_profile`, `abs_threshold`, `time_to_phase`, `phase_to_string`,
   `phase_diff`
