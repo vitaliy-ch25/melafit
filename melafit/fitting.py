@@ -1,8 +1,23 @@
 import scipy.optimize as opt
 import numpy as np
 
+# Parameter names for melatonin wave approximation functions
+BCF_PARAM_NAMES   = ["phi", "b", "H", "c"]
+SBCF_PARAM_NAMES  = ["phi", "b", "H", "c", "v"]
+BBCF_PARAM_NAMES  = ["phi", "b", "H", "c", "m"]
+BSBCF_PARAM_NAMES = ["phi", "b", "H", "c", "v", "m"]
+
+def _resolve_params(p: np.ndarray | dict) -> np.ndarray:
+    """
+    Convert parameter dict to array if needed, pass array through unchanged.
+    """
+    
+    if isinstance(p, dict):
+        return np.array(list(p.values()))
+    return p
+
 def bcf(t: np.ndarray,
-        p: np.ndarray) -> np.ndarray:
+        p: dict | np.ndarray) -> np.ndarray:
     """
     Baseline cosine function
     [Ruf '92](https://doi.org/10.1076/brhm.27.2.153.12942)
@@ -11,7 +26,7 @@ def bcf(t: np.ndarray,
     ----------
         t : Numpy array of floats
             Time values for the BCF waveform
-        p : Numpy array of floats
+        p : Dictionary or Numpy array of floats
             BCF parameters phi, b, H, c
 
     Returns
@@ -20,6 +35,8 @@ def bcf(t: np.ndarray,
             Values of the BCF function for the respective time points
     """
 
+    p = _resolve_params(p)
+    
     phi = p[0]
     b = p[1]
     H = p[2]
@@ -34,7 +51,7 @@ def bcf(t: np.ndarray,
     return bcf_val
 
 def sbcf(t: np.ndarray,
-         p: np.ndarray) -> np.ndarray:
+         p: dict | np.ndarray) -> np.ndarray:
     """
     Skewed baseline cosine function
     [Van Someren & Nagtegaal '07](https://doi.org/10.1016/j.sleep.2007.03.012)
@@ -43,7 +60,7 @@ def sbcf(t: np.ndarray,
     ----------
         t : Numpy array of floats
             Time values for the SBCF waveform
-        p : Numpy array of floats
+        p : Dictionary or Numpy array of floats
             SBCF parameters phi, b, H, c, v
     
     Returns
@@ -52,6 +69,8 @@ def sbcf(t: np.ndarray,
             Values of the SBCF function for the respective time points
     """
 
+    p = _resolve_params(p)
+    
     phi = p[0]
     b = p[1]
     H = p[2]
@@ -68,7 +87,7 @@ def sbcf(t: np.ndarray,
     return sbcf_val
 
 def bbcf(t: np.ndarray,
-         p: np.ndarray) -> np.ndarray:
+         p: dict | np.ndarray) -> np.ndarray:
     """
     Bimodal baseline cosine function
     [Van Someren & Nagtegaal '07](https://doi.org/10.1016/j.sleep.2007.03.012)
@@ -77,7 +96,7 @@ def bbcf(t: np.ndarray,
     ----------
         t : Numpy array of floats
             Time values for the BBCF waveform
-        p : Numpy array of floats
+        p : Dictionary or Numpy array of floats
             BBCF parameters phi, b, H, c, m
 
     Returns
@@ -86,6 +105,8 @@ def bbcf(t: np.ndarray,
             Values of the BBCF function for the respective time points
     """
 
+    p = _resolve_params(p)
+    
     phi = p[0]
     b = p[1]
     H = p[2]
@@ -116,10 +137,12 @@ def bsbcf(t: np.ndarray,
 
     Returns
     -------
-        bsbcf_val : Numpy array of floats
+        bsbcf_val : Dictionary or Numpy array of floats
             Values of the BSBCF function for the respective time points
     """
     
+    p = _resolve_params(p)
+
     phi = p[0]
     b = p[1]
     H = p[2]
@@ -138,11 +161,57 @@ def bsbcf(t: np.ndarray,
 
     return bsbcf_val
 
+# Mapping of functions to parameter names for conversion between dict
+# and array representations
+PARAM_NAMES = {
+    bcf:   BCF_PARAM_NAMES,
+    sbcf:  SBCF_PARAM_NAMES,
+    bbcf:  BBCF_PARAM_NAMES,
+    bsbcf: BSBCF_PARAM_NAMES,
+}
+
+def params_to_array(params: dict) -> np.ndarray:
+    """
+    Convert parameter dictionary to numpy array for scipy.optimize.
+
+    Parameters
+    ----------
+        params : dict
+            Dictionary of parameter names and values
+    Returns
+    -------
+        p : Numpy array of floats
+            Parameter vector for scipy.optimize
+    """
+    return np.array(list(params.values()))
+
+def array_to_params(x: np.ndarray, f: callable) -> dict:
+    """
+    Convert scipy.optimize result array to named parameter dictionary.
+
+    Parameters
+    ----------
+        x : Numpy array of floats
+            Parameter vector from scipy.optimize
+        f : callable
+            Melatonin wave approximation function for which the parameters were fitted
+    Returns
+    -------
+        params : dict
+            Dictionary of parameter names and values for the respective function
+    """
+
+    param_names = PARAM_NAMES.get(f)
+    if param_names is None:
+        raise ValueError(f"Function {f.__name__} not recognized for parameter " +
+                          "conversion.")
+    return dict(zip(param_names, x))
+
 def cost(p: np.ndarray,
          t: np.ndarray,
          y: np.ndarray,
          f: callable,
-         eps: np.float64 = 1e-8) -> np.float64:
+         cost_p : dict | None = None) -> np.float64:
     """
     Cost function for melatonin fitting, penalizes the trivial solution when
     all model values = 0
@@ -160,14 +229,19 @@ def cost(p: np.ndarray,
             Y-values for curve fitting (melatonin levels)
         f : callable
             Melatonin wave approximation function
-        eps : float
-            Small constant to avoid division by zero (defaults to 1e-8)
+        cost_p : dict | None
+            Cost function parameters (defaults to None) in which case
+            {"eps": 1e-8} is used
 
     Returns
     -------
         val : float
             Value of the cost function
     """
+
+    if cost_p is None:
+        cost_p = {}
+    eps = cost_p.get("eps", 1e-8)
 
     y_ = f(t, p)
 
@@ -212,11 +286,11 @@ def func_defaults(data_fit: np.ndarray,
 
     Returns
     -------
-        p0 : Numpy array of floats or None
+        p0 : Dictionary
             Initial guess for the function parameters
-        lb : Numpy array of floats or None
+        lb : Dictionary
             Lower bounds for the function parameters
-        ub : Numpy array of floats or None
+        ub : Dictionary
             Upper bounds for the function parameters
     """
 
@@ -337,7 +411,9 @@ def func_defaults(data_fit: np.ndarray,
         raise NotImplementedError(f"Constraints and initial conditions for " + 
                                   f"function '{f.__name__}' are not defined!")
     
-    return p0, lb, ub
+    return (array_to_params(p0, f),
+            array_to_params(lb, f),
+            array_to_params(ub, f))
 
 def fit(time_fit: np.ndarray,
         data_fit: np.ndarray,
@@ -345,7 +421,8 @@ def fit(time_fit: np.ndarray,
         cost_f: callable=cost,
         p0: np.ndarray | None = None,
         lb: np.ndarray | None = None,
-        ub: np.ndarray | None = None) -> opt.OptimizeResult:
+        ub: np.ndarray | None = None,
+        cost_p: dict | None = None) -> opt.OptimizeResult:
     """
     Melatonin data fitting routine
 
@@ -368,6 +445,8 @@ def fit(time_fit: np.ndarray,
         ub : Numpy array of floats or None
             Non-standard upper bounds for wave approximation function
             parameters (defaults to 'None')
+        cost_p : dict | None
+            Cost function parameters as dictionary or None (defaults to None)
 
     Returns
     -------
@@ -387,10 +466,12 @@ def fit(time_fit: np.ndarray,
     if ub is not None:
         _ub = ub
 
-    bounds = opt.Bounds(_lb, _ub)
+    bounds = opt.Bounds(_resolve_params(_lb), _resolve_params(_ub))
     res = opt.minimize(fun=cost_f,
-                       args=(time_fit, data_fit, f),
-                       x0=_p0,
+                       args=(time_fit, data_fit, f, cost_p),
+                       x0=_resolve_params(_p0),
                        bounds=bounds)
+    
+    res.p = array_to_params(res.x, f)
 
     return res

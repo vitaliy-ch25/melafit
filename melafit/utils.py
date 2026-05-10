@@ -84,7 +84,7 @@ def compute_wave(tmin: np.float64,
                  tmax: np.float64,
                  dt_minutes: np.float64,
                  f: callable,
-                 p: np.ndarray,
+                 p: dict | np.ndarray,
                  full_wave: bool = True) -> np.ndarray:
     """
     Compute waveform resampled to given time resolution
@@ -99,7 +99,7 @@ def compute_wave(tmin: np.float64,
             Time increment in minutes
         f : callable
             Waveform function
-        p : Numpy array of floats
+        p : Dictionary or Numpy array of floats
             Waveform parameter vector
         full_wave: bool
             If True and (tmax-tmin) < 1.0, tmax = tmin + 1.0 (defaults to

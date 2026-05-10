@@ -44,11 +44,11 @@ for mel_func in mel_funcs:
             res = fit(p_data.Timedays, p_data.Mel, mel_func)
 
             # Compute goodness of fit with fitted curve and raw data
-            fitted_curve = mel_func(t=p_data.Timedays, p=res.x)
+            fitted_curve = mel_func(t=p_data.Timedays, p=res.p)
             r2 = rsquared(p_data.Mel, fitted_curve)
 
-            # Compute fitted curve resampled to one minute resolution, res.x contains the fitted func parameters
-            resampled_curve = compute_wave(p_data.Timedays.min(), p_data.Timedays.max(), dt_minutes, mel_func, res.x)
+            # Compute fitted curve resampled to one minute resolution, res.p contains the fitted func parameters
+            resampled_curve = compute_wave(p_data.Timedays.min(), p_data.Timedays.max(), dt_minutes, mel_func, res.p)
             
             # Generate pandas timestamps for finding markers and plotting the fitted curve
             resampled_time = pd.date_range(p_data.Timestamp.min(), periods=len(resampled_curve), freq=pd.Timedelta(minutes=dt_minutes))
@@ -67,11 +67,11 @@ for mel_func in mel_funcs:
             ampl = amplitude(resampled_curve)
 
             # Print waveform function name and fitted parameters
-            print(f"Fitted function: {mel_func.__name__.upper()}, parameters: {res.x}")
+            print(f"Fitted function: {mel_func.__name__.upper()}, parameters: {res.p}")
 
             # Save results
             results = pd.concat([results, pd.DataFrame(
-                [[participant, p_data.Timestamp.min(), res.x,
+                [[participant, p_data.Timestamp.min(), res.p,
                 ampl, dlmon_str, dlmoff_str, midpt_str, area, cog_str, r2]],
                 columns=["Participant", "Start", "Curve_Params",
                          "Amplitude", "DLMOn", "DLMOff", "Midpoint", "Area", "COG", "R2"]
