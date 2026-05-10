@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import dates
 from melafit.fitting import bcf, sbcf, bbcf, bsbcf, fit, func_defaults
 from melafit.markers import midpoint
-from melafit.utils import read_data, prepare_part_data, compute_wave, phase_to_string
+from melafit.utils import read_data, prepare_part_data, compute_wave, phase_to_string, params_to_string
 
 # EXPERIMENTAL: Determine DLMO using the curve fitting approach for full curves and partial data
 
@@ -71,11 +71,11 @@ for mel_func in mel_funcs:
             dlmon_str = phase_to_string(dlmon)
 
             # Print waveform function name and fitted parameters
-            print(f"Fitted function: {mel_func.__name__.upper()}, parameters: {res.p}")
+            print(f"Fitted function: {mel_func.__name__.upper()}, parameters: {params_to_string(res.p)}")
 
             # Save results
             results = pd.concat([results, pd.DataFrame(
-                [[participant, p_data.Timestamp.min(), res.p, dlmon_str]],
+                [[participant, p_data.Timestamp.min(), params_to_string(res.p), dlmon_str]],
                 columns=["Participant", "Start", "Curve_Params", "DLMOn"]
             )], ignore_index=True)
 

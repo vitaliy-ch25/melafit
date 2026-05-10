@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import dates
 from melafit.fitting import bcf, sbcf, bbcf, bsbcf, fit, rsquared
 from melafit.markers import amplitude, midpoint, area_cog
-from melafit.utils import read_data, prepare_part_data, compute_wave, phase_to_string, phase_diff
+from melafit.utils import read_data, prepare_part_data, compute_wave, phase_to_string, phase_diff, params_to_string
 
 data_path = "./data/"
 result_path = "./results/full/" # Full profile
@@ -67,11 +67,11 @@ for mel_func in mel_funcs:
             ampl = amplitude(resampled_curve)
 
             # Print waveform function name and fitted parameters
-            print(f"Fitted function: {mel_func.__name__.upper()}, parameters: {res.p}")
+            print(f"Fitted function: {mel_func.__name__.upper()}, parameters: {params_to_string(res.p)}")
 
             # Save results
             results = pd.concat([results, pd.DataFrame(
-                [[participant, p_data.Timestamp.min(), res.p,
+                [[participant, p_data.Timestamp.min(), params_to_string(res.p),
                 ampl, dlmon_str, dlmoff_str, midpt_str, area, cog_str, r2]],
                 columns=["Participant", "Start", "Curve_Params",
                          "Amplitude", "DLMOn", "DLMOff", "Midpoint", "Area", "COG", "R2"]
