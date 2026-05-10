@@ -22,7 +22,7 @@ from melafit.fitting import (bcf, sbcf, bbcf, bsbcf, cost, rsquared,
 from melafit.markers import amplitude, midpoint, area_cog
 from melafit.utils import (read_data, prepare_part_data, compute_wave,
                             day_profile, time_to_phase, phase_to_string,
-                            abs_threshold, phase_diff)
+                            abs_threshold, phase_diff, params_to_string)
 
 # ---------------------------------------------------------------------------
 # Shared test fixtures
@@ -365,6 +365,7 @@ class TestFit(unittest.TestCase):
         self.assertIsInstance(res, opt.OptimizeResult)
 
     def test_with_real_data(self):
+        """fit() should converge on real dummy data."""
         data = read_data(DUMMY_DATA_FULL)
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
         res = fit(p_data.Timedays.values, p_data.Mel.values, f=bsbcf)
@@ -734,6 +735,63 @@ class TestPhaseDiff(unittest.TestCase):
     def test_out_of_range_inputs_normalised(self):
         self.assertAlmostEqual(phase_diff(0.3, 0.1), phase_diff(1.3, 1.1),
                                places=10)
+
+
+# ---------------------------------------------------------------------------
+# utils.py — params_to_string tests
+# ---------------------------------------------------------------------------
+
+class TestParamsToString(unittest.TestCase):
+    """Tests for params_to_string()."""
+
+    def test_dict_input_uses_key_names(self):
+        """Dict input should produce key=value pairs."""
+        result = params_to_string(BSBCF_PARAMS_DICT)
+        for key in BSBCF_PARAM_NAMES:
+            self.assertIn(key, result)
+
+    def test_array_input_uses_positional_names(self):
+        """Array input should produce p0=value, p1=value, ... pairs."""
+        result = params_to_string(BSBCF_PARAMS_ARRAY)
+        for i in range(len(BSBCF_PARAMS_ARRAY)):
+            self.assertIn(f"p{i}=", result)
+
+    def test_returns_string(self):
+        self.assertIsInstance(params_to_string(BSBCF_PARAMS_DICT), str)
+        self.assertIsInstance(params_to_string(BSBCF_PARAMS_ARRAY), str)
+
+    def test_default_decimal_places(self):
+        """Default ndec=3 should produce values with 3 decimal places."""
+        result = params_to_string({"phi": 0.875})
+        self.assertIn("phi=0.875", result)
+
+    def test_custom_decimal_places(self):
+        """ndec parameter should control decimal places."""
+        result = params_to_string({"phi": 0.875}, ndec=1)
+        self.assertIn("phi=0.9", result)
+
+    def test_comma_separated(self):
+        """Multiple parameters should be comma-separated."""
+        result = params_to_string(BSBCF_PARAMS_DICT)
+        self.assertIn(",", result)
+
+    def test_dict_values_correct(self):
+        """Values in output should match input dict values."""
+        p = {"phi": 0.500, "b": 2.000}
+        result = params_to_string(p, ndec=3)
+        self.assertIn("phi=0.500", result)
+        self.assertIn("b=2.000", result)
+
+    def test_empty_dict_returns_empty_string(self):
+        self.assertEqual(params_to_string({}), "")
+
+    def test_fit_result_dict_works(self):
+        """params_to_string should accept res.p directly."""
+        res = fit(T, bsbcf(t=T, p=BSBCF_PARAMS_ARRAY), f=bsbcf)
+        result = params_to_string(res.p)
+        self.assertIsInstance(result, str)
+        for key in BSBCF_PARAM_NAMES:
+            self.assertIn(key, result)
 
 
 if __name__ == "__main__":

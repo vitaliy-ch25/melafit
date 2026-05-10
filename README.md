@@ -88,6 +88,21 @@ If you use `melafit` in your research, please cite the following foundational pu
 
 ## Revision History
 
+### v0.1.0 — First public release
+- Dictionary support for waveform function parameters throughout the package:
+  all functions accept both `dict` and `np.ndarray` for parameter input
+- Named parameter constants: `BCF_PARAM_NAMES`, `SBCF_PARAM_NAMES`,
+  `BBCF_PARAM_NAMES`, `BSBCF_PARAM_NAMES` and `PARAM_NAMES` lookup
+- New utility functions `params_to_array()` and `array_to_params()` for
+  conversion between array and named dictionary representations
+- `fit()` now returns named parameter dictionary as `res.p` in addition
+  to the standard scipy `res.x` array
+- `fit()` now accepts `cost_p` dictionary for passing parameters to the
+  cost function (e.g. `{"eps": 1e-6}`)
+- New utility function `params_to_string()` for human-readable parameter output
+- Fixed `area_cog()`: baseline subtraction and bin size normalisation
+- Unit tests for all public functions in `fitting`, `markers` and `utils`
+
 ### v0.0.9
 - New function `func_defaults()` in `fitting.py` for standalone access to
   default initial conditions and constraints for all waveform functions
