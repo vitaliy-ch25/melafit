@@ -39,8 +39,9 @@ BCF_PARAMS_DICT   = dict(zip(BCF_PARAM_NAMES,   BCF_PARAMS_ARRAY))
 SBCF_PARAMS_DICT  = dict(zip(SBCF_PARAM_NAMES,  SBCF_PARAMS_ARRAY))
 BBCF_PARAMS_DICT  = dict(zip(BBCF_PARAM_NAMES,  BBCF_PARAMS_ARRAY))
 
-# Time array covering one full day at 1-minute resolution
+# Time array covering one and two full days at 1-minute resolution
 T = np.linspace(0, 1, 1440, endpoint=False)
+T2 = np.linspace(0, 2, 2 * 1440, endpoint=False)
 
 # Full-profile and DLMO dummy data paths (from repo root)
 DUMMY_DATA_FULL = "./data/dummy_data_full.xlsx"
@@ -594,8 +595,10 @@ class TestDayProfile(unittest.TestCase):
     """Tests for day_profile()."""
 
     def setUp(self):
-        times = pd.date_range("2024-01-01", periods=1440, freq="1min")
-        values = bsbcf(t=T, p=BSBCF_PARAMS_ARRAY)
+        times = pd.date_range("2024-01-01", periods=len(T2), freq="1min")
+        values = (bsbcf(t=T2, p=BSBCF_PARAMS_ARRAY) + 
+                  np.random.normal(0, 5, size=T2.shape))
+        values = values - np.min(values) + 1.0
         self.series = pd.Series(index=times, data=values)
 
     def test_returns_two_series(self):
@@ -613,10 +616,10 @@ class TestDayProfile(unittest.TestCase):
         mean_repfirst, _ = day_profile(self.series, repfirst=True)
         self.assertEqual(len(mean_repfirst), len(mean_normal) + 1)
 
-    def test_mean_values_are_finite(self):
-        mean, _ = day_profile(self.series)
+    def test_mean_std_values_are_finite(self):
+        mean, std = day_profile(self.series)
         self.assertTrue(np.all(np.isfinite(mean.values)))
-
+        self.assertTrue(np.all(np.isfinite(std.values)))
 
 # ---------------------------------------------------------------------------
 # utils.py — time_to_phase tests
