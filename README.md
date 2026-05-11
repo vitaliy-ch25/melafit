@@ -18,7 +18,7 @@ git clone https://github.com/vitaliy-ch25/melafit.git
 cd melafit
 ```
 
-Then create and activate the conda environment, which ensures all dependencies (Python 3.12, NumPy, SciPy, Pandas, etc.) are correctly configured. The environment configuration file `melafit.yml` explicitly uses `conda-forge` as the sole package channel, ensuring reproducibility and full control over the package sources:
+Then create and activate the conda environment, which ensures all dependencies (Python 3.12, NumPy, SciPy, Pandas, etc.) are correctly configured. The environment configuration file `melafit.yml` explicitly uses `conda-forge` as the sole package channel, ensuring reproducibility and avoiding potential conflicts between packages from different channels:
 
 ```bash
 conda env create -f melafit.yml
