@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import dates
 from melafit.fitting import bcf, sbcf, bbcf, bsbcf, fit, func_defaults
 from melafit.markers import midpoint
-from melafit.utils import read_data, prepare_part_data, compute_wave, phase_to_string
+from melafit.utils import read_data, prepare_part_data, compute_wave, phase_to_string, params_to_string
 
 # EXPERIMENTAL: Determine DLMO using the curve fitting approach for full curves and partial data
 
@@ -42,36 +42,40 @@ for mel_func in mel_funcs:
             p_data = prepare_part_data(data, participant)
             print(p_data)
 
-            # Fit curve to raw data
+            # Get default initial values and bounds for curve fitting parameters
+            # based on the data and the function to fit
             p0, lb, ub = func_defaults(p_data.Mel, mel_func)
-            # Set initial value, lower and upper bounds for curve peak width between -1 and 1
-            # to avoid very or very wide peaks, higher values = narrower peaks
-            p0[3] = 0
-            lb[3] = -0.5
-            ub[3] = 0.5
+
+            # Modify the default initial value and default upper bound for curve height
+            # to allow for higher peaks in the data, can be adjusted as needed
+            p0["H"] *= 4
+            ub["H"] *= 4
+
+            # Fit curve to raw data
             res = fit(p_data.Timedays, p_data.Mel, mel_func, p0=p0, lb=lb, ub=ub)
 
             # Compute goodness of fit with fitted curve and raw data
-            fitted_curve = mel_func(t=p_data.Timedays, p=res.x)
+            fitted_curve = mel_func(t=p_data.Timedays, p=res.p)
 
-            # Compute fitted curve resampled to one minute resolution, res.x contains the fitted func parameters
-            resampled_curve = compute_wave(p_data.Timedays.min(), p_data.Timedays.max(), dt_minutes, mel_func, res.x)
+            # Compute fitted curve resampled to one minute resolution, res.p contains the fitted func parameters
+            resampled_curve = compute_wave(p_data.Timedays.min(), p_data.Timedays.max(), dt_minutes, mel_func, res.p)
             
             # Generate pandas timestamps for finding markers and plotting the fitted curve
             resampled_time = pd.date_range(p_data.Timestamp.min(), periods=len(resampled_curve), freq=pd.Timedelta(minutes=dt_minutes))
 
-            # Find melatonin onset, offset and midpoint as phase (from 0.0 to 1.0, 1.0 = 24h)
+            # Find melatonin onset as phase (from 0.0 to 1.0, 1.0 = 24h),
+            # ignore midpoint and offset as unreliable for partial data, use absolute threshold for DLMO
             _, dlmon, _, thresh_abs = midpoint(resampled_time, resampled_curve, thresh_dlmo, thresh_abs=True)
 
             # Convert phase to string representation of time as HH:MM
             dlmon_str = phase_to_string(dlmon)
 
             # Print waveform function name and fitted parameters
-            print(f"Fitted function: {mel_func.__name__.upper()}, parameters: {res.x}")
+            print(f"Fitted function: {mel_func.__name__.upper()}, parameters: {params_to_string(res.p)}")
 
             # Save results
             results = pd.concat([results, pd.DataFrame(
-                [[participant, p_data.Timestamp.min(), res.x, dlmon_str]],
+                [[participant, p_data.Timestamp.min(), params_to_string(res.p), dlmon_str]],
                 columns=["Participant", "Start", "Curve_Params", "DLMOn"]
             )], ignore_index=True)
 

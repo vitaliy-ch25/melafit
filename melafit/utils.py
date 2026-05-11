@@ -84,7 +84,7 @@ def compute_wave(tmin: np.float64,
                  tmax: np.float64,
                  dt_minutes: np.float64,
                  f: callable,
-                 p: np.ndarray,
+                 p: dict | np.ndarray,
                  full_wave: bool = True) -> np.ndarray:
     """
     Compute waveform resampled to given time resolution
@@ -99,7 +99,7 @@ def compute_wave(tmin: np.float64,
             Time increment in minutes
         f : callable
             Waveform function
-        p : Numpy array of floats
+        p : Dictionary or Numpy array of floats
             Waveform parameter vector
         full_wave: bool
             If True and (tmax-tmin) < 1.0, tmax = tmin + 1.0 (defaults to
@@ -292,3 +292,31 @@ def phase_diff(phase1: np.float64,
         dp -= 1.0
 
     return dp
+
+def params_to_string(params: dict | np.ndarray, ndec: int = 3) -> str:
+    """
+    Convert curve fitting parameters to string
+
+    Parameters
+    ----------
+        params : dict or Numpy array of floats
+            Curve fitting parameters
+        ndec : int
+            Number of decimal places to display (defaults to 3)
+
+    Returns
+    -------
+        string : str
+            String representation of curve fitting parameters
+    """
+
+    if isinstance(params, dict):
+        param_strs = [f"{key}={value:.{ndec}f}" 
+                      for key, value in params.items()]
+    else:
+        param_strs = [f"p{i}={value:.{ndec}f}"
+                      for i, value in enumerate(params)]
+
+    string = ", ".join(param_strs)
+
+    return string

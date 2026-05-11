@@ -111,8 +111,10 @@ def area_cog(times: pd.DatetimeIndex,
     if baseline is None:
         baseline = np.min(values)
     
+    bin_minutes = 1
+
     data_series = pd.Series(index=times, data=values)
-    d_profile = day_profile(data_series, binsize=1)[0]
+    d_profile = day_profile(data_series, binsize=bin_minutes)[0]
 
     times = d_profile.index.values / 24.0
     values = d_profile.values
@@ -121,12 +123,14 @@ def area_cog(times: pd.DatetimeIndex,
                          (values[1:] > baseline))[0][0]
 
     times = np.concatenate([times[idx_on:], 1.0 + times[:idx_on]])
-    values = np.concatenate([values[idx_on:], values[:idx_on]])
+    values = np.concatenate([values[idx_on:], values[:idx_on]]) - baseline
 
     area = np.sum(values)
     cog = np.dot(values, times) / area
 
     # Convert COG to phase (from 0.0 to 1.0, 1.0 = 24h)
     cog = time_to_phase(cog)
+
+    area /= (24.0 * 60.0 / bin_minutes) # Normalize by bin size in minutes
 
     return area, cog
