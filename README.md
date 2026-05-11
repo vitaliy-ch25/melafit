@@ -10,13 +10,18 @@ Furthermore, the library utilizes a **specialized cost function** developed to o
 
 ## Installation
 
-### Using Conda or Miniconda (Recommended)
+The workflow described below is based on [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/) as the package and environment manager. Create a dedicated directory `<YOUR-DIRECTORY>` for the `melafit` repository, navigate to it, and clone the repository:
 
-To ensure all dependencies (Python 3.12, NumPy, SciPy, Pandas, etc.) are correctly configured, you can create a dedicated Python virtual environment using the provided [`melafit.yml`](https://github.com/vitaliy-ch25/melafit/blob/main/melafit.yml) file. Download the file [`melafit.yml`](https://github.com/vitaliy-ch25/melafit/blob/main/melafit.yml), navigate to the directory you downloaded it to, and execute the following commands in your terminal window:
+```bash
+cd <YOUR-DIRECTORY>
+git clone https://github.com/vitaliy-ch25/melafit.git
+cd melafit
+```
+
+Then create and activate the conda environment, which ensures all dependencies (Python 3.12, NumPy, SciPy, Pandas, etc.) are correctly configured. The environment configuration file `melafit.yml` explicitly uses `conda-forge` as the sole package channel, ensuring reproducibility and full control over the package sources:
 
 ```bash
 conda env create -f melafit.yml
-
 conda activate melafit
 ```
 
@@ -24,7 +29,14 @@ This will create a fully functional analysis environment, including a number of 
 
 ## Updating
 
-Download the latest file [`melafit.yml`](https://github.com/vitaliy-ch25/melafit/blob/main/melafit.yml). In your terminal prompt, navigate to the directory where your `melafit.yml` file resides, and run the following command:
+Navigate to the cloned repository directory and pull the latest version:
+
+```bash
+cd <YOUR-DIRECTORY>/melafit
+git pull
+```
+
+Then update the conda environment to match any updated dependencies:
 
 ```bash
 conda env update -f melafit.yml --prune
