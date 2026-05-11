@@ -18,7 +18,7 @@ git clone https://github.com/vitaliy-ch25/melafit.git
 cd melafit
 ```
 
-Then create and activate the conda environment, which ensures all dependencies (Python 3.12, NumPy, SciPy, Pandas, etc.) are correctly configured. The environment configuration file `melafit.yml` explicitly uses `conda-forge` as the sole package channel, ensuring reproducibility and avoiding potential conflicts between packages from different channels:
+Then create and activate the conda environment, which ensures all dependencies (Python 3.12, NumPy, SciPy, Pandas, etc.) are correctly configured. The environment configuration file [./melafit.yml](melafit.yml) explicitly uses `conda-forge` as the sole package channel, ensuring reproducibility and avoiding potential conflicts between packages from different channels:
 
 ```bash
 conda env create -f melafit.yml
@@ -100,40 +100,35 @@ If you use `melafit` in your research, please cite the following foundational pu
 
 ## Revision History
 
+### v0.1.1
+- Enhanced function `fit()` to support custom waveform functions with user-defined initial parameters and bounds
+- Changed named parameter order in `fit()`: `cost_f` and `cost_p` are now the last two parameters
+- Fixed returned type hints in `func_defaults()`
+- Additional unit tests for new functionality
+
 ### v0.1.0 — First public release
-- Dictionary support for waveform function parameters throughout the package:
-  all functions accept both `dict` and `np.ndarray` for parameter input
-- Named parameter constants: `BCF_PARAM_NAMES`, `SBCF_PARAM_NAMES`,
-  `BBCF_PARAM_NAMES`, `BSBCF_PARAM_NAMES` and `PARAM_NAMES` lookup
-- New utility functions `params_to_array()` and `array_to_params()` for
-  conversion between array and named dictionary representations
-- `fit()` now returns named parameter dictionary as `res.p` in addition
-  to the standard scipy `res.x` array
-- `fit()` now accepts `cost_p` dictionary for passing parameters to the
-  cost function (e.g. `{"eps": 1e-6}`)
+- Dictionary support for waveform function parameters throughout the package: all functions accept both `dict` and `np.ndarray` for parameter input
+- Named parameter constants: `BCF_PARAM_NAMES`, `SBCF_PARAM_NAMES`, `BBCF_PARAM_NAMES`, `BSBCF_PARAM_NAMES` and `PARAM_NAMES` lookup
+- New utility functions `params_to_array()` and `array_to_params()` for conversion between array and named dictionary representations
+- `fit()` now returns named parameter dictionary as `res.p` in addition to the standard scipy `res.x` array
+- `fit()` now accepts `cost_p` dictionary for passing parameters to the cost function (e.g. `{"eps": 1e-6}`)
 - New utility function `params_to_string()` for human-readable parameter output
 - Fixed `area_cog()`: baseline subtraction and bin size normalisation
 - Unit tests for all public functions in `fitting`, `markers` and `utils`
 
 ### v0.0.9
-- New function `func_defaults()` in `fitting.py` for standalone access to
-  default initial conditions and constraints for all waveform functions
+- New function `func_defaults()` in `fitting.py` for standalone access to default initial conditions and constraints for all waveform functions
 - Improved cost function: `eps` parameter for more robust fitting
-- Optional `thresh_abs` parameter in `markers.midpoint()` for absolute
-  threshold support
-- New example script `example_dlmo.py` and dataset for DLMO detection
-  from partial data
+- Optional `thresh_abs` parameter in `markers.midpoint()` for absolute threshold support
+- New example script `example_dlmo.py` and dataset for DLMO detection from partial data
 - Previous example renamed to `example_full_profile.py`
 - Improved type hints, docstrings and README
 
 ### Previous revisions (v0.0.1 – v0.0.8)
-- Full implementation of melatonin profile analysis as described in
-  [Gabel et al. (2017)](https://doi.org/10.1038/s41598-017-07060-8)
+- Full implementation of melatonin profile analysis as described in [Gabel et al. (2017)](https://doi.org/10.1038/s41598-017-07060-8)
 - Waveform functions: `bcf`, `sbcf`, `bbcf`, `bsbcf`
 - Markers: `amplitude`, `midpoint`, `DLMOn`, `DLMOff`, `area`, `cog`
-- Utilities: `read_data`, `prepare_part_data`, `compute_wave`,
-  `day_profile`, `abs_threshold`, `time_to_phase`, `phase_to_string`,
-  `phase_diff`
+- Utilities: `read_data`, `prepare_part_data`, `compute_wave`, `day_profile`, `abs_threshold`, `time_to_phase`, `phase_to_string`, `phase_diff`
 - MIT license, packaging metadata and README
 
 ## License

@@ -361,9 +361,47 @@ class TestFit(unittest.TestCase):
         res = fit(self.t, self.y, f=bsbcf, p0=p0, lb=lb, ub=ub)
         self.assertIsNotNone(res)
 
+    def test_custom_params_not_overwritten_for_builtin_functions(self):
+        p0 = {"phi": 0.875, "b": 2.0, "H": 80.0, "c": 0.5, "v": 0.3, "m": 0.1}
+        lb = {"phi": 0.870, "b": 1.9, "H": 79.0, "c": 0.49, "v": 0.29, "m": 0.09}
+        ub = {"phi": 0.880, "b": 2.1, "H": 81.0, "c": 0.51, "v": 0.31, "m": 0.11}
+
+        res = fit(self.t, self.y, f=bsbcf, p0=p0, lb=lb, ub=ub)
+        self.assertTrue(res.success or res.fun < 0.01)
+        # Verify the result stays within the tight custom bounds
+        for key in BSBCF_PARAM_NAMES:
+            self.assertGreaterEqual(res.p[key], lb[key] - 1e-10)
+            self.assertLessEqual(res.p[key], ub[key] + 1e-10)
+
     def test_cost_p_passed_through(self):
         res = fit(self.t, self.y, f=bsbcf, cost_p={"eps": 1e-6})
         self.assertIsInstance(res, opt.OptimizeResult)
+
+    def test_custom_waveform_function_requires_manual_bounds(self):
+        def cosine_wave(t, p):
+            p = _resolve_params(p)
+            return p[0] + p[1] * np.cos(2 * np.pi * t)
+
+        with self.assertRaises(ValueError):
+            fit(self.t, cosine_wave(self.t, p=np.array([1.0, 1.0])), f=cosine_wave)
+
+    def test_custom_waveform_function_fits_with_manual_bounds(self):
+        def cosine_wave(t, p):
+            p = _resolve_params(p)
+            return p[0] + p[1] * np.cos(2 * np.pi * t)
+
+        true_params = {"offset": 2.0, "amplitude": 3.0}
+        y = cosine_wave(self.t, true_params)
+        p0 = {"offset": 1.0, "amplitude": 1.0}
+        lb = {"offset": 0.0, "amplitude": 0.0}
+        ub = {"offset": 5.0, "amplitude": 5.0}
+
+        res = fit(self.t, y, f=cosine_wave, p0=p0, lb=lb, ub=ub)
+        self.assertTrue(res.success or res.fun < 1e-6)
+        self.assertIsInstance(res.p, dict)
+        self.assertEqual(list(res.p.keys()), ["offset", "amplitude"])
+        self.assertAlmostEqual(res.p["offset"], true_params["offset"], places=3)
+        self.assertAlmostEqual(res.p["amplitude"], true_params["amplitude"], places=3)
 
     def test_with_real_data(self):
         """fit() should converge on real dummy data."""
