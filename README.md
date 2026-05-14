@@ -100,12 +100,13 @@ If you use [melafit](https://github.com/vitaliy-ch25/melafit) in your research, 
 
 ## Revision History
 
-### [v0.1.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.1.1)
+### [v0.1.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.1.1) - First PyPI release
 - Enhanced function `fit()` to support custom waveform functions with user-defined initial parameters and bounds
 - Changed named parameter order in `fit()`: `cost_f` and `cost_p` are now the last two parameters
 - Fixed returned type hints in `func_defaults()`
 - Additional unit tests for new functionality
 - Improved README
+- Package registered in Python Package Index PyPI
 
 ### [v0.1.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.1.0) — First public release
 - Dictionary support for waveform function parameters throughout the package: all functions accept both `dict` and `np.ndarray` for parameter input

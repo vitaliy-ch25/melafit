@@ -8,7 +8,7 @@ packages = ["melafit"]
 [project]
 name = "melafit"
 version = "0.1.1"
-description = "High-precision 24h melatonin profile analysis"
+description = "High-precision circadian melatonin profile analysis"
 requires-python = ">=3.12"
 license = {text = "MIT"}
 dependencies = [
