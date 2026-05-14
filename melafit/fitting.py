@@ -1,3 +1,51 @@
+"""
+# melafit.fitting: Melatonin Wave Approximation Models and Fitting Routines
+
+This module provides parametric cosine-based models for approximating melatonin
+concentration curves and methods for fitting these models to experimental data.
+
+Models:
+-------
+- BCF (Baseline Cosine Function)
+  * Simple baseline cosine model suitable for symmetric melatonin profiles
+  * Parameters: phi (phase), b (baseline), H (height), c (width)
+  * Reference: [Ruf '92](https://doi.org/10.1076/brhm.27.2.153.12942)
+
+- SBCF (Skewed Baseline Cosine Function)
+  * Baseline cosine model with skewness parameter for asymmetric profiles
+  * Parameters: phi, b, H, c, v (skewness)
+  * Reference: [Van Someren & Nagtegaal '07](https://doi.org/10.1016/j.sleep.2007.03.012)
+
+- BBCF (Bimodal Baseline Cosine Function)
+  * Bimodal baseline cosine model with two peaks for biphasic melatonin secretion patterns
+  * Parameters: phi, b, H, c, m (bimodality)
+  * Reference: [Van Someren & Nagtegaal '07](https://doi.org/10.1016/j.sleep.2007.03.012)
+
+- BSBCF (Bimodal Skewed Baseline Cosine Function)
+  * Most complex model combining bimodality and skewness
+  * Parameters: phi, b, H, c, v (skewness), m (bimodality)
+  * Reference: [Van Someren & Nagtegaal '07](https://doi.org/10.1016/j.sleep.2007.03.012)
+
+Functions:
+----------
+- bcf, sbcf, bbcf, bsbcf : Waveform model functions
+- params_to_array, array_to_params : Convert between dict and array parameter formats
+- cost : Cost function for curve fitting with trivial solution penalty
+- rsquared : R² goodness of fit metric
+- func_defaults : Generate default initial conditions and parameter bounds
+- fit : Main routine for fitting melatonin data using scipy optimization
+
+Classes:
+--------
+None
+
+Constants:
+----------
+- BCF_PARAM_NAMES, SBCF_PARAM_NAMES, BBCF_PARAM_NAMES, BSBCF_PARAM_NAMES : 
+    Parameter name lists for each model
+- PARAM_NAMES : Mapping of functions to their parameter names
+"""
+
 import scipy.optimize as opt
 import numpy as np
 

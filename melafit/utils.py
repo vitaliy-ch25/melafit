@@ -1,3 +1,66 @@
+"""
+# melafit.utils: Utility Functions for Melatonin Data Processing and Analysis
+
+This module provides support functions for reading, preprocessing, and analyzing
+melatonin time series data, including waveform computation, day profile averaging,
+and time/phase conversion utilities.
+
+Data I/O Functions:
+-------------------
+- read_data : Load melatonin data from Excel spreadsheet
+- prepare_part_data : Extract and preprocess single participant's data
+
+Waveform Functions:
+-------------------
+- compute_wave : Generate a full 24h waveform curve at specified time resolution
+
+Time Series Analysis:
+---------------------
+- day_profile : Compute averaged 24h profile from multi-day time series
+    Bins data and computes mean and standard error for each bin
+
+Time/Phase Conversion:
+----------------------
+- time_to_phase : Convert time values to phase representation (0.0 to 1.0)
+    Handles both daily (1.0 = 24h) and hourly time formats
+- phase_to_string : Format phase values as human-readable time strings (HH:MM)
+- time_to_phase : Normalize time to phase representation
+- phase_diff : Compute difference between two phases with proper wrapping
+
+Parameter/Threshold Utilities:
+------------------------------
+- abs_threshold : Convert relative threshold to absolute threshold value
+- params_to_string : Format curve fitting parameters as human-readable strings
+
+Data Format:
+------------
+Input melatonin data should be an Excel file with columns:
+- Participant : Study participant ID
+- Date : Sample date
+- Time : Sample time of day
+- Mel : Melatonin concentration value
+
+The module handles timestamp validation and correction for multi-day studies.
+
+Functions:
+----------
+- read_data : Load data from Excel
+- prepare_part_data : Preprocess participant data
+- compute_wave : Generate fitted waveform curve
+- day_profile : Average time series into 24h profile
+- time_to_phase : Convert time to phase
+- phase_to_string : Format phase as time string
+- phase_diff : Compute phase difference
+- abs_threshold : Convert relative to absolute threshold
+- params_to_string : Format parameters as string
+
+Notes:
+------
+- Times are internally stored as days (1.0 = 24 hours) or phases (1.0 = 24h)
+- All time arithmetic properly handles modulo 24h wrapping
+- Day profiles are computed by averaging across multiple circadian cycles
+"""
+
 import numpy as np
 import pandas as pd
 import datetime as dt

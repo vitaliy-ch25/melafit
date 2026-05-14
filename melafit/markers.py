@@ -1,3 +1,49 @@
+"""
+# melafit.markers: Circadian Phase Markers from Melatonin Data
+
+This module provides functions to compute clinically relevant circadian phase
+markers and rhythm characteristics from melatonin concentration curves.
+
+Markers Computed:
+-----------------
+- Amplitude : Peak-to-baseline difference of the melatonin curve
+    Indicator of circadian rhythm strength/robustness
+    
+- DLMOn/DLMOff (Dim Light Melatonin Onset/Offset) : Times when melatonin
+    crosses a given threshold (absolute or relative). Key markers of
+    circadian phase for clinical assessment
+
+- Midpoint : Time of melatonin level in the middle between DLMOn and DLMOff. 
+    Used to define melatonin phase angle
+    
+- Area Under Curve : Total melatonin secretion over 24 hours. Indicator of total 
+    circulating melatonin quantity
+    
+- Center of Gravity (COG) : Shape-based phase marker computed as the weighted
+    average time of melatonin secretion. Used to define melatonin phase angle. 
+    More robust to noise and partial data than threshold-based markers 
+    including DLMOn/Off and midpoint. Coincides with midpoint for symmetric 
+    curves.
+
+Functions:
+----------
+- amplitude : Compute peak-to-baseline amplitude
+- midpoint : Compute DLMOn/DLMOff times and melatonin midpoint
+- area_cog : Compute area under curve and center of gravity
+
+Notes:
+------
+- All timing outputs are in phase representation (0.0 to 1.0, where 1.0 = 24h)
+- Threshold-based markers (DLMOn/Off) require at least 24h of data or a 
+  full 24h fitted curve
+- Functions typically work with complete circadian cycles for accuracy
+
+References:
+-----------
+- [Benloucif et al. '08](https://pmc.ncbi.nlm.nih.gov/articles/PMC2276833/)
+- [Kolodyazhniy et al. '12](https://doi.org/10.3109/07420528.2012.700669)
+"""
+
 import numpy as np
 import pandas as pd
 from melafit.utils import day_profile, abs_threshold, time_to_phase
