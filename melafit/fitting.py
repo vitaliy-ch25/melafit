@@ -272,7 +272,7 @@ def rsquared(Y: np.ndarray,
     return r2
 
 def func_defaults(data_fit: np.ndarray,
-                  f: callable) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+                  f: callable) -> tuple[dict, dict, dict]:
     """
     Default initial conditions and constraints for melatonin wave approximation
     functions
@@ -408,7 +408,7 @@ def func_defaults(data_fit: np.ndarray,
             1 - 1e-6 # m
         ]
     else:
-        raise NotImplementedError(f"Constraints and initial conditions for " + 
+        raise NotImplementedError("Constraints and initial conditions for " + 
                                   f"function '{f.__name__}' are not defined!")
     
     return (array_to_params(p0, f),
@@ -418,10 +418,10 @@ def func_defaults(data_fit: np.ndarray,
 def fit(time_fit: np.ndarray,
         data_fit: np.ndarray,
         f: callable=bsbcf,
-        cost_f: callable=cost,
         p0: np.ndarray | None = None,
         lb: np.ndarray | None = None,
         ub: np.ndarray | None = None,
+        cost_f: callable=cost,
         cost_p: dict | None = None) -> opt.OptimizeResult:
     """
     Melatonin data fitting routine
@@ -434,8 +434,6 @@ def fit(time_fit: np.ndarray,
             Y-values for curve fitting (melatonin levels)
         f : callable
             Melatonin wave approximation function (defaults to `bsbcf`)
-        cost_f : callable
-            Cost function for curve fitting (defaults to `cost`)
         p0 : Numpy array of floats or None
             Non-standard initial values for wave approximation function
             (defaults to 'None')
@@ -445,6 +443,8 @@ def fit(time_fit: np.ndarray,
         ub : Numpy array of floats or None
             Non-standard upper bounds for wave approximation function
             parameters (defaults to 'None')
+        cost_f : callable
+            Cost function for curve fitting (defaults to `cost`)
         cost_p : dict | None
             Cost function parameters as dictionary or None (defaults to None)
 
@@ -455,16 +455,24 @@ def fit(time_fit: np.ndarray,
             in the field `x`
     """
 
-    _p0, _lb, _ub = func_defaults(data_fit, f)
+    # Only try to fetch defaults if we recognize the function
+    if f in PARAM_NAMES.keys():
+        _p0, _lb, _ub = func_defaults(data_fit, f)
 
-    if p0 is not None:
-        _p0 = p0
+        if p0 is not None:
+            _p0 = p0
 
-    if lb is not None:
-        _lb = lb
+        if lb is not None:
+            _lb = lb
 
-    if ub is not None:
-        _ub = ub
+        if ub is not None:
+            _ub = ub
+    else:
+        # For custom functions, require the user to have provided p0/lb/ub
+        if p0 is None or lb is None or ub is None:
+            raise ValueError(f"Function '{f.__name__}' is not a built-in model. " +
+                             "You must provide p0, lb, and ub manually.")
+        _p0, _lb, _ub = p0, lb, ub
 
     bounds = opt.Bounds(_resolve_params(_lb), _resolve_params(_ub))
     res = opt.minimize(fun=cost_f,
@@ -472,6 +480,18 @@ def fit(time_fit: np.ndarray,
                        x0=_resolve_params(_p0),
                        bounds=bounds)
     
-    res.p = array_to_params(res.x, f)
+    if f in PARAM_NAMES:
+        res.p = array_to_params(res.x, f)
+    else:
+        if isinstance(_p0, dict):
+            param_names = list(_p0.keys())
+        elif isinstance(_lb, dict):
+            param_names = list(_lb.keys())
+        elif isinstance(_ub, dict):
+            param_names = list(_ub.keys())
+        else:
+            param_names = None
+
+        res.p = dict(zip(param_names, res.x)) if param_names is not None else None
 
     return res

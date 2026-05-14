@@ -1,16 +1,16 @@
 # melafit
 
-Python package for **high-precision 24h melatonin profile analysis.** Features a variety of baseline cosine functions for curve fitting (Van Someren & Nagtegaal, 2007) and a robust cost function for superior convergence, even with sparse data (Gabel et al., 2017).
+Python package for **high-precision circadian melatonin profile analysis.** Features a variety of baseline cosine functions for curve fitting (Van Someren & Nagtegaal, 2007) and a robust cost function for superior convergence, even with sparse data ([Gabel et al. (2017)](https://doi.org/10.1038/s41598-017-07060-8)).
 
 ## Overview
 
-`melafit` is a Python package designed for high-precision modeling of 24-hour melatonin secretion. While standard cosinor or harmonic analyses fail to capture the physiological nuances of the melatonin "wave," `melafit` implements several **baseline cosine functions** including bimodal, skewed and bimodal-skewed modifications. This approach accounts for the characteristic baseline, asymmetry and dual peaks often seen in high-resolution melatonin data.
+[melafit](https://github.com/vitaliy-ch25/melafit) is a Python package designed for high-precision modeling of 24-hour melatonin secretion. While standard cosinor or harmonic analyses fail to capture the physiological nuances of the melatonin "wave," [melafit](https://github.com/vitaliy-ch25/melafit) implements several **baseline cosine functions** including bimodal, skewed and bimodal-skewed modifications. This approach accounts for the characteristic baseline, asymmetry and dual peaks often seen in high-resolution circadian melatonin data.
 
 Furthermore, the library utilizes a **specialized cost function** developed to overcome common optimization hurdles (trivial all-zero solutions), ensuring stable convergence even when working with sparse or incomplete time series.
 
 ## Installation
 
-The workflow described below is based on [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/) as the package and environment manager. Create a dedicated directory `<YOUR-DIRECTORY>` for the `melafit` repository, navigate to it, and clone the repository:
+The workflow described below is based on [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/) as the package and environment manager. Create a dedicated directory `<YOUR-DIRECTORY>` for the [melafit](https://github.com/vitaliy-ch25/melafit) repository, navigate to it, and clone the repository:
 
 ```bash
 cd <YOUR-DIRECTORY>
@@ -18,7 +18,7 @@ git clone https://github.com/vitaliy-ch25/melafit.git
 cd melafit
 ```
 
-Then create and activate the conda environment, which ensures all dependencies (Python 3.12, NumPy, SciPy, Pandas, etc.) are correctly configured. The environment configuration file `melafit.yml` explicitly uses `conda-forge` as the sole package channel, ensuring reproducibility and avoiding potential conflicts between packages from different channels:
+Then create and activate the conda environment, which ensures all dependencies (Python 3.12, NumPy, SciPy, Pandas, etc.) are correctly configured. The environment configuration file [./melafit.yml](https://github.com/vitaliy-ch25/melafit/blob/main/melafit.yml) explicitly uses `conda-forge` as the sole package channel, ensuring reproducibility and avoiding potential conflicts between packages from different channels:
 
 ```bash
 conda env create -f melafit.yml
@@ -57,14 +57,14 @@ Follow the Excel table format and column naming conventions as in [./data/](http
 
 ## Key Features
 
-* **Bimodal Waveform Fitting:** Implementation of the Nagtegaal & Van Someren model for superior physiological accuracy.
-* **Optimized Convergence:** Leverages the robust cost function described in Gabel et al. (2017) to ensure reliable fits across diverse datasets.
+* **Bimodal Waveform Fitting:** Implementation of the [Nagtegaal & Van Someren (2007)](https://doi.org/10.1016/j.sleep.2007.03.012) model for superior physiological accuracy.
+* **Optimized Convergence:** Leverages the robust cost function described in [Gabel et al. (2017)](https://doi.org/10.1038/s41598-017-07060-8) to ensure reliable fits across diverse datasets.
 * **Sparse Data Support:** Capable of reconstructing full profiles and estimating circadian phase from limited data points, as well as determining dim light melatonin onset (DLMO) with partial data.
 * **Research-Ready:** Direct derivation of phase markers from continuous, fitted waveforms.
 
 ## Scientific Foundations
 
-If you use `melafit` in your research, please cite the following foundational publications:
+If you use [melafit](https://github.com/vitaliy-ch25/melafit) in your research, please cite the following foundational publications:
 
 ### Human-Readable
 1. [Van Someren, E. J., & Nagtegaal, E. (2007). Improving melatonin circadian phase estimates. Sleep Medicine, 8(6), 590-601.](https://doi.org/10.1016/j.sleep.2007.03.012)
@@ -100,40 +100,37 @@ If you use `melafit` in your research, please cite the following foundational pu
 
 ## Revision History
 
-### v0.1.0 — First public release
-- Dictionary support for waveform function parameters throughout the package:
-  all functions accept both `dict` and `np.ndarray` for parameter input
-- Named parameter constants: `BCF_PARAM_NAMES`, `SBCF_PARAM_NAMES`,
-  `BBCF_PARAM_NAMES`, `BSBCF_PARAM_NAMES` and `PARAM_NAMES` lookup
-- New utility functions `params_to_array()` and `array_to_params()` for
-  conversion between array and named dictionary representations
-- `fit()` now returns named parameter dictionary as `res.p` in addition
-  to the standard scipy `res.x` array
-- `fit()` now accepts `cost_p` dictionary for passing parameters to the
-  cost function (e.g. `{"eps": 1e-6}`)
+### [v0.1.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.1.1) - First PyPI release
+- Enhanced function `fit()` to support custom waveform functions with user-defined initial parameters and bounds
+- Changed named parameter order in `fit()`: `cost_f` and `cost_p` are now the last two parameters
+- Fixed returned type hints in `func_defaults()`
+- Additional unit tests for new functionality
+- Improved README
+- Package registered in Python Package Index PyPI
+
+### [v0.1.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.1.0) — First public release
+- Dictionary support for waveform function parameters throughout the package: all functions accept both `dict` and `np.ndarray` for parameter input
+- Named parameter constants: `BCF_PARAM_NAMES`, `SBCF_PARAM_NAMES`, `BBCF_PARAM_NAMES`, `BSBCF_PARAM_NAMES` and `PARAM_NAMES` lookup
+- New utility functions `params_to_array()` and `array_to_params()` for conversion between array and named dictionary representations
+- `fit()` now returns named parameter dictionary as `res.p` in addition to the standard scipy `res.x` array
+- `fit()` now accepts `cost_p` dictionary for passing parameters to the cost function (e.g. `{"eps": 1e-6}`)
 - New utility function `params_to_string()` for human-readable parameter output
-- Fixed `area_cog()`: baseline subtraction and bin size normalisation
+- Fixed `area_cog()`: baseline subtraction and bin size normalization
 - Unit tests for all public functions in `fitting`, `markers` and `utils`
 
 ### v0.0.9
-- New function `func_defaults()` in `fitting.py` for standalone access to
-  default initial conditions and constraints for all waveform functions
+- New function `func_defaults()` in `fitting.py` for standalone access to default initial conditions and constraints for all waveform functions
 - Improved cost function: `eps` parameter for more robust fitting
-- Optional `thresh_abs` parameter in `markers.midpoint()` for absolute
-  threshold support
-- New example script `example_dlmo.py` and dataset for DLMO detection
-  from partial data
+- Optional `thresh_abs` parameter in `markers.midpoint()` for absolute threshold support
+- New example script `example_dlmo.py` and dataset for DLMO detection from partial data
 - Previous example renamed to `example_full_profile.py`
 - Improved type hints, docstrings and README
 
-### Previous revisions (v0.0.1 – v0.0.8)
-- Full implementation of melatonin profile analysis as described in
-  [Gabel et al. (2017)](https://doi.org/10.1038/s41598-017-07060-8)
+### Initial revisions (v0.0.1 – v0.0.8)
+- Full implementation of melatonin profile analysis as described in [Gabel et al. (2017)](https://doi.org/10.1038/s41598-017-07060-8)
 - Waveform functions: `bcf`, `sbcf`, `bbcf`, `bsbcf`
 - Markers: `amplitude`, `midpoint`, `DLMOn`, `DLMOff`, `area`, `cog`
-- Utilities: `read_data`, `prepare_part_data`, `compute_wave`,
-  `day_profile`, `abs_threshold`, `time_to_phase`, `phase_to_string`,
-  `phase_diff`
+- Utilities: `read_data`, `prepare_part_data`, `compute_wave`, `day_profile`, `abs_threshold`, `time_to_phase`, `phase_to_string`, `phase_diff`
 - MIT license, packaging metadata and README
 
 ## License
