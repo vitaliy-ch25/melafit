@@ -100,7 +100,7 @@ If you use [melafit](https://github.com/vitaliy-ch25/melafit) in your research, 
 
 ## Revision History
 
-### [v0.1.2](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.1.2)]
+### [v0.1.2](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.1.2)
 - Improved documentation
 
 ### [v0.1.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.1.1) - First PyPI release
