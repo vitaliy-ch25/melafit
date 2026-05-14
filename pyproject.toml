@@ -7,10 +7,12 @@ packages = ["melafit"]
 
 [project]
 name = "melafit"
-version = "0.1.1"
+version = "0.1.2"
 description = "High-precision circadian melatonin profile analysis"
+readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
+license-files = ["LICENSE"]
 dependencies = [
     "numpy",
     "scipy",
