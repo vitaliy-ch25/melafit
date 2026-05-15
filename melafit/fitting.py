@@ -310,7 +310,7 @@ def rsquared(Y: np.ndarray,
     Returns
     -------
         r2 : float
-            R2 value
+            R² value
     """
 
     err = Y - y

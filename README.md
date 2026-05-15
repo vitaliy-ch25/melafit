@@ -1,6 +1,6 @@
 # melafit
 
-Python package for **high-precision circadian melatonin profile analysis.** Features a variety of baseline cosine functions for curve fitting (Van Someren & Nagtegaal, 2007) and a robust cost function for superior convergence, even with sparse data ([Gabel et al. (2017)](https://doi.org/10.1038/s41598-017-07060-8)).
+Python package for **high-precision circadian melatonin profile analysis.** Features a variety of baseline cosine functions for curve fitting ([Van Someren & Nagtegaal, 2007](https://doi.org/10.1016/j.sleep.2007.03.012)) and a robust cost function for superior convergence, even with sparse data ([Gabel et al., 2017](https://doi.org/10.1038/s41598-017-07060-8)).
 
 ## Overview
 
@@ -8,9 +8,32 @@ Python package for **high-precision circadian melatonin profile analysis.** Feat
 
 Furthermore, the library utilizes a **specialized cost function** developed to overcome common optimization hurdles (trivial all-zero solutions), ensuring stable convergence even when working with sparse or incomplete time series.
 
+## Key Features
+
+* **Bimodal Waveform Fitting:** Implementation of the [Van Someren & Nagtegaal (2007)](https://doi.org/10.1016/j.sleep.2007.03.012) model for superior physiological accuracy.
+* **Optimized Convergence:** Leverages the robust cost function described in [Gabel et al. (2017)](https://doi.org/10.1038/s41598-017-07060-8) to ensure reliable fits across diverse datasets.
+* **Sparse Data Support:** Capable of reconstructing full profiles and estimating circadian phase from limited data points, as well as determining dim light melatonin onset (DLMO) with partial data.
+* **Research-Ready:** Direct derivation of `Amplitude`, `DLMOn`, `DLMOff`, `Midpoint`, `Area` and `COG` markers from continuous, fitted waveforms.
+
 ## Installation
 
-The workflow described below is based on [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/) as the package and environment manager. Create a dedicated directory `<YOUR-DIRECTORY>` for the [melafit](https://github.com/vitaliy-ch25/melafit) repository, navigate to it, and clone the repository:
+`melafit` is available on [PyPI](https://pypi.org/project/melafit/) and can be installed with `pip`. However, installing directly into your system Python environment without a virtual environment is strongly discouraged, as it may cause conflicts with other packages. The recommended approach is to use [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/) as the package and environment manager to create a dedicated virtual environment, as described below.
+
+### Standard installation
+
+Download file [`melafit.yml`](https://github.com/vitaliy-ch25/melafit/blob/main/melafit.yml) to a directory of your choice (`<YOUR-DIRECTORY>`). Navigate to the directory, create and activate the conda environment:
+
+```bash
+cd <YOUR-DIRECTORY>
+conda env create -f melafit.yml
+conda activate melafit
+```
+
+The environment configuration file [`melafit.yml`](https://github.com/vitaliy-ch25/melafit/blob/main/melafit.yml) uses `conda-forge` as the sole package channel, ensuring reproducibility and avoiding potential conflicts between packages from different channels. `melafit` itself is installed from [PyPI](https://pypi.org/project/melafit/) via `pip` as part of the environment setup. This will create a fully functional analysis environment, including all supporting packages (`numpy`, `scipy`, `pandas`, `openpyxl` and `matplotlib`).
+
+### Developer installation
+
+If you intend to follow the development closely or contribute to the package, clone the repository first to a dedicated directory `<YOUR-DIRECTORY>`. Navigate to it and clone the repository as follows:
 
 ```bash
 cd <YOUR-DIRECTORY>
@@ -18,28 +41,41 @@ git clone https://github.com/vitaliy-ch25/melafit.git
 cd melafit
 ```
 
-Then create and activate the conda environment, which ensures all dependencies (Python 3.12, NumPy, SciPy, Pandas, etc.) are correctly configured. The environment configuration file [./melafit.yml](https://github.com/vitaliy-ch25/melafit/blob/main/melafit.yml) explicitly uses `conda-forge` as the sole package channel, ensuring reproducibility and avoiding potential conflicts between packages from different channels:
+Then create and activate the conda environment using the developer configuration file [`melafit-dev.yml`](https://github.com/vitaliy-ch25/melafit/blob/main/melafit-dev.yml), which installs `melafit` directly from the cloned directory in editable mode:
 
 ```bash
-conda env create -f melafit.yml
+conda env create -f melafit-dev.yml
 conda activate melafit
 ```
 
-This will create a fully functional analysis environment, including a number of supporting data manipulation and analysis packages (`numpy`, `scipy`, `pandas`, `openpyxl` and `matplotlib`).
+With an editable install, any changes to the source code in the cloned directory take effect immediately without reinstalling the package.
 
 ## Updating
 
-Navigate to the cloned repository directory and pull the latest version:
+### Standard update
+
+Download the latest [`melafit.yml`](https://github.com/vitaliy-ch25/melafit/blob/main/melafit.yml) to `<YOUR-DIRECTORY>`. Navigate to it and run the update command as follows:
+
+```bash
+cd <YOUR-DIRECTORY>
+conda env update -f melafit.yml --prune
+```
+
+This updates both the dependencies and `melafit` itself to the latest released version.
+
+### Developer update
+
+Navigate to the cloned repository directory and pull the latest version from the main branch:
 
 ```bash
 cd <YOUR-DIRECTORY>/melafit
 git pull
 ```
 
-Then update the conda environment to match any updated dependencies:
+The editable install picks up the changes immediately. If dependencies in [`melafit-dev.yml`](https://github.com/vitaliy-ch25/melafit/blob/main/melafit-dev.yml) have changed, also run:
 
 ```bash
-conda env update -f melafit.yml --prune
+conda env update -f melafit-dev.yml --prune
 ```
 
 This updates both the dependencies and the `melafit` package itself to the latest version.
@@ -54,13 +90,6 @@ Follow the Excel table format and column naming conventions as in [./data/](http
 * *Date* for dates of the respective samples
 * *Time* for sample timestamps 
 * *Mel* for melatonin level values
-
-## Key Features
-
-* **Bimodal Waveform Fitting:** Implementation of the [Nagtegaal & Van Someren (2007)](https://doi.org/10.1016/j.sleep.2007.03.012) model for superior physiological accuracy.
-* **Optimized Convergence:** Leverages the robust cost function described in [Gabel et al. (2017)](https://doi.org/10.1038/s41598-017-07060-8) to ensure reliable fits across diverse datasets.
-* **Sparse Data Support:** Capable of reconstructing full profiles and estimating circadian phase from limited data points, as well as determining dim light melatonin onset (DLMO) with partial data.
-* **Research-Ready:** Direct derivation of phase markers from continuous, fitted waveforms.
 
 ## Scientific Foundations
 
@@ -94,11 +123,19 @@ If you use [melafit](https://github.com/vitaliy-ch25/melafit) in your research, 
 }
 ```
 
+If there is no associated publication publication on `melafit` yet, please cite the package directly using the following reference:
+
+[Kolodyazhniy, V., & Cajochen, C. (2026). melafit: High-precision circadian melatonin profile analysis. Retrieved from https://github.com/vitaliy-ch25/melafit](https://github.com/vitaliy-ch25/melafit).
+
 ## Authors
 * Vitaliy Kolodyazhniy – Lead Developer
 * Christian Cajochen – Scientific Lead
 
 ## Revision History
+
+### [v0.1.3](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.1.3)
+- Improved documentation
+- Developer installation option
 
 ### [v0.1.2](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.1.2)
 - Improved documentation
@@ -137,4 +174,4 @@ If you use [melafit](https://github.com/vitaliy-ch25/melafit) in your research, 
 - MIT license, packaging metadata and README
 
 ## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/vitaliy-ch25/melafit/blob/main/LICENSE) file for details.
