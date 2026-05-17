@@ -633,29 +633,28 @@ class TestDayProfile(unittest.TestCase):
     """Tests for day_profile()."""
 
     def setUp(self):
-        times = pd.date_range("2024-01-01", periods=len(T2), freq="1min")
-        values = (bsbcf(t=T2, p=BSBCF_PARAMS_ARRAY) + 
+        self.times = pd.date_range("2024-01-01", periods=len(T2), freq="1min")
+        self.values = (bsbcf(t=T2, p=BSBCF_PARAMS_ARRAY) + 
                   np.random.normal(0, 5, size=T2.shape))
-        values = values - np.min(values) + 1.0
-        self.series = pd.Series(index=times, data=values)
+        self.values = self.values - np.min(self.values) + 1.0
 
     def test_returns_two_series(self):
-        mean, std = day_profile(self.series)
+        mean, std = day_profile(self.times, self.values)
         self.assertIsInstance(mean, pd.Series)
         self.assertIsInstance(std, pd.Series)
 
     def test_double_doubles_length(self):
-        mean_single, _ = day_profile(self.series, double=False)
-        mean_double, _ = day_profile(self.series, double=True)
+        mean_single, _ = day_profile(self.times, self.values, double=False)
+        mean_double, _ = day_profile(self.times, self.values, double=True)
         self.assertEqual(len(mean_double), 2 * len(mean_single))
 
     def test_repfirst_adds_one_row(self):
-        mean_normal,   _ = day_profile(self.series, repfirst=False)
-        mean_repfirst, _ = day_profile(self.series, repfirst=True)
+        mean_normal,   _ = day_profile(self.times, self.values, repfirst=False)
+        mean_repfirst, _ = day_profile(self.times, self.values, repfirst=True)
         self.assertEqual(len(mean_repfirst), len(mean_normal) + 1)
 
     def test_mean_std_values_are_finite(self):
-        mean, std = day_profile(self.series)
+        mean, std = day_profile(self.times, self.values)
         self.assertTrue(np.all(np.isfinite(mean.values)))
         self.assertTrue(np.all(np.isfinite(std.values)))
 

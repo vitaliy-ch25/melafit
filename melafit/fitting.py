@@ -81,6 +81,11 @@ def bcf(t: np.ndarray,
     -------
         bcf_val : Numpy array of floats
             Values of the BCF function for the respective time points
+
+    See also
+    ---------
+        :func:`sbcf`, :func:`bbcf`, :func:`bsbcf`: Skewed, bimodal and bimodal
+        skewed baseline cosine functions
     """
 
     p = _resolve_params(p)
@@ -115,6 +120,11 @@ def sbcf(t: np.ndarray,
     -------
         sbcf_val : Numpy array of floats
             Values of the SBCF function for the respective time points
+
+    See also
+    ---------
+        :func:`bcf`, :func:`bbcf`, :func:`bsbcf`: Baseline cosine function and 
+        its bimodal and bimodal skewed modifications
     """
 
     p = _resolve_params(p)
@@ -151,6 +161,11 @@ def bbcf(t: np.ndarray,
     -------
         bbcf_val : Numpy array of floats
             Values of the BBCF function for the respective time points
+
+    See also
+    ---------
+        :func:`bcf`, :func:`sbcf`, :func:`bsbcf`: Baseline cosine function and 
+        its skewed and bimodal skewed modifications
     """
 
     p = _resolve_params(p)
@@ -187,6 +202,11 @@ def bsbcf(t: np.ndarray,
     -------
         bsbcf_val : Dictionary or Numpy array of floats
             Values of the BSBCF function for the respective time points
+
+    See also
+    ---------
+        :func:`bcf`, :func:`sbcf`, :func:`bbcf`: Baseline cosine function and 
+        its skewed and bimodal modifications
     """
     
     p = _resolve_params(p)
@@ -230,6 +250,10 @@ def params_to_array(params: dict) -> np.ndarray:
     -------
         p : Numpy array of floats
             Parameter vector for scipy.optimize
+
+    See also
+    ---------
+        :func:`array_to_params`: Convert array to parameter dictionary
     """
     return np.array(list(params.values()))
 
@@ -247,6 +271,10 @@ def array_to_params(x: np.ndarray, f: callable) -> dict:
     -------
         params : dict
             Dictionary of parameter names and values for the respective function
+
+    See also
+    ---------
+        :func:`params_to_array`: Convert parameter dictionary to numpy array
     """
 
     param_names = PARAM_NAMES.get(f)
@@ -501,6 +529,11 @@ def fit(time_fit: np.ndarray,
         res : OptimizeResult
             Optimization result including parameters of the fitted function
             in the field `x`
+
+    See also
+    ---------
+        :func:`cost`, :func:`func_defaults`: Cost function, default initial 
+        conditions and bounds for fitting
     """
 
     # Only try to fetch defaults if we recognize the function

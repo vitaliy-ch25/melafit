@@ -99,12 +99,11 @@ def midpoint(times: pd.DatetimeIndex,
 
     See also
     --------
-         melafit.utils.compute_wave: Compute waveform resampled to given time
-         resolution
+         :func:`melafit.utils.compute_wave`: Compute waveform resampled to
+         given time resolution
     """
 
-    data_series = pd.Series(index=times, data=values)        
-    d_profile = day_profile(data_series, binsize=1)[0]
+    d_profile = day_profile(times, values, binsize=1)[0]
 
     if not thresh_abs:
         threshold = abs_threshold(values, threshold)
@@ -152,6 +151,11 @@ def area_cog(times: pd.DatetimeIndex,
         cog : float
             Center of gravity of area under the curve as phase (from 0.0 to
             1.0, 1.0 = 24h)
+
+    See also
+    --------
+         :func:`melafit.utils.compute_wave`: Compute waveform resampled to
+         given time resolution
     """
 
     if baseline is None:
@@ -159,8 +163,7 @@ def area_cog(times: pd.DatetimeIndex,
     
     bin_minutes = 1
 
-    data_series = pd.Series(index=times, data=values)
-    d_profile = day_profile(data_series, binsize=bin_minutes)[0]
+    d_profile = day_profile(times, values, binsize=bin_minutes)[0]
 
     times = d_profile.index.values / 24.0
     values = d_profile.values

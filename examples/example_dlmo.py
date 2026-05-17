@@ -51,12 +51,12 @@ for mel_func in mel_funcs:
             p0["H"] *= 4
             ub["H"] *= 4
 
-            # Fit curve to raw data
+            # Fit curve to raw melatonin data
             res = fit(p_data.Timedays, p_data.Mel, mel_func, p0=p0, lb=lb, ub=ub)
 
-            # Compute goodness of fit with fitted curve and raw data
+            # Compute fitted curve
             fitted_curve = mel_func(t=p_data.Timedays, p=res.p)
-
+            
             # Compute fitted curve resampled to one minute resolution, res.p contains the fitted func parameters
             resampled_curve = compute_wave(p_data.Timedays.min(), p_data.Timedays.max(), dt_minutes, mel_func, res.p)
             

@@ -40,7 +40,7 @@ for mel_func in mel_funcs:
             p_data = prepare_part_data(data, participant)
             print(p_data)
 
-            # Fit curve to raw data
+            # Fit curve to raw melatonin data
             res = fit(p_data.Timedays, p_data.Mel, mel_func)
 
             # Compute goodness of fit with fitted curve and raw data

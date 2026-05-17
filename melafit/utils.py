@@ -183,7 +183,8 @@ def compute_wave(tmin: np.float64,
 
     return curve_val
 
-def day_profile(data: pd.Series,
+def day_profile(times: pd.DatetimeIndex,
+                values: np.ndarray,
                 binsize: int = 60,
                 double: bool = False, 
                 stderr: bool = False,
@@ -193,8 +194,10 @@ def day_profile(data: pd.Series,
 
     Parameters
     ----------
-        data : pandas Series
-            Time series data
+        times : pandas DatetimeIndex
+            Time stamps
+        values : numpy array
+            Data values
         binsize : int
             Bin size in minutes (defaults to 60)
         double: bool
@@ -209,6 +212,8 @@ def day_profile(data: pd.Series,
         profile : tuple[pd.Series, pd.Series]
             Bin averages and standard errors with index in hours (0..24)
     """
+
+    data = pd.Series(index=times, data=values)        
 
     # Bin data, ensure centering of the data points around bin centers
     smpstr=str(binsize)+'min'
