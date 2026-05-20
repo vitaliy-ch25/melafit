@@ -15,18 +15,19 @@ import scipy.optimize as opt
 from collections.abc import Mapping
 
 from melafit.fitting import (bcf, sbcf, bbcf, bsbcf, cost, rsquared,
-                              func_defaults, fit, FitResult,
+                              func_defaults, fit,
                               params_to_array, array_to_params,
                               _resolve_params, BCF_PARAM_NAMES,
                               SBCF_PARAM_NAMES, BBCF_PARAM_NAMES,
                               BSBCF_PARAM_NAMES, BUILTIN_PARAM_NAMES)
-from melafit.markers import (amplitude, midpoint, area_cog,
-                              AnalysisResult, AnalysisInfo, AmplitudeResult,
-                              MidpointResult, AreaCogResult)
+from melafit.markers import amplitude, midpoint, area_cog
+from melafit.results import (FitResult, AnalysisResult, AnalysisInfo,
+                              AmplitudeResult, MidpointResult, AreaCogResult,
+                              ResultsCollector)
 from melafit.utils import (read_data, prepare_part_data, compute_wave,
                             day_profile, time_to_phase, phase_to_string,
                             string_to_phase, abs_threshold, phase_diff,
-                            params_to_string, ResultsCollector)
+                            params_to_string)
 
 # ---------------------------------------------------------------------------
 # Shared test fixtures

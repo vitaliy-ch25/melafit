@@ -3,10 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import dates
 from melafit.fitting import bcf, sbcf, bbcf, bsbcf, fit, rsquared
-from melafit.markers import (amplitude, midpoint, area_cog, AnalysisInfo)
+from melafit.markers import amplitude, midpoint, area_cog
+from melafit.results import AnalysisInfo, ResultsCollector
 from melafit.utils import (read_data, prepare_part_data, compute_wave,
-                            phase_to_string, phase_diff, params_to_string,
-                            ResultsCollector)
+                            phase_to_string, phase_diff, params_to_string)
 
 data_path = "./data/"
 result_path = "./results/full/"

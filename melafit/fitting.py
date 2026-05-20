@@ -39,7 +39,7 @@ Functions:
 
 Classes:
 --------
-- FitResult : OptimizeResult subclass implementing the AnalysisResult interface
+- FitResult : defined in :mod:`melafit.results`
 
 Constants:
 ----------
@@ -51,66 +51,7 @@ Constants:
 import scipy.optimize as opt
 import numpy as np
 from collections.abc import Mapping
-from melafit.markers import AnalysisResult
-
-class FitResult(AnalysisResult, Mapping):
-    """
-    Wrapper of optimization result implementing the :class:`AnalysisResult`
-    and :class:`collections.abc.Mapping` interfaces. Mapping support allows
-    ``FitResult`` to be passed directly wherever a parameter dict is accepted
-    (waveform functions, :func:`compute_wave`, etc.). All standard scipy
-    attributes (``x``, ``fun``, ``success``, ``nit``, etc.) are preserved in
-    the field ``result`` of type :class:`scipy.optimize.OptimizeResult`.
-
-    Attributes
-    ----------
-        wave_func : callable
-            Melatonin wave approximation function for which the parameters were
-            fitted
-        result : scipy.optimize.OptimizeResult
-            Result of the optimization procedure including fitted parameters in
-            the field ``x``
-    """
-
-    def __init__(self, result: opt.OptimizeResult, wave_func: callable,
-                 param_names: list | None):
-        self.wave_func = wave_func
-        self.result = result
-        self._param_names = param_names
-
-    # ------------------------------------------------------------------
-    # Mapping protocol — enables direct use as a parameter dict
-    # ------------------------------------------------------------------
-
-    def __getitem__(self, key):
-        if self._param_names is None:
-            raise KeyError(key)
-        try:
-            return self.result.x[self._param_names.index(key)]
-        except ValueError:
-            raise KeyError(key)
-
-    def __iter__(self):
-        return iter(self._param_names or [])
-
-    def __len__(self):
-        return len(self._param_names or [])
-
-    # ------------------------------------------------------------------
-
-    def to_dict(self) -> dict:
-        """
-        Return fitted parameters as a named dictionary.
-
-        Returns
-        -------
-            d : dict
-                ``{name: value, ...}`` for each fitted parameter, or an
-                empty dict if no parameter names are available (e.g. a
-                custom function with array-only bounds).
-        """
-        return dict(self)
-
+from melafit.results import FitResult
 
 # Parameter names for melatonin wave approximation functions
 BCF_PARAM_NAMES   = ["phi", "b", "H", "c"]

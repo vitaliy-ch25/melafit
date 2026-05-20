@@ -2,8 +2,8 @@
 melafit.markers: Circadian Phase Markers from Melatonin Data
 
 This module provides functions to compute clinically relevant circadian phase
-markers and rhythm characteristics from melatonin concentration curves,
-together with structured result dataclasses.
+markers and rhythm characteristics from melatonin concentration curves.
+Result types are defined in :mod:`melafit.results`.
 
 Markers Computed:
 -----------------
@@ -26,20 +26,6 @@ Markers Computed:
     including DLMOn/Off and midpoint. Coincides with midpoint for symmetric
     curves.
 
-Result Dataclasses:
--------------------
-- AnalysisResult : Abstract base class defining the to_dict() interface for
-    all result types
-- AnalysisInfo : Identifying information about an analysis (participant, start,
-    waveform function name, goodness of fit)
-- AmplitudeResult : Wrapper for amplitude marker
-- MidpointResult : Wrapper for midpoint, DLMOn, DLMOff and threshold
-- AreaCogResult : Wrapper for area under curve and center of gravity
-
-All result dataclasses inherit from AnalysisResult and implement `to_dict()`,
-returning a dictionary suitable for tabular output. Timing fields (phase
-values) are formatted as HH:MM strings; other fields as native types.
-
 Functions:
 ----------
 - amplitude : Compute peak-to-baseline amplitude
@@ -61,162 +47,9 @@ References:
 
 import numpy as np
 import pandas as pd
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, asdict
+from melafit.results import AmplitudeResult, MidpointResult, AreaCogResult
 from melafit.utils import (day_profile, abs_threshold, time_to_phase,
                             phase_to_string)
-
-
-class AnalysisResult(ABC):
-    """
-    Abstract base class for all melafit analysis result types.
-
-    All subclasses must implement :meth:`to_dict`, returning a dictionary
-    suitable for tabular output (e.g. for use with
-    :class:`melafit.utils.ResultsCollector`).
-    """
-
-    @abstractmethod
-    def to_dict(self) -> dict:
-        """Return result fields as a dictionary for tabular output."""
-        ...
-
-
-@dataclass
-class AnalysisInfo(AnalysisResult):
-    """
-    Identifying information about a single melatonin analysis.
-
-    Attributes
-    ----------
-        participant : int or str
-            Participant identifier
-        start : pd.Timestamp
-            Start timestamp of the analysis session
-        func : str
-            Name of the waveform function used for fitting
-        r2 : float
-            R² goodness of fit (defaults to NaN if not provided, which is
-            convenient when r2 is not computed, e.g. for partial-data DLMO
-            detection)
-    """
-
-    participant: int | str
-    start: pd.Timestamp
-    func: str
-    r2: np.float64 = float("nan")
-
-    def to_dict(self) -> dict:
-        """
-        Return all fields as a flat dictionary.
-
-        Returns
-        -------
-            d : dict
-                All fields in their native types.
-        """
-        return asdict(self)
-
-
-@dataclass
-class AmplitudeResult(AnalysisResult):
-    """
-    Result of peak-to-baseline amplitude computation.
-
-    Attributes
-    ----------
-        amplitude : float
-            Peak-to-baseline amplitude of the waveform
-    """
-
-    amplitude: np.float64
-
-    def to_dict(self) -> dict:
-        """
-        Return all fields as a flat dictionary.
-
-        Returns
-        -------
-            d : dict
-                All fields in their native types.
-        """
-        return asdict(self)
-
-
-@dataclass
-class MidpointResult(AnalysisResult):
-    """
-    Result of midpoint, DLMOn and DLMOff computation.
-
-    Timing fields are stored as phase values (0.0 to 1.0, 1.0 = 24h).
-    Use :meth:`to_dict` to obtain HH:MM string representations.
-
-    Attributes
-    ----------
-        dlmon : float
-            Dim light melatonin onset time as phase
-        dlmoff : float
-            Dim light melatonin offset time as phase
-        midpoint : float
-            Melatonin midpoint time as phase
-        threshold : float
-            Absolute threshold value used for the computation
-    """
-
-    dlmon: np.float64
-    dlmoff: np.float64
-    midpoint: np.float64
-    threshold: np.float64
-
-    def to_dict(self) -> dict:
-        """
-        Return timing fields as HH:MM string representations.
-
-        Returns
-        -------
-            d : dict
-                Dictionary with keys 'dlmon', 'dlmoff', 'midpoint' mapped
-                to their HH:MM string representations. 'threshold' is
-                included unchanged as a float.
-        """
-        return {
-            "dlmon": phase_to_string(self.dlmon),
-            "dlmoff": phase_to_string(self.dlmoff),
-            "midpoint": phase_to_string(self.midpoint),
-            "threshold": self.threshold,
-        }
-
-
-@dataclass
-class AreaCogResult(AnalysisResult):
-    """
-    Result of area under curve and center of gravity computation.
-
-    Attributes
-    ----------
-        area : float
-            Area under the curve
-        cog : float
-            Center of gravity as phase (0.0 to 1.0, 1.0 = 24h)
-    """
-
-    area: np.float64
-    cog: np.float64
-
-    def to_dict(self) -> dict:
-        """
-        Return timing fields as HH:MM string representations.
-
-        Returns
-        -------
-            d : dict
-                Dictionary with key 'cog' mapped to its HH:MM string
-                representation. 'area' is included unchanged as a float.
-        """
-        return {
-            "area": self.area,
-            "cog": phase_to_string(self.cog),
-        }
 
 
 def amplitude(values: np.ndarray) -> AmplitudeResult:

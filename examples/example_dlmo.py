@@ -3,10 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import dates
 from melafit.fitting import bcf, sbcf, bbcf, bsbcf, fit, func_defaults
-from melafit.markers import midpoint, AnalysisInfo
+from melafit.markers import midpoint
+from melafit.results import AnalysisInfo, ResultsCollector
 from melafit.utils import (read_data, prepare_part_data, compute_wave,
-                            phase_to_string, params_to_string,
-                            ResultsCollector)
+                            phase_to_string, params_to_string)
 
 # EXPERIMENTAL: Determine DLMO using the curve fitting approach for partial data
 
