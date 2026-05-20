@@ -34,8 +34,10 @@ Result Dataclasses:
 - MidpointResult : Wrapper for midpoint, DLMOn, DLMOff and threshold
 - AreaCogResult : Wrapper for area under curve and center of gravity
 
-Each result dataclass provides a `to_dict()` method that returns its
-timing fields as HH:MM strings.
+Each result dataclass provides a `to_dict()` method returning a
+dictionary suitable for tabular output. Timing fields (phase values)
+are formatted as HH:MM strings; other fields are returned as native
+types.
 
 Functions:
 ----------
@@ -58,7 +60,7 @@ References:
 
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from melafit.utils import (day_profile, abs_threshold, time_to_phase,
                             phase_to_string)
 
@@ -87,6 +89,17 @@ class AnalysisInfo:
     func: str
     r2: np.float64 = float("nan")
 
+    def to_dict(self) -> dict:
+        """
+        Return all fields as a flat dictionary.
+
+        Returns
+        -------
+            d : dict
+                All fields in their native types.
+        """
+        return asdict(self)
+
 
 @dataclass
 class AmplitudeResult:
@@ -100,6 +113,17 @@ class AmplitudeResult:
     """
 
     amplitude: np.float64
+
+    def to_dict(self) -> dict:
+        """
+        Return all fields as a flat dictionary.
+
+        Returns
+        -------
+            d : dict
+                All fields in their native types.
+        """
+        return asdict(self)
 
 
 @dataclass

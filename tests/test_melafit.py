@@ -444,6 +444,13 @@ class TestAmplitude(unittest.TestCase):
         self.assertGreater(result.amplitude, 0.0)
         self.assertTrue(np.isfinite(result.amplitude))
 
+    def test_to_dict_returns_dict(self):
+        result = amplitude(np.array([2.0, 5.0, 10.0, 3.0]))
+        d = result.to_dict()
+        self.assertIsInstance(d, dict)
+        self.assertIn("amplitude", d)
+        self.assertAlmostEqual(d["amplitude"], 8.0)
+
 
 # ---------------------------------------------------------------------------
 # markers.py — midpoint tests
@@ -956,6 +963,19 @@ class TestAnalysisInfo(unittest.TestCase):
                         start=pd.Timestamp("2024-01-01"),
                         func="BSBCF")
         self.assertEqual(meta.participant, "P01")
+
+    def test_to_dict_returns_dict(self):
+        meta = AnalysisInfo(participant=1,
+                        start=pd.Timestamp("2024-01-01 21:00"),
+                        func="BSBCF",
+                        r2=0.95)
+        d = meta.to_dict()
+        self.assertIsInstance(d, dict)
+        for key in ["participant", "start", "func", "r2"]:
+            self.assertIn(key, d)
+        self.assertEqual(d["participant"], 1)
+        self.assertEqual(d["func"], "BSBCF")
+        self.assertAlmostEqual(d["r2"], 0.95)
 
 
 # ---------------------------------------------------------------------------

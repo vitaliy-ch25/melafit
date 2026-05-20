@@ -54,7 +54,6 @@ import os
 import numpy as np
 import pandas as pd
 import datetime as dt
-from dataclasses import asdict
 import scipy.optimize as opt
 
 
@@ -497,15 +496,12 @@ class ResultsCollector:
 
         for obj in args:
             if isinstance(obj, AnalysisInfo):
-                record.update(asdict(obj))
+                record.update(obj.to_dict())
                 meta_found = True
             elif isinstance(obj, opt.OptimizeResult):
                 record["func_params"] = params_to_string(obj.p)
-            elif isinstance(obj, AmplitudeResult):
-                record.update(asdict(obj))
-            elif isinstance(obj, MidpointResult):
-                record.update(obj.to_dict())
-            elif isinstance(obj, AreaCogResult):
+            elif isinstance(obj, (AmplitudeResult, MidpointResult,
+                                   AreaCogResult)):
                 record.update(obj.to_dict())
             else:
                 raise TypeError(
@@ -513,7 +509,7 @@ class ResultsCollector:
                     f"{type(obj).__name__}")
 
         if not meta_found:
-            raise ValueError("ResultsCollector.add() requires a AnalysisInfo "
+            raise ValueError("ResultsCollector.add() requires an AnalysisInfo "
                              "instance among its arguments")
 
         self._records.append(record)

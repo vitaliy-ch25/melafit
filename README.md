@@ -144,6 +144,7 @@ the required packages from any location. Simply make sure to use the virtual
 environment `melafit` you created.
 
 ## Data preparation
+
 Follow the Excel table format and column naming conventions as in 
 [./data/](https://github.com/vitaliy-ch25/melafit/blob/main/data/):
 * *Participant* for study participant ID
@@ -198,19 +199,19 @@ melatonin profile analysis, version <x.y.z>. Retrieved from
 on <Date>.
 
 ## Authors
+
 * Vitaliy Kolodyazhniy – Lead Developer
 * Christian Cajochen – Scientific Lead
 
 ## Revision History
 
-### [v0.2.0] (https://github.com/vitaliy-ch25/melafit/releases/tag/v0.2.0)
-Structured result dataclasses and simplified result collection
+### [v0.2.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.2.0) - Simplified API
 - New result dataclasses in markers.py: AnalysisInfo, AmplitudeResult,
   MidpointResult, AreaCogResult
 - amplitude(), midpoint() and area_cog() now return their respective
   dataclasses instead of tuples/floats
-- New to_dict() method on MidpointResult and AreaCogResult returning
-  HH:MM string representations of timing fields
+- New to_dict() method on all result dataclasses: timing fields
+  returned as HH:MM strings, other fields as native types
 - AnalysisInfo.r2 defaults to NaN for convenience in DLMO workflows
 - New ResultsCollector class in utils.py with type-dispatched add() method
   accepting any combination of result objects in any order
@@ -236,7 +237,7 @@ Structured result dataclasses and simplified result collection
 - Improved README
 - Package registered in Python Package Index PyPI
 
-### [v0.1.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.1.0) — First public release
+### [v0.1.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.1.0) - First public release
 - Dictionary support for waveform function parameters throughout the
   package: all functions accept both `dict` and `np.ndarray` for
   parameter input
@@ -252,28 +253,20 @@ Structured result dataclasses and simplified result collection
 - Fixed `area_cog()`: baseline subtraction and bin size normalization
 - Unit tests for all public functions in `fitting`, `markers` and `utils`
 
-### v0.0.9
-- New function `func_defaults()` in `fitting.py` for standalone access
-  to default initial conditions and constraints for all waveform functions
-- Improved cost function: `eps` parameter for more robust fitting
-- Optional `thresh_abs` parameter in `markers.midpoint()` for absolute
-  threshold support
-- New example script `example_dlmo.py` and dataset for DLMO detection
-  from partial data
-- Previous example renamed to `example_full_profile.py`
-- Improved type hints, docstrings and README
-
-### Initial revisions (v0.0.1 – v0.0.8)
-- Full implementation of melatonin profile analysis as described in 
+### Initial revisions (v0.0.1 – v0.0.9)
+- Full implementation of melatonin profile analysis as described in
   [Gabel et al. (2017)](https://doi.org/10.1038/s41598-017-07060-8)
 - Waveform functions: `bcf`, `sbcf`, `bbcf`, `bsbcf`
 - Markers: `amplitude`, `midpoint`, `DLMOn`, `DLMOff`, `area`, `cog`
 - Utilities: `read_data`, `prepare_part_data`, `compute_wave`,
   `day_profile`, `abs_threshold`, `time_to_phase`, `phase_to_string`,
   `phase_diff`
+- Example scripts: `example_dlmo.py` (DLMO from partial data) and
+  `example_full_profile.py` (full profile analysis)
 - MIT license, packaging metadata and README
 
 ## License
+
 This project is licensed under the MIT License. See the 
 [LICENSE](https://github.com/vitaliy-ch25/melafit/blob/main/LICENSE) file for 
 details.
