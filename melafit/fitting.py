@@ -39,51 +39,58 @@ Functions:
 
 Classes:
 --------
-- FitResult : OptimizeResult subclass implementing the MelaResult interface
+- FitResult : OptimizeResult subclass implementing the AnalysisResult interface
 
 Constants:
 ----------
 - BCF_PARAM_NAMES, SBCF_PARAM_NAMES, BBCF_PARAM_NAMES, BSBCF_PARAM_NAMES : 
     Parameter name lists for each model
-- PARAM_NAMES : Mapping of functions to their parameter names
+- BUILTIN_PARAM_NAMES : Mapping of built-in functions to their parameter names
 """
 
 import scipy.optimize as opt
 import numpy as np
-from melafit.markers import MelaResult
-from melafit.utils import params_to_string
+from melafit.markers import AnalysisResult
 
-class FitResult(MelaResult, opt.OptimizeResult):
+class FitResult(AnalysisResult):
     """
-    Optimization result implementing the :class:`MelaResult` interface.
-
-    A thin subclass of :class:`scipy.optimize.OptimizeResult` that adds
-    :meth:`to_dict`, making it compatible with
+    Wrapper of optimization result implementing the :class:`AnalysisResult`
+    interface that adds :meth:`to_dict`, making it compatible with
     :class:`melafit.utils.ResultsCollector`. All standard scipy attributes
-    (``x``, ``fun``, ``success``, ``nit``, etc.) are preserved.
+    (``x``, ``fun``, ``success``, ``nit``, etc.) are preserved in the field
+    ``result`` of type :class:`scipy.optimize.OptimizeResult`.
 
     Attributes
     ----------
-        p : dict or None
-            Fitted parameters as a named dictionary, or None if no
-            parameter names are available (e.g. custom functions with
-            array-only bounds)
+        wave_func : callable
+            Melatonin wave approximation function for which the parameters were
+            fitted
+        result : scipy.optimize.OptimizeResult
+            Result of the optimization procedure including fitted parameters in
+            the field ``x``
     """
+
+    def __init__(self, result: opt.OptimizeResult, wave_func: callable,
+                 param_names: list | None):
+        super().__init__()
+        self.wave_func = wave_func
+        self.result = result
+        self._param_names = param_names
 
     def to_dict(self) -> dict:
         """
-        Return fitted parameters as a dictionary entry.
+        Return fitted parameters as a named dictionary.
 
         Returns
         -------
             d : dict
-                ``{'func_params': <str>}`` with parameters formatted by
-                :func:`melafit.utils.params_to_string`, or
-                ``{'func_params': None}`` if no parameter names are
-                available.
+                ``{name: value, ...}`` for each fitted parameter, or an
+                empty dict if no parameter names are available (e.g. a
+                custom function with array-only bounds).
         """
-        return {"func_params": (params_to_string(self.p)
-                                if self.p is not None else None)}
+        if self._param_names is None:
+            return {}
+        return dict(zip(self._param_names, self.result.x))
 
 
 # Parameter names for melatonin wave approximation functions
@@ -266,9 +273,9 @@ def bsbcf(t: np.ndarray,
 
     return bsbcf_val
 
-# Mapping of functions to parameter names for conversion between dict
+# Mapping of functions to built-in parameter names for conversion between dict
 # and array representations
-PARAM_NAMES = {
+BUILTIN_PARAM_NAMES = {
     bcf:   BCF_PARAM_NAMES,
     sbcf:  SBCF_PARAM_NAMES,
     bbcf:  BBCF_PARAM_NAMES,
@@ -315,7 +322,7 @@ def array_to_params(x: np.ndarray, f: callable) -> dict:
         :func:`params_to_array`: Convert parameter dictionary to numpy array
     """
 
-    param_names = PARAM_NAMES.get(f)
+    param_names = BUILTIN_PARAM_NAMES.get(f)
     if param_names is None:
         raise ValueError(
             f"Function {f.__name__} not recognized for parameter conversion.")
@@ -575,7 +582,7 @@ def fit(time_fit: np.ndarray,
     """
 
     # Only try to fetch defaults if we recognize the function
-    if f in PARAM_NAMES.keys():
+    if f in BUILTIN_PARAM_NAMES.keys():
         _p0, _lb, _ub = func_defaults(data_fit, f)
 
         if p0 is not None:
@@ -600,8 +607,8 @@ def fit(time_fit: np.ndarray,
                        x0=_resolve_params(_p0),
                        bounds=bounds)
     
-    if f in PARAM_NAMES:
-        res.p = array_to_params(res.x, f)
+    if f in BUILTIN_PARAM_NAMES:
+        param_names = BUILTIN_PARAM_NAMES[f]
     else:
         if isinstance(_p0, dict):
             param_names = list(_p0.keys())
@@ -612,7 +619,4 @@ def fit(time_fit: np.ndarray,
         else:
             param_names = None
 
-        res.p = (dict(zip(param_names, res.x))
-                 if param_names is not None else None)
-
-    return FitResult(res)
+    return FitResult(result=res, wave_func=f, param_names=param_names)

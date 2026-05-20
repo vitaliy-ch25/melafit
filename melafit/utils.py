@@ -441,7 +441,7 @@ class ResultsCollector:
     an Excel spreadsheet.
 
     The :meth:`add` method accepts any combination of
-    :class:`~melafit.markers.MelaResult` subclass instances in any order.
+    :class:`~melafit.markers.AnalysisResult` subclass instances in any order.
     It calls :meth:`to_dict` on each and merges the resulting fields into a
     single row per participant. Missing fields appear as NaN in the output.
     Timing fields are stored as HH:MM strings in the Excel output.
@@ -458,10 +458,10 @@ class ResultsCollector:
 
     See also
     --------
-        :class:`melafit.markers.MelaResult` : Abstract base class for all
+        :class:`melafit.markers.AnalysisResult` : Abstract base class for all
         result types
         :class:`melafit.fitting.FitResult` : Optimization result with
-        MelaResult interface
+        AnalysisResult interface
     """
 
     def __init__(self):
@@ -471,32 +471,32 @@ class ResultsCollector:
         """
         Add one analysis run to the collector.
 
-        Accepts any combination of :class:`~melafit.markers.MelaResult`
+        Accepts any combination of :class:`~melafit.markers.AnalysisResult`
         subclass instances in any order. Exactly one
         :class:`~melafit.markers.AnalysisInfo` is required.
 
         Parameters
         ----------
-            *args : MelaResult
-                Any combination of MelaResult subclass instances from
+            *args : AnalysisResult
+                Any combination of AnalysisResult subclass instances from
                 one analysis run
 
         Raises
         ------
             TypeError
-                If any argument is not a MelaResult subclass instance
+                If any argument is not a AnalysisResult subclass instance
             ValueError
                 If no AnalysisInfo is provided among the arguments
         """
 
         # Local import to avoid circular dependency
-        from melafit.markers import MelaResult, AnalysisInfo
+        from melafit.markers import AnalysisResult, AnalysisInfo
 
         record = {}
         meta_found = False
 
         for obj in args:
-            if not isinstance(obj, MelaResult):
+            if not isinstance(obj, AnalysisResult):
                 raise TypeError(
                     f"ResultsCollector.add() received unsupported type "
                     f"{type(obj).__name__}")

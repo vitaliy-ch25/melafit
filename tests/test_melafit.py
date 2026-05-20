@@ -14,14 +14,14 @@ import datetime as dt
 import scipy.optimize as opt
 
 from melafit.fitting import (bcf, sbcf, bbcf, bsbcf, cost, rsquared,
-                              func_defaults, fit, params_to_array,
-                              array_to_params, _resolve_params,
-                              BCF_PARAM_NAMES, SBCF_PARAM_NAMES,
-                              BBCF_PARAM_NAMES, BSBCF_PARAM_NAMES,
-                              PARAM_NAMES)
+                              func_defaults, fit, FitResult,
+                              params_to_array, array_to_params,
+                              _resolve_params, BCF_PARAM_NAMES,
+                              SBCF_PARAM_NAMES, BBCF_PARAM_NAMES,
+                              BSBCF_PARAM_NAMES, BUILTIN_PARAM_NAMES)
 from melafit.markers import (amplitude, midpoint, area_cog,
-                              AnalysisInfo, AmplitudeResult, MidpointResult,
-                              AreaCogResult)
+                              AnalysisResult, AnalysisInfo, AmplitudeResult,
+                              MidpointResult, AreaCogResult)
 from melafit.utils import (read_data, prepare_part_data, compute_wave,
                             day_profile, time_to_phase, phase_to_string,
                             string_to_phase, abs_threshold, phase_diff,
@@ -310,20 +310,24 @@ class TestFit(unittest.TestCase):
         self.y = bsbcf(t=T, p=BSBCF_PARAMS_ARRAY)
         self.t = T
 
-    def test_returns_optimize_result(self):
+    def test_returns_fitresult(self):
         res = fit(self.t, self.y)
-        self.assertIsInstance(res, opt.OptimizeResult)
-        self.assertIn('x', res)
+        self.assertIsInstance(res, FitResult)
+        self.assertIsInstance(res.result, opt.OptimizeResult)
+        self.assertIsInstance(res, AnalysisResult)
+        self.assertIn('x', res.result)
 
     def test_returns_param_dict(self):
         res = fit(self.t, self.y, f=bsbcf)
-        self.assertIsInstance(res.p, dict)
-        self.assertEqual(list(res.p.keys()), BSBCF_PARAM_NAMES)
+        p = res.to_dict()
+        self.assertIsInstance(p, dict)
+        self.assertEqual(list(p.keys()), BSBCF_PARAM_NAMES)
 
     def test_param_dict_consistent_with_array(self):
         res = fit(self.t, self.y, f=bsbcf)
         for i, key in enumerate(BSBCF_PARAM_NAMES):
-            self.assertAlmostEqual(res.p[key], res.x[i], places=10)
+            self.assertAlmostEqual(res.to_dict()[key], res.result.x[i], 
+                                   places=10)
 
     def test_param_dict_correct_keys_all_functions(self):
         for func, names, params in [
@@ -334,23 +338,23 @@ class TestFit(unittest.TestCase):
         ]:
             y = func(t=T, p=params)
             res = fit(T, y, f=func)
-            self.assertEqual(list(res.p.keys()), names)
+            self.assertEqual(list(res.to_dict().keys()), names)
 
     def test_bsbcf_converges(self):
         res = fit(self.t, self.y, f=bsbcf)
-        self.assertTrue(res.success or res.fun < 0.01)
+        self.assertTrue(res.result.success or res.result.fun < 0.01)
 
     def test_bcf_converges(self):
         res = fit(T, bcf(t=T, p=BCF_PARAMS_ARRAY), f=bcf)
-        self.assertTrue(res.success or res.fun < 0.01)
+        self.assertTrue(res.result.success or res.result.fun < 0.01)
 
     def test_sbcf_converges(self):
         res = fit(T, sbcf(t=T, p=SBCF_PARAMS_ARRAY), f=sbcf)
-        self.assertTrue(res.success or res.fun < 0.01)
+        self.assertTrue(res.result.success or res.result.fun < 0.01)
 
     def test_bbcf_converges(self):
         res = fit(T, bbcf(t=T, p=BBCF_PARAMS_ARRAY), f=bbcf)
-        self.assertTrue(res.success or res.fun < 0.01)
+        self.assertTrue(res.result.success or res.result.fun < 0.01)
 
     def test_custom_p0_lb_ub_as_dicts(self):
         p0, lb, ub = func_defaults(self.y, bsbcf)
@@ -365,22 +369,33 @@ class TestFit(unittest.TestCase):
         self.assertIsNotNone(res)
 
     def test_custom_params_not_overwritten_for_builtin_functions(self):
-        p0 = {"phi": 0.875, "b": 2.0, "H": 80.0, "c": 0.5, "v": 0.3, "m": 0.1}
+        p0 = {"phi": 0.875, "b": 2.0, "H": 80.0, 
+              "c": 0.5, "v": 0.3, "m": 0.1}
         lb = {"phi": 0.870, "b": 1.9, "H": 79.0,
               "c": 0.49, "v": 0.29, "m": 0.09}
         ub = {"phi": 0.880, "b": 2.1, "H": 81.0,
               "c": 0.51, "v": 0.31, "m": 0.11}
 
         res = fit(self.t, self.y, f=bsbcf, p0=p0, lb=lb, ub=ub)
-        self.assertTrue(res.success or res.fun < 0.01)
+        self.assertTrue(res.result.success or res.result.fun < 0.01)
         # Verify the result stays within the tight custom bounds
+        p = res.to_dict()
         for key in BSBCF_PARAM_NAMES:
-            self.assertGreaterEqual(res.p[key], lb[key] - 1e-10)
-            self.assertLessEqual(res.p[key], ub[key] + 1e-10)
+            self.assertGreaterEqual(p[key], lb[key] - 1e-10)
+            self.assertLessEqual(p[key], ub[key] + 1e-10)
+
+    def test_fitresult_to_dict(self):
+        res = fit(self.t, self.y, f=bsbcf)
+        d = res.to_dict()
+        self.assertIsInstance(d, dict)
+        p = res.to_dict()
+        for key in BSBCF_PARAM_NAMES:
+            self.assertIn(key, p.keys())
+            self.assertIsInstance(p[key], float)
 
     def test_cost_p_passed_through(self):
         res = fit(self.t, self.y, f=bsbcf, cost_p={"eps": 1e-6})
-        self.assertIsInstance(res, opt.OptimizeResult)
+        self.assertIsInstance(res, FitResult)
 
     def test_custom_waveform_function_requires_manual_bounds(self):
         def cosine_wave(t, p):
@@ -404,11 +419,12 @@ class TestFit(unittest.TestCase):
         ub = {"offset": 5.0, "amplitude": 5.0}
 
         res = fit(self.t, y, f=cosine_wave, p0=p0, lb=lb, ub=ub)
-        self.assertTrue(res.success or res.fun < 1e-6)
-        self.assertIsInstance(res.p, dict)
-        self.assertEqual(list(res.p.keys()), ["offset", "amplitude"])
-        self.assertAlmostEqual(res.p["offset"], true_params["offset"], places=3)
-        self.assertAlmostEqual(res.p["amplitude"],
+        self.assertTrue(res.result.success or res.result.fun < 1e-6)
+        p = res.to_dict()
+        self.assertIsInstance(p, dict)
+        self.assertEqual(list(p.keys()), ["offset", "amplitude"])
+        self.assertAlmostEqual(p["offset"], true_params["offset"], places=3)
+        self.assertAlmostEqual(p["amplitude"],
                                true_params["amplitude"], places=3)
 
     def test_with_real_data(self):
@@ -416,9 +432,10 @@ class TestFit(unittest.TestCase):
         data = read_data(DUMMY_DATA_FULL)
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
         res = fit(p_data.Timedays.values, p_data.Mel.values, f=bsbcf)
-        self.assertTrue(res.success or res.fun < 1.0)
-        self.assertIsInstance(res.p, dict)
-        self.assertEqual(list(res.p.keys()), BSBCF_PARAM_NAMES)
+        self.assertTrue(res.result.success or res.result.fun < 1.0)
+        p = res.to_dict()
+        self.assertIsInstance(p, dict)
+        self.assertEqual(list(p.keys()), BSBCF_PARAM_NAMES)
 
 
 # ---------------------------------------------------------------------------
@@ -507,7 +524,7 @@ class TestMidpoint(unittest.TestCase):
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
         res = fit(p_data.Timedays.values, p_data.Mel.values, f=bsbcf)
         curve = compute_wave(p_data.Timedays.min(), p_data.Timedays.max(),
-                             1.0, bsbcf, res.p)
+                             1.0, bsbcf, res.to_dict())
         times = pd.date_range(p_data.Timestamp.min(), periods=len(curve),
                               freq=pd.Timedelta(minutes=1))
         result = midpoint(times, curve, 0.25)
@@ -568,7 +585,7 @@ class TestAreaCog(unittest.TestCase):
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
         res = fit(p_data.Timedays.values, p_data.Mel.values, f=bsbcf)
         curve = compute_wave(p_data.Timedays.min(), p_data.Timedays.max(),
-                             1.0, bsbcf, res.p)
+                             1.0, bsbcf, res.to_dict())
         times = pd.date_range(p_data.Timestamp.min(), periods=len(curve),
                               freq=pd.Timedelta(minutes=1))
         result = area_cog(times, curve)
@@ -672,7 +689,7 @@ class TestComputeWave(unittest.TestCase):
     def test_accepts_fit_result_param_dict(self):
         """compute_wave should accept res.p directly."""
         res = fit(T, bsbcf(t=T, p=BSBCF_PARAMS_ARRAY), f=bsbcf)
-        result = compute_wave(0.0, 1.0, 1.0, bsbcf, res.p)
+        result = compute_wave(0.0, 1.0, 1.0, bsbcf, res.to_dict())
         self.assertIsInstance(result, np.ndarray)
         self.assertTrue(np.all(np.isfinite(result)))
 
@@ -880,7 +897,7 @@ class TestParamsToString(unittest.TestCase):
     def test_fit_result_dict_works(self):
         """params_to_string should accept res.p directly."""
         res = fit(T, bsbcf(t=T, p=BSBCF_PARAMS_ARRAY), f=bsbcf)
-        result = params_to_string(res.p)
+        result = params_to_string(res.to_dict())
         self.assertIsInstance(result, str)
         for key in BSBCF_PARAM_NAMES:
             self.assertIn(key, result)
@@ -989,12 +1006,13 @@ class TestResultsCollector(unittest.TestCase):
         self.tmpdir = "/tmp/melafit_test_results/"
         self.filename = "test_results"
         # Generate one analysis run for testing
-        self.values = bsbcf(t=T, p=BSBCF_PARAMS_ARRAY)
+        self.func = bsbcf
+        self.values = self.func(t=T, p=BSBCF_PARAMS_ARRAY)
         self.times = pd.date_range(
             start="2024-01-01 00:00",
             periods=len(T),
             freq=pd.Timedelta(minutes=1))
-        self.res = fit(T, self.values, f=bsbcf)
+        self.res = fit(T, self.values, f=self.func)
         self.meta = AnalysisInfo(participant=1,
                              start=pd.Timestamp("2024-01-01 00:00"),
                              func="BSBCF",
@@ -1061,7 +1079,7 @@ class TestResultsCollector(unittest.TestCase):
         collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
         record = collector._records[0]
         for key in ["amplitude", "dlmon", "dlmoff", "midpoint",
-                    "threshold", "area", "cog", "func_params"]:
+                    "threshold", "area", "cog"] + BUILTIN_PARAM_NAMES[self.func]:
             self.assertIn(key, record)
 
     def test_record_timing_fields_are_strings(self):
@@ -1099,7 +1117,7 @@ class TestResultsCollector(unittest.TestCase):
         df = pd.read_excel(filepath, index_col="participant")
         self.assertGreater(len(df), 0)
         for col in ["func", "r2", "amplitude", "dlmon", "dlmoff",
-                    "midpoint", "area", "cog", "func_params"]:
+                    "midpoint", "area", "cog"] + BUILTIN_PARAM_NAMES[self.func]:
             self.assertIn(col, df.columns)
 
     def test_multiple_participants_sorted_in_excel(self):

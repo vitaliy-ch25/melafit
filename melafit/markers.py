@@ -28,7 +28,7 @@ Markers Computed:
 
 Result Dataclasses:
 -------------------
-- MelaResult : Abstract base class defining the to_dict() interface for
+- AnalysisResult : Abstract base class defining the to_dict() interface for
     all result types
 - AnalysisInfo : Identifying information about an analysis (participant, start,
     waveform function name, goodness of fit)
@@ -36,7 +36,7 @@ Result Dataclasses:
 - MidpointResult : Wrapper for midpoint, DLMOn, DLMOff and threshold
 - AreaCogResult : Wrapper for area under curve and center of gravity
 
-All result dataclasses inherit from MelaResult and implement `to_dict()`,
+All result dataclasses inherit from AnalysisResult and implement `to_dict()`,
 returning a dictionary suitable for tabular output. Timing fields (phase
 values) are formatted as HH:MM strings; other fields as native types.
 
@@ -67,9 +67,9 @@ from melafit.utils import (day_profile, abs_threshold, time_to_phase,
                             phase_to_string)
 
 
-class MelaResult(ABC):
+class AnalysisResult(ABC):
     """
-    Abstract base class for all melafit result types.
+    Abstract base class for all melafit analysis result types.
 
     All subclasses must implement :meth:`to_dict`, returning a dictionary
     suitable for tabular output (e.g. for use with
@@ -83,7 +83,7 @@ class MelaResult(ABC):
 
 
 @dataclass
-class AnalysisInfo(MelaResult):
+class AnalysisInfo(AnalysisResult):
     """
     Identifying information about a single melatonin analysis.
 
@@ -119,7 +119,7 @@ class AnalysisInfo(MelaResult):
 
 
 @dataclass
-class AmplitudeResult(MelaResult):
+class AmplitudeResult(AnalysisResult):
     """
     Result of peak-to-baseline amplitude computation.
 
@@ -144,7 +144,7 @@ class AmplitudeResult(MelaResult):
 
 
 @dataclass
-class MidpointResult(MelaResult):
+class MidpointResult(AnalysisResult):
     """
     Result of midpoint, DLMOn and DLMOff computation.
 
@@ -188,7 +188,7 @@ class MidpointResult(MelaResult):
 
 
 @dataclass
-class AreaCogResult(MelaResult):
+class AreaCogResult(AnalysisResult):
     """
     Result of area under curve and center of gravity computation.
 

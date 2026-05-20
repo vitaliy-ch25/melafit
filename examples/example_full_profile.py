@@ -34,10 +34,10 @@ for mel_func in mel_funcs:
 
             # Fit curve and compute resampled waveform
             res = fit(p_data.Timedays, p_data.Mel, mel_func)
-            r2 = rsquared(p_data.Mel, mel_func(t=p_data.Timedays, p=res.p))
+            r2 = rsquared(p_data.Mel, mel_func(t=p_data.Timedays, p=res.to_dict()))
             resampled_curve = compute_wave(p_data.Timedays.min(),
                                            p_data.Timedays.max(),
-                                           dt_minutes, mel_func, res.p)
+                                           dt_minutes, mel_func, res.to_dict())
             resampled_time = pd.date_range(
                 p_data.Timestamp.min(),
                 periods=len(resampled_curve),
@@ -55,7 +55,7 @@ for mel_func in mel_funcs:
 
             # Print summary
             print(f"Fitted function: {meta.func}, "
-                  f"parameters: {params_to_string(res.p)}")
+                  f"parameters: {params_to_string(res.to_dict())}")
             res_str = (f"Date: {meta.start.date()}, "
                        f"DLMOn={phase_to_string(mid.dlmon)}, "
                        f"DLMOff={phase_to_string(mid.dlmoff)}, "
