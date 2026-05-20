@@ -37,10 +37,6 @@ Functions:
 - func_defaults : Generate default initial conditions and parameter bounds
 - fit : Main routine for fitting melatonin data using scipy optimization
 
-Classes:
---------
-- FitResult : defined in :mod:`melafit.results`
-
 Constants:
 ----------
 - BCF_PARAM_NAMES, SBCF_PARAM_NAMES, BBCF_PARAM_NAMES, BSBCF_PARAM_NAMES : 
