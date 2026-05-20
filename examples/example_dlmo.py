@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import dates
 from melafit.fitting import bcf, sbcf, bbcf, bsbcf, fit, func_defaults
-from melafit.markers import midpoint, MetaInfo
+from melafit.markers import midpoint, AnalysisInfo
 from melafit.utils import (read_data, prepare_part_data, compute_wave,
                             phase_to_string, params_to_string,
                             ResultsCollector)
@@ -45,14 +45,15 @@ for mel_func in mel_funcs:
             resampled_curve = compute_wave(p_data.Timedays.min(),
                                            p_data.Timedays.max(),
                                            dt_minutes, mel_func, res.p)
-            resampled_time = pd.date_range(p_data.Timestamp.min(),
-                                           periods=len(resampled_curve),
-                                           freq=pd.Timedelta(minutes=dt_minutes))
+            resampled_time = pd.date_range(
+                p_data.Timestamp.min(),
+                periods=len(resampled_curve),
+                freq=pd.Timedelta(minutes=dt_minutes))
 
-            # Compute DLMO only (midpoint and offset unreliable for partial data)
+            # Compute DLMO only (midpoint/offset unreliable for partial data)
             mid = midpoint(resampled_time, resampled_curve, thresh_dlmo,
                            thresh_abs=True)
-            meta = MetaInfo(participant, p_data.Timestamp.min(),
+            meta = AnalysisInfo(participant, p_data.Timestamp.min(),
                             mel_func.__name__.upper())
 
             # Collect results for this participant

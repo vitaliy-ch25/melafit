@@ -1,9 +1,9 @@
 """
 melafit.utils: Utility Functions for Melatonin Data Processing and Analysis
 
-This module provides support functions for reading, preprocessing, and analyzing
-melatonin time series data, including waveform computation, day profile averaging,
-and time/phase conversion utilities.
+This module provides support functions for reading, preprocessing, and
+analyzing melatonin time series data, including waveform computation,
+day profile averaging, and time/phase conversion utilities.
 
 Data I/O Functions:
 -------------------
@@ -82,7 +82,8 @@ def read_data(data_pathname: str) -> pd.DataFrame:
     data = pd.read_excel(data_pathname)
 
     data.Participant = data.Participant.astype(int, errors="ignore")
-    data.Date = pd.to_datetime(data.Date, dayfirst=True, errors="coerce").dt.date
+    data.Date = (pd.to_datetime(data.Date, dayfirst=True, errors="coerce")
+                 .dt.date)
     data.Time = pd.to_datetime(data.Time.astype(str), errors="coerce").dt.time
     data.Mel = data.Mel.astype(float, errors="ignore")
 
@@ -441,7 +442,8 @@ class ResultsCollector:
     an Excel spreadsheet.
 
     The :meth:`add` method accepts any combination of typed result objects
-    (MetaInfo, OptimizeResult, AmplitudeResult, MidpointResult, AreaCogResult)
+    (AnalysisInfo, OptimizeResult, AmplitudeResult, MidpointResult,
+     AreaCogResult)
     in any order. The collector identifies each by type and merges its fields
     into a single row per participant. Missing fields appear as NaN in the
     output. Timing fields are stored as HH:MM strings in the Excel output.
@@ -458,7 +460,7 @@ class ResultsCollector:
 
     See also
     --------
-        :class:`melafit.markers.MetaInfo` : Participant/run identification
+        :class:`melafit.markers.AnalysisInfo` : Participant/run identification
         :class:`melafit.markers.AmplitudeResult` : Amplitude marker result
         :class:`melafit.markers.MidpointResult` : Midpoint/DLMO marker result
         :class:`melafit.markers.AreaCogResult` : Area/COG marker result
@@ -471,30 +473,30 @@ class ResultsCollector:
         """
         Add one analysis run to the collector.
 
-        Accepts any combination of MetaInfo, OptimizeResult and marker
-        result dataclasses in any order. Exactly one MetaInfo is required.
+        Accepts any combination of AnalysisInfo, OptimizeResult and marker
+        result dataclasses in any order. Exactly one AnalysisInfo is required.
 
         Parameters
         ----------
-            *args : MetaInfo, OptimizeResult, AmplitudeResult, MidpointResult,
-                    AreaCogResult
+            *args : AnalysisInfo, OptimizeResult, AmplitudeResult,
+                    MidpointResult, AreaCogResult
                 Result objects from one analysis run
 
         Raises
         ------
             ValueError
-                If no MetaInfo is provided among the arguments
+                If no AnalysisInfo is provided among the arguments
         """
 
         # Local import to avoid circular dependency
-        from melafit.markers import (MetaInfo, AmplitudeResult,
+        from melafit.markers import (AnalysisInfo, AmplitudeResult,
                                        MidpointResult, AreaCogResult)
 
         record = {}
         meta_found = False
 
         for obj in args:
-            if isinstance(obj, MetaInfo):
+            if isinstance(obj, AnalysisInfo):
                 record.update(asdict(obj))
                 meta_found = True
             elif isinstance(obj, opt.OptimizeResult):
@@ -502,16 +504,16 @@ class ResultsCollector:
             elif isinstance(obj, AmplitudeResult):
                 record.update(asdict(obj))
             elif isinstance(obj, MidpointResult):
-                record.update(obj.as_strings())
+                record.update(obj.to_dict())
             elif isinstance(obj, AreaCogResult):
-                record.update(obj.as_strings())
+                record.update(obj.to_dict())
             else:
                 raise TypeError(
                     f"ResultsCollector.add() received unsupported type "
                     f"{type(obj).__name__}")
 
         if not meta_found:
-            raise ValueError("ResultsCollector.add() requires a MetaInfo "
+            raise ValueError("ResultsCollector.add() requires a AnalysisInfo "
                              "instance among its arguments")
 
         self._records.append(record)

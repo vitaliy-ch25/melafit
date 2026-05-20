@@ -17,7 +17,8 @@ Models:
   * Reference: [Van Someren & Nagtegaal '07](https://doi.org/10.1016/j.sleep.2007.03.012)
 
 - BBCF (Bimodal Baseline Cosine Function)
-  * Bimodal baseline cosine model with two peaks for biphasic melatonin secretion patterns
+  * Bimodal baseline cosine model with two peaks for biphasic melatonin
+    secretion patterns
   * Parameters: phi, b, H, c, m (bimodality)
   * Reference: [Van Someren & Nagtegaal '07](https://doi.org/10.1016/j.sleep.2007.03.012)
 
@@ -29,7 +30,8 @@ Models:
 Functions:
 ----------
 - bcf, sbcf, bbcf, bsbcf : Waveform model functions
-- params_to_array, array_to_params : Convert between dict and array parameter formats
+- params_to_array, array_to_params : Convert between dict and array
+  parameter formats
 - cost : Cost function for curve fitting with trivial solution penalty
 - rsquared : R² goodness of fit metric
 - func_defaults : Generate default initial conditions and parameter bounds
@@ -266,7 +268,8 @@ def array_to_params(x: np.ndarray, f: callable) -> dict:
         x : Numpy array of floats
             Parameter vector from scipy.optimize
         f : callable
-            Melatonin wave approximation function for which the parameters were fitted
+            Melatonin wave approximation function for which the
+            parameters were fitted
     Returns
     -------
         params : dict
@@ -279,8 +282,8 @@ def array_to_params(x: np.ndarray, f: callable) -> dict:
 
     param_names = PARAM_NAMES.get(f)
     if param_names is None:
-        raise ValueError(f"Function {f.__name__} not recognized for parameter " +
-                          "conversion.")
+        raise ValueError(
+            f"Function {f.__name__} not recognized for parameter conversion.")
     return dict(zip(param_names, x))
 
 def cost(p: np.ndarray,
@@ -551,8 +554,9 @@ def fit(time_fit: np.ndarray,
     else:
         # For custom functions, require the user to have provided p0/lb/ub
         if p0 is None or lb is None or ub is None:
-            raise ValueError(f"Function '{f.__name__}' is not a built-in model. " +
-                             "You must provide p0, lb, and ub manually.")
+            raise ValueError(
+                f"Function '{f.__name__}' is not a built-in model. "
+                "You must provide p0, lb, and ub manually.")
         _p0, _lb, _ub = p0, lb, ub
 
     bounds = opt.Bounds(_resolve_params(_lb), _resolve_params(_ub))
@@ -573,6 +577,7 @@ def fit(time_fit: np.ndarray,
         else:
             param_names = None
 
-        res.p = dict(zip(param_names, res.x)) if param_names is not None else None
+        res.p = (dict(zip(param_names, res.x))
+                 if param_names is not None else None)
 
     return res

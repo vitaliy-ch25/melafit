@@ -28,13 +28,13 @@ Markers Computed:
 
 Result Dataclasses:
 -------------------
-- MetaInfo : Identifying information about an analysis (participant, start,
+- AnalysisInfo : Identifying information about an analysis (participant, start,
     waveform function name, goodness of fit)
 - AmplitudeResult : Wrapper for amplitude marker
 - MidpointResult : Wrapper for midpoint, DLMOn, DLMOff and threshold
 - AreaCogResult : Wrapper for area under curve and center of gravity
 
-Each result dataclass provides an `as_strings()` method that returns its
+Each result dataclass provides a `to_dict()` method that returns its
 timing fields as HH:MM strings.
 
 Functions:
@@ -64,7 +64,7 @@ from melafit.utils import (day_profile, abs_threshold, time_to_phase,
 
 
 @dataclass
-class MetaInfo:
+class AnalysisInfo:
     """
     Identifying information about a single melatonin analysis.
 
@@ -108,7 +108,7 @@ class MidpointResult:
     Result of midpoint, DLMOn and DLMOff computation.
 
     Timing fields are stored as phase values (0.0 to 1.0, 1.0 = 24h).
-    Use :meth:`as_strings` to obtain HH:MM string representations.
+    Use :meth:`to_dict` to obtain HH:MM string representations.
 
     Attributes
     ----------
@@ -127,7 +127,7 @@ class MidpointResult:
     midpoint: np.float64
     threshold: np.float64
 
-    def as_strings(self) -> dict:
+    def to_dict(self) -> dict:
         """
         Return timing fields as HH:MM string representations.
 
@@ -162,7 +162,7 @@ class AreaCogResult:
     area: np.float64
     cog: np.float64
 
-    def as_strings(self) -> dict:
+    def to_dict(self) -> dict:
         """
         Return timing fields as HH:MM string representations.
 

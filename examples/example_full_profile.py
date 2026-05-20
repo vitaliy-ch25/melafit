@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import dates
 from melafit.fitting import bcf, sbcf, bbcf, bsbcf, fit, rsquared
-from melafit.markers import (amplitude, midpoint, area_cog, MetaInfo)
+from melafit.markers import (amplitude, midpoint, area_cog, AnalysisInfo)
 from melafit.utils import (read_data, prepare_part_data, compute_wave,
                             phase_to_string, phase_diff, params_to_string,
                             ResultsCollector)
@@ -38,15 +38,16 @@ for mel_func in mel_funcs:
             resampled_curve = compute_wave(p_data.Timedays.min(),
                                            p_data.Timedays.max(),
                                            dt_minutes, mel_func, res.p)
-            resampled_time = pd.date_range(p_data.Timestamp.min(),
-                                           periods=len(resampled_curve),
-                                           freq=pd.Timedelta(minutes=dt_minutes))
+            resampled_time = pd.date_range(
+                p_data.Timestamp.min(),
+                periods=len(resampled_curve),
+                freq=pd.Timedelta(minutes=dt_minutes))
 
             # Compute all markers
             ampl = amplitude(resampled_curve)
             mid = midpoint(resampled_time, resampled_curve, thresh_dlmo)
             ac = area_cog(resampled_time, resampled_curve)
-            meta = MetaInfo(participant, p_data.Timestamp.min(),
+            meta = AnalysisInfo(participant, p_data.Timestamp.min(),
                             mel_func.__name__.upper(), r2)
 
             # Collect all results for this participant

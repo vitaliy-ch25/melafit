@@ -20,7 +20,7 @@ from melafit.fitting import (bcf, sbcf, bbcf, bsbcf, cost, rsquared,
                               BBCF_PARAM_NAMES, BSBCF_PARAM_NAMES,
                               PARAM_NAMES)
 from melafit.markers import (amplitude, midpoint, area_cog,
-                              MetaInfo, AmplitudeResult, MidpointResult,
+                              AnalysisInfo, AmplitudeResult, MidpointResult,
                               AreaCogResult)
 from melafit.utils import (read_data, prepare_part_data, compute_wave,
                             day_profile, time_to_phase, phase_to_string,
@@ -366,8 +366,10 @@ class TestFit(unittest.TestCase):
 
     def test_custom_params_not_overwritten_for_builtin_functions(self):
         p0 = {"phi": 0.875, "b": 2.0, "H": 80.0, "c": 0.5, "v": 0.3, "m": 0.1}
-        lb = {"phi": 0.870, "b": 1.9, "H": 79.0, "c": 0.49, "v": 0.29, "m": 0.09}
-        ub = {"phi": 0.880, "b": 2.1, "H": 81.0, "c": 0.51, "v": 0.31, "m": 0.11}
+        lb = {"phi": 0.870, "b": 1.9, "H": 79.0,
+              "c": 0.49, "v": 0.29, "m": 0.09}
+        ub = {"phi": 0.880, "b": 2.1, "H": 81.0,
+              "c": 0.51, "v": 0.31, "m": 0.11}
 
         res = fit(self.t, self.y, f=bsbcf, p0=p0, lb=lb, ub=ub)
         self.assertTrue(res.success or res.fun < 0.01)
@@ -386,7 +388,9 @@ class TestFit(unittest.TestCase):
             return p[0] + p[1] * np.cos(2 * np.pi * t)
 
         with self.assertRaises(ValueError):
-            fit(self.t, cosine_wave(self.t, p=np.array([1.0, 1.0])), f=cosine_wave)
+            fit(self.t,
+                cosine_wave(self.t, p=np.array([1.0, 1.0])),
+                f=cosine_wave)
 
     def test_custom_waveform_function_fits_with_manual_bounds(self):
         def cosine_wave(t, p):
@@ -404,7 +408,8 @@ class TestFit(unittest.TestCase):
         self.assertIsInstance(res.p, dict)
         self.assertEqual(list(res.p.keys()), ["offset", "amplitude"])
         self.assertAlmostEqual(res.p["offset"], true_params["offset"], places=3)
-        self.assertAlmostEqual(res.p["amplitude"], true_params["amplitude"], places=3)
+        self.assertAlmostEqual(res.p["amplitude"],
+                               true_params["amplitude"], places=3)
 
     def test_with_real_data(self):
         """fit() should converge on real dummy data."""
@@ -473,18 +478,19 @@ class TestMidpoint(unittest.TestCase):
         result = midpoint(self.times, self.values, 10.0, thresh_abs=True)
         self.assertAlmostEqual(result.threshold, 10.0)
 
-    def test_as_strings_returns_dict(self):
+    def test_to_dict_returns_dict(self):
         result = midpoint(self.times, self.values, 0.25)
-        d = result.as_strings()
+        d = result.to_dict()
         self.assertIsInstance(d, dict)
         for key in ["dlmon", "dlmoff", "midpoint"]:
             self.assertIn(key, d)
             self.assertIsInstance(d[key], str)
         self.assertIn("threshold", d)
+        self.assertIsInstance(d["threshold"], float)
 
-    def test_as_strings_match_phase_to_string(self):
+    def test_to_dict_match_phase_to_string(self):
         result = midpoint(self.times, self.values, 0.25)
-        d = result.as_strings()
+        d = result.to_dict()
         self.assertEqual(d["dlmon"], phase_to_string(result.dlmon))
         self.assertEqual(d["dlmoff"], phase_to_string(result.dlmoff))
         self.assertEqual(d["midpoint"], phase_to_string(result.midpoint))
@@ -536,17 +542,18 @@ class TestAreaCog(unittest.TestCase):
                              baseline=min(self.values) + 1.0)
         self.assertNotAlmostEqual(r_default.area, r_custom.area)
 
-    def test_as_strings_returns_dict(self):
+    def test_to_dict_returns_dict(self):
         result = area_cog(self.times, self.values)
-        d = result.as_strings()
+        d = result.to_dict()
         self.assertIsInstance(d, dict)
         self.assertIn("area", d)
         self.assertIn("cog", d)
+        self.assertIsInstance(d["area"], float)
         self.assertIsInstance(d["cog"], str)
 
-    def test_as_strings_match_phase_to_string(self):
+    def test_to_dict_match_phase_to_string(self):
         result = area_cog(self.times, self.values)
-        d = result.as_strings()
+        d = result.to_dict()
         self.assertEqual(d["cog"], phase_to_string(result.cog))
 
     def test_with_real_data(self):
@@ -921,14 +928,14 @@ class TestStringToPhase(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# markers.py — MetaInfo tests
+# markers.py — AnalysisInfo tests
 # ---------------------------------------------------------------------------
 
-class TestMetaInfo(unittest.TestCase):
-    """Tests for MetaInfo dataclass."""
+class TestAnalysisInfo(unittest.TestCase):
+    """Tests for AnalysisInfo dataclass."""
 
     def test_construction_with_all_fields(self):
-        meta = MetaInfo(participant=1,
+        meta = AnalysisInfo(participant=1,
                         start=pd.Timestamp("2024-01-01 21:00"),
                         func="BSBCF",
                         r2=0.95)
@@ -938,14 +945,14 @@ class TestMetaInfo(unittest.TestCase):
 
     def test_default_r2_is_nan(self):
         """r2 should default to NaN when not provided."""
-        meta = MetaInfo(participant=1,
+        meta = AnalysisInfo(participant=1,
                         start=pd.Timestamp("2024-01-01 21:00"),
                         func="BCF")
         self.assertTrue(np.isnan(meta.r2))
 
     def test_string_participant(self):
         """participant field should accept strings."""
-        meta = MetaInfo(participant="P01",
+        meta = AnalysisInfo(participant="P01",
                         start=pd.Timestamp("2024-01-01"),
                         func="BSBCF")
         self.assertEqual(meta.participant, "P01")
@@ -968,7 +975,7 @@ class TestResultsCollector(unittest.TestCase):
             periods=len(T),
             freq=pd.Timedelta(minutes=1))
         self.res = fit(T, self.values, f=bsbcf)
-        self.meta = MetaInfo(participant=1,
+        self.meta = AnalysisInfo(participant=1,
                              start=pd.Timestamp("2024-01-01 00:00"),
                              func="BSBCF",
                              r2=0.99)
@@ -991,7 +998,7 @@ class TestResultsCollector(unittest.TestCase):
         self.assertFalse(os.path.exists(filepath))
 
     def test_add_requires_meta_info(self):
-        """add() should raise ValueError if no MetaInfo is provided."""
+        """add() should raise ValueError if no AnalysisInfo is provided."""
         collector = ResultsCollector()
         with self.assertRaises(ValueError):
             collector.add(self.res, self.ampl)
@@ -1009,7 +1016,7 @@ class TestResultsCollector(unittest.TestCase):
         self.assertEqual(len(collector._records), 1)
 
     def test_add_partial_dlmo(self):
-        """add() should work with only MetaInfo, fit result and midpoint."""
+        """add() should work with only AnalysisInfo, fit result and midpoint."""
         collector = ResultsCollector()
         collector.add(self.meta, self.res, self.mid)
         self.assertEqual(len(collector._records), 1)
@@ -1063,7 +1070,7 @@ class TestResultsCollector(unittest.TestCase):
         self.assertTrue(os.path.isdir(self.tmpdir))
 
     def test_saved_excel_readable(self):
-        """The saved Excel file should be readable and contain expected columns."""
+        """Saved Excel file should be readable with expected columns."""
         import os
         collector = ResultsCollector()
         collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
@@ -1079,10 +1086,10 @@ class TestResultsCollector(unittest.TestCase):
         """Excel output should have participants sorted by ID."""
         import os
         collector = ResultsCollector()
-        meta2 = MetaInfo(participant=3,
+        meta2 = AnalysisInfo(participant=3,
                          start=pd.Timestamp("2024-01-02 00:00"),
                          func="BSBCF", r2=0.97)
-        meta3 = MetaInfo(participant=2,
+        meta3 = AnalysisInfo(participant=2,
                          start=pd.Timestamp("2024-01-03 00:00"),
                          func="BSBCF", r2=0.98)
         collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
@@ -1096,7 +1103,7 @@ class TestResultsCollector(unittest.TestCase):
     def test_dlmo_workflow_nan_fields(self):
         """A DLMO-style add() should leave non-applicable fields as NaN."""
         import os
-        meta_dlmo = MetaInfo(participant=1,
+        meta_dlmo = AnalysisInfo(participant=1,
                              start=pd.Timestamp("2024-01-01 18:00"),
                              func="BSBCF")  # r2 defaults to NaN
         collector = ResultsCollector()
