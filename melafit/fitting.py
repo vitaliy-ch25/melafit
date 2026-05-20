@@ -1,5 +1,5 @@
 """
-# melafit.fitting: Melatonin Wave Approximation Models and Fitting Routines
+melafit.fitting: Melatonin Wave Approximation Models and Fitting Routines
 
 This module provides parametric cosine-based models for approximating melatonin
 concentration curves and methods for fitting these models to experimental data.
