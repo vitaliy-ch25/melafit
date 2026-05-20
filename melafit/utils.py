@@ -1,9 +1,9 @@
 """
-# melafit.utils: Utility Functions for Melatonin Data Processing and Analysis
+melafit.utils: Utility Functions for Melatonin Data Processing and Analysis
 
-This module provides support functions for reading, preprocessing, and analyzing
-melatonin time series data, including waveform computation, day profile averaging,
-and time/phase conversion utilities.
+This module provides support functions for reading, preprocessing, and
+analyzing melatonin time series data, including waveform computation,
+day profile averaging, and time/phase conversion utilities.
 
 Data I/O Functions:
 -------------------
@@ -17,14 +17,12 @@ Waveform Functions:
 Time Series Analysis:
 ---------------------
 - day_profile : Compute averaged 24h profile from multi-day time series
-    Bins data and computes mean and standard error for each bin
 
 Time/Phase Conversion:
 ----------------------
 - time_to_phase : Convert time values to phase representation (0.0 to 1.0)
-    Handles both daily (1.0 = 24h) and hourly time formats
 - phase_to_string : Format phase values as human-readable time strings (HH:MM)
-- time_to_phase : Normalize time to phase representation
+- string_to_phase : Convert HH:MM time string back to phase representation
 - phase_diff : Compute difference between two phases with proper wrapping
 
 Parameter/Threshold Utilities:
@@ -40,20 +38,6 @@ Input melatonin data should be an Excel file with columns:
 - Time : Sample time of day
 - Mel : Melatonin concentration value
 
-The module handles timestamp validation and correction for multi-day studies.
-
-Functions:
-----------
-- read_data : Load data from Excel
-- prepare_part_data : Preprocess participant data
-- compute_wave : Generate fitted waveform curve
-- day_profile : Average time series into 24h profile
-- time_to_phase : Convert time to phase
-- phase_to_string : Format phase as time string
-- phase_diff : Compute phase difference
-- abs_threshold : Convert relative to absolute threshold
-- params_to_string : Format parameters as string
-
 Notes:
 ------
 - Times are internally stored as days (1.0 = 24 hours) or phases (1.0 = 24h)
@@ -61,9 +45,13 @@ Notes:
 - Day profiles are computed by averaging across multiple circadian cycles
 """
 
+import os
 import numpy as np
 import pandas as pd
 import datetime as dt
+import scipy.optimize as opt
+from collections.abc import Mapping
+
 
 def read_data(data_pathname: str) -> pd.DataFrame:
     """
@@ -72,7 +60,7 @@ def read_data(data_pathname: str) -> pd.DataFrame:
     Column must be named as follows:
     * *Participant* for study participant ID
     * *Date* for dates of the respective samples
-    * *Time* for sample timestamps 
+    * *Time* for sample timestamps
     * *Mel* for melatonin level values
 
     Parameters
@@ -86,24 +74,24 @@ def read_data(data_pathname: str) -> pd.DataFrame:
             Data for all participants read from the Excel table
     """
 
-    # Read data from Excel spreadsheet
     data = pd.read_excel(data_pathname)
 
-    # Enforce correct data types
     data.Participant = data.Participant.astype(int, errors="ignore")
-    data.Date = pd.to_datetime(data.Date, dayfirst=True, errors="coerce").dt.date
+    data.Date = (pd.to_datetime(data.Date, dayfirst=True, errors="coerce")
+                 .dt.date)
     data.Time = pd.to_datetime(data.Time.astype(str), errors="coerce").dt.time
     data.Mel = data.Mel.astype(float, errors="ignore")
 
-    # Add combined datetime timestamp
-    data["Timestamp"] = data.apply(lambda x: dt.datetime.combine(x.Date, x.Time), axis=1)
+    data["Timestamp"] = data.apply(
+        lambda x: dt.datetime.combine(x.Date, x.Time), axis=1)
 
     return data
+
 
 def prepare_part_data(data: pd.DataFrame,
                       participant: str | int) -> pd.DataFrame:
     """
-    Prepare one participant's data for analysis
+    Prepare one participant's data for analysis.
 
     Parameters
     ----------
@@ -118,39 +106,37 @@ def prepare_part_data(data: pd.DataFrame,
             Prepared data for one participant
     """
 
-    # Select participant's data
-    p_data = data.loc[data.Participant==participant]
+    p_data = data.loc[data.Participant == participant]
 
-    # Extract cumulative time in days
     base = p_data.Timestamp.min()
     diff = p_data.Timestamp - base
-    p_data["Timedays"] = (diff.dt.total_seconds() / (24*60*60) +
-                            base.hour / 24 + 
-                            base.minute / (24*60) +
-                            base.second / (24*60*60))
+    p_data["Timedays"] = (diff.dt.total_seconds() / (24 * 60 * 60) +
+                          base.hour / 24 +
+                          base.minute / (24 * 60) +
+                          base.second / (24 * 60 * 60))
 
-    # Check and fix errors in timestamps
     idiff = np.diff(p_data.Timedays) < 0
 
     if any(idiff):
         ix = np.where(idiff)
-        
+
         for i in ix:
-            idx = p_data.index[i[0]+1]  # get the actual index label
+            idx = p_data.index[i[0] + 1]
             p_data.loc[idx, 'Timestamp'] += pd.Timedelta(days=1)
             p_data.loc[idx, 'Timedays'] += 1.0
             print(f"Corrected one timestamp for participant {participant}")
 
     return p_data
 
+
 def compute_wave(tmin: np.float64,
                  tmax: np.float64,
                  dt_minutes: np.float64,
                  f: callable,
-                 p: dict | np.ndarray,
+                 p: Mapping | np.ndarray,
                  full_wave: bool = True) -> np.ndarray:
     """
-    Compute waveform resampled to given time resolution
+    Compute waveform resampled to given time resolution.
 
     Parameters
     ----------
@@ -162,9 +148,9 @@ def compute_wave(tmin: np.float64,
             Time increment in minutes
         f : callable
             Waveform function
-        p : Dictionary or Numpy array of floats
+        p : Mapping, FitResult, or Numpy array of floats
             Waveform parameter vector
-        full_wave: bool
+        full_wave : bool
             If True and (tmax-tmin) < 1.0, tmax = tmin + 1.0 (defaults to
             True)
 
@@ -183,21 +169,25 @@ def compute_wave(tmin: np.float64,
 
     return curve_val
 
-def day_profile(data: pd.Series,
+
+def day_profile(times: pd.DatetimeIndex,
+                values: np.ndarray,
                 binsize: int = 60,
-                double: bool = False, 
+                double: bool = False,
                 stderr: bool = False,
-                repfirst: bool = False)->tuple[pd.Series, pd.Series]:
+                repfirst: bool = False) -> tuple[pd.Series, pd.Series]:
     """
-    Compute averaged day profile of a (quasi-)periodic time series
+    Compute averaged day profile of a (quasi-)periodic time series.
 
     Parameters
     ----------
-        data : pandas Series
-            Time series data
+        times : pandas DatetimeIndex
+            Time stamps
+        values : numpy array
+            Data values
         binsize : int
             Bin size in minutes (defaults to 60)
-        double: bool
+        double : bool
             Prepare data for double plot (defaults to False)
         stderr : bool
             Compute standard errors per bin (defaults to False)
@@ -210,44 +200,40 @@ def day_profile(data: pd.Series,
             Bin averages and standard errors with index in hours (0..24)
     """
 
-    # Bin data, ensure centering of the data points around bin centers
-    smpstr=str(binsize)+'min'
-    profile = data.shift(0.5, freq=smpstr).resample(smpstr).mean()
-    profile = profile.groupby(profile.index.hour + profile.index.minute/60)
+    data = pd.Series(index=times, data=values)
 
-    # Compute average profile and standard deviations for each bin
+    smpstr = str(binsize) + 'min'
+    profile = data.shift(0.5, freq=smpstr).resample(smpstr).mean()
+    profile = profile.groupby(profile.index.hour + profile.index.minute / 60)
+
     profile_mean = profile.mean()
     profile_std = profile.std()
-    
-    # If standard errors requested, compute these from std's and bin counts
-    if stderr:
-        profile_std  = profile_std / np.sqrt(profile.count())
 
-    # Concatenate results
+    if stderr:
+        profile_std = profile_std / np.sqrt(profile.count())
+
     profile = pd.DataFrame(data=pd.concat([profile_mean, profile_std],
                                           axis=1))
-    
-    # Prepare data for double plot if requested
+
     if double:
         profile = pd.concat([profile, profile])
-        
-    # Add first bin at 00:00 to the end
+
     if repfirst:
-        profile = pd.concat([profile, pd.DataFrame(profile.iloc[0,:]).T])
-    
-    # Split returned results up for maximum flexibility
-    return profile.iloc[:,0], profile.iloc[:,1]
+        profile = pd.concat([profile, pd.DataFrame(profile.iloc[0, :]).T])
+
+    return profile.iloc[:, 0], profile.iloc[:, 1]
+
 
 def time_to_phase(t: np.float64,
                   hours: bool = False) -> np.float64:
     """
-    Convert time values to phase representation (0.0 to 1.0, 1.0 = 24h)
+    Convert time values to phase representation (0.0 to 1.0, 1.0 = 24h).
 
     Parameters
     ----------
         t : float
             Time value (in days or hours)
-        hours: bool
+        hours : bool
             If True, time value is in hours and will be converted to phase by
             dividing by 24. If False, time value is in days (1.0 = 24h).
             Defaults to False.
@@ -266,9 +252,12 @@ def time_to_phase(t: np.float64,
     else:
         return t - np.floor(t)
 
+
 def phase_to_string(phase: np.float64) -> str:
     """
-    Convert phase representation of time (0.0 to 1.0) to string
+    Convert phase representation of time (0.0 to 1.0) to HH:MM string.
+
+    Negative phases produce a negative string (e.g. -0.25 -> "-06:00").
 
     Parameters
     ----------
@@ -278,7 +267,11 @@ def phase_to_string(phase: np.float64) -> str:
     Returns
     -------
         string : str
-            String representation of phase
+            String representation of phase in HH:MM format
+
+    See also
+    --------
+        :func:`string_to_phase` : Inverse conversion from HH:MM string to phase
     """
 
     if phase < 0:
@@ -299,16 +292,69 @@ def phase_to_string(phase: np.float64) -> str:
 
     return string
 
+
+def string_to_phase(string: str) -> np.float64:
+    """
+    Convert HH:MM time string to phase representation (0.0 to 1.0, 1.0 = 24h).
+
+    Negative strings (e.g. "-06:00") produce negative phase output.
+    Inverse of :func:`phase_to_string`.
+
+    Parameters
+    ----------
+        string : str
+            Time string in HH:MM format (24-hour, no am/pm).
+            Negative times are prefixed with "-" (e.g. "-02:30")
+
+    Returns
+    -------
+        phase : float
+            Time as phase. Negative input produces negative phase output.
+
+    Raises
+    ------
+        ValueError
+            If the string is not in HH:MM format
+
+    See also
+    --------
+        :func:`phase_to_string` : Inverse conversion from phase to HH:MM string
+    """
+
+    string = string.strip()
+
+    if string.startswith("-"):
+        sign = -1.0
+        string = string[1:]
+    else:
+        sign = 1.0
+
+    try:
+        parts = string.split(":")
+        if len(parts) != 2:
+            raise ValueError
+        hours = int(parts[0])
+        minutes = int(parts[1])
+    except (ValueError, AttributeError):
+        raise ValueError(
+            f"Invalid time string '{string}': expected HH:MM format "
+            f"(24-hour, no am/pm)")
+
+    phase = sign * (hours + minutes / 60.0) / 24.0
+
+    return phase
+
+
 def abs_threshold(values: np.ndarray,
                   thresh_rel: np.float64) -> np.float64:
     """
-    Compute absolute threshold from relative threshold
+    Compute absolute threshold from relative threshold.
 
     Parameters
     ----------
         values : Numpy array of floats
             Waveform values
-        thresh_rel: float
+        thresh_rel : float
             Relative threshold, fraction of range peak-to-baseline (0 to 1)
 
     Returns
@@ -323,10 +369,11 @@ def abs_threshold(values: np.ndarray,
 
     return thresh_abs
 
+
 def phase_diff(phase1: np.float64,
                phase2: np.float64) -> np.float64:
     """
-    Compute difference between two phases (0.0 to 1.0, 1.0 = 24h)
+    Compute difference between two phases (0.0 to 1.0, 1.0 = 24h).
 
     Parameters
     ----------
@@ -338,17 +385,15 @@ def phase_diff(phase1: np.float64,
     Returns
     -------
         dp : float
-            Difference between the two phases (0.0 to 1.0, 1.0 = 24h),
-            adjusted to be in the range -0.5 to 0.5 (i.e., -12h to 12h)
+            Difference between the two phases, adjusted to be in the range
+            -0.5 to 0.5 (i.e., -12h to 12h)
     """
 
-    # Make sure we deal with phases in the range 0.0 to 1.0
     phase1 = time_to_phase(phase1, hours=False)
     phase2 = time_to_phase(phase2, hours=False)
 
     dp = phase1 - phase2
 
-    # Adjust difference to be in the range -0.5 to 0.5 (i.e., -12h to 12h)
     if dp < -0.5:
         dp += 1.0
     elif dp > 0.5:
@@ -356,9 +401,10 @@ def phase_diff(phase1: np.float64,
 
     return dp
 
-def params_to_string(params: dict | np.ndarray, ndec: int = 3) -> str:
+
+def params_to_string(params: Mapping | np.ndarray, ndec: int = 3) -> str:
     """
-    Convert curve fitting parameters to string
+    Convert curve fitting parameters to string.
 
     Parameters
     ----------
@@ -373,8 +419,8 @@ def params_to_string(params: dict | np.ndarray, ndec: int = 3) -> str:
             String representation of curve fitting parameters
     """
 
-    if isinstance(params, dict):
-        param_strs = [f"{key}={value:.{ndec}f}" 
+    if isinstance(params, Mapping):
+        param_strs = [f"{key}={value:.{ndec}f}"
                       for key, value in params.items()]
     else:
         param_strs = [f"p{i}={value:.{ndec}f}"

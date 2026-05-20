@@ -12,17 +12,22 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import scipy.optimize as opt
+from collections.abc import Mapping
 
 from melafit.fitting import (bcf, sbcf, bbcf, bsbcf, cost, rsquared,
-                              func_defaults, fit, params_to_array,
-                              array_to_params, _resolve_params,
-                              BCF_PARAM_NAMES, SBCF_PARAM_NAMES,
-                              BBCF_PARAM_NAMES, BSBCF_PARAM_NAMES,
-                              PARAM_NAMES)
+                              func_defaults, fit,
+                              params_to_array, array_to_params,
+                              _resolve_params, BCF_PARAM_NAMES,
+                              SBCF_PARAM_NAMES, BBCF_PARAM_NAMES,
+                              BSBCF_PARAM_NAMES, BUILTIN_PARAM_NAMES)
 from melafit.markers import amplitude, midpoint, area_cog
+from melafit.results import (FitResult, AnalysisResult, AnalysisInfo,
+                              AmplitudeResult, MidpointResult, AreaCogResult,
+                              ResultsCollector)
 from melafit.utils import (read_data, prepare_part_data, compute_wave,
                             day_profile, time_to_phase, phase_to_string,
-                            abs_threshold, phase_diff, params_to_string)
+                            string_to_phase, abs_threshold, phase_diff,
+                            params_to_string)
 
 # ---------------------------------------------------------------------------
 # Shared test fixtures
@@ -307,20 +312,25 @@ class TestFit(unittest.TestCase):
         self.y = bsbcf(t=T, p=BSBCF_PARAMS_ARRAY)
         self.t = T
 
-    def test_returns_optimize_result(self):
+    def test_returns_fitresult(self):
         res = fit(self.t, self.y)
-        self.assertIsInstance(res, opt.OptimizeResult)
-        self.assertIn('x', res)
+        self.assertIsInstance(res, FitResult)
+        self.assertIsInstance(res.result, opt.OptimizeResult)
+        self.assertIsInstance(res, AnalysisResult)
+        self.assertIsInstance(res, Mapping)
+        self.assertIn('x', res.result)
 
     def test_returns_param_dict(self):
         res = fit(self.t, self.y, f=bsbcf)
-        self.assertIsInstance(res.p, dict)
-        self.assertEqual(list(res.p.keys()), BSBCF_PARAM_NAMES)
+        p = res.to_dict()
+        self.assertIsInstance(p, dict)
+        self.assertEqual(list(p.keys()), BSBCF_PARAM_NAMES)
 
     def test_param_dict_consistent_with_array(self):
         res = fit(self.t, self.y, f=bsbcf)
         for i, key in enumerate(BSBCF_PARAM_NAMES):
-            self.assertAlmostEqual(res.p[key], res.x[i], places=10)
+            self.assertAlmostEqual(res.to_dict()[key], res.result.x[i], 
+                                   places=10)
 
     def test_param_dict_correct_keys_all_functions(self):
         for func, names, params in [
@@ -331,23 +341,23 @@ class TestFit(unittest.TestCase):
         ]:
             y = func(t=T, p=params)
             res = fit(T, y, f=func)
-            self.assertEqual(list(res.p.keys()), names)
+            self.assertEqual(list(res.to_dict().keys()), names)
 
     def test_bsbcf_converges(self):
         res = fit(self.t, self.y, f=bsbcf)
-        self.assertTrue(res.success or res.fun < 0.01)
+        self.assertTrue(res.result.success or res.result.fun < 0.01)
 
     def test_bcf_converges(self):
         res = fit(T, bcf(t=T, p=BCF_PARAMS_ARRAY), f=bcf)
-        self.assertTrue(res.success or res.fun < 0.01)
+        self.assertTrue(res.result.success or res.result.fun < 0.01)
 
     def test_sbcf_converges(self):
         res = fit(T, sbcf(t=T, p=SBCF_PARAMS_ARRAY), f=sbcf)
-        self.assertTrue(res.success or res.fun < 0.01)
+        self.assertTrue(res.result.success or res.result.fun < 0.01)
 
     def test_bbcf_converges(self):
         res = fit(T, bbcf(t=T, p=BBCF_PARAMS_ARRAY), f=bbcf)
-        self.assertTrue(res.success or res.fun < 0.01)
+        self.assertTrue(res.result.success or res.result.fun < 0.01)
 
     def test_custom_p0_lb_ub_as_dicts(self):
         p0, lb, ub = func_defaults(self.y, bsbcf)
@@ -362,20 +372,43 @@ class TestFit(unittest.TestCase):
         self.assertIsNotNone(res)
 
     def test_custom_params_not_overwritten_for_builtin_functions(self):
-        p0 = {"phi": 0.875, "b": 2.0, "H": 80.0, "c": 0.5, "v": 0.3, "m": 0.1}
-        lb = {"phi": 0.870, "b": 1.9, "H": 79.0, "c": 0.49, "v": 0.29, "m": 0.09}
-        ub = {"phi": 0.880, "b": 2.1, "H": 81.0, "c": 0.51, "v": 0.31, "m": 0.11}
+        p0 = {"phi": 0.875, "b": 2.0, "H": 80.0, 
+              "c": 0.5, "v": 0.3, "m": 0.1}
+        lb = {"phi": 0.870, "b": 1.9, "H": 79.0,
+              "c": 0.49, "v": 0.29, "m": 0.09}
+        ub = {"phi": 0.880, "b": 2.1, "H": 81.0,
+              "c": 0.51, "v": 0.31, "m": 0.11}
 
         res = fit(self.t, self.y, f=bsbcf, p0=p0, lb=lb, ub=ub)
-        self.assertTrue(res.success or res.fun < 0.01)
+        self.assertTrue(res.result.success or res.result.fun < 0.01)
         # Verify the result stays within the tight custom bounds
+        p = res.to_dict()
         for key in BSBCF_PARAM_NAMES:
-            self.assertGreaterEqual(res.p[key], lb[key] - 1e-10)
-            self.assertLessEqual(res.p[key], ub[key] + 1e-10)
+            self.assertGreaterEqual(p[key], lb[key] - 1e-10)
+            self.assertLessEqual(p[key], ub[key] + 1e-10)
+
+    def test_fitresult_to_dict(self):
+        res = fit(self.t, self.y, f=bsbcf)
+        d = res.to_dict()
+        self.assertIsInstance(d, dict)
+        p = res.to_dict()
+        for key in BSBCF_PARAM_NAMES:
+            self.assertIn(key, p.keys())
+            self.assertIsInstance(p[key], float)
+
+    def test_fitresult_usable_as_wave_param(self):
+        res = fit(self.t, self.y, f=bsbcf)
+        # FitResult should be passable directly wherever a param dict is accepted
+        curve_direct = bsbcf(t=self.t, p=res)
+        curve_dict   = bsbcf(t=self.t, p=res.to_dict())
+        np.testing.assert_array_almost_equal(curve_direct, curve_dict)
+        wave_direct = compute_wave(0.0, 1.0, 1.0, bsbcf, res)
+        wave_dict   = compute_wave(0.0, 1.0, 1.0, bsbcf, res.to_dict())
+        np.testing.assert_array_almost_equal(wave_direct, wave_dict)
 
     def test_cost_p_passed_through(self):
         res = fit(self.t, self.y, f=bsbcf, cost_p={"eps": 1e-6})
-        self.assertIsInstance(res, opt.OptimizeResult)
+        self.assertIsInstance(res, FitResult)
 
     def test_custom_waveform_function_requires_manual_bounds(self):
         def cosine_wave(t, p):
@@ -383,7 +416,9 @@ class TestFit(unittest.TestCase):
             return p[0] + p[1] * np.cos(2 * np.pi * t)
 
         with self.assertRaises(ValueError):
-            fit(self.t, cosine_wave(self.t, p=np.array([1.0, 1.0])), f=cosine_wave)
+            fit(self.t,
+                cosine_wave(self.t, p=np.array([1.0, 1.0])),
+                f=cosine_wave)
 
     def test_custom_waveform_function_fits_with_manual_bounds(self):
         def cosine_wave(t, p):
@@ -397,20 +432,23 @@ class TestFit(unittest.TestCase):
         ub = {"offset": 5.0, "amplitude": 5.0}
 
         res = fit(self.t, y, f=cosine_wave, p0=p0, lb=lb, ub=ub)
-        self.assertTrue(res.success or res.fun < 1e-6)
-        self.assertIsInstance(res.p, dict)
-        self.assertEqual(list(res.p.keys()), ["offset", "amplitude"])
-        self.assertAlmostEqual(res.p["offset"], true_params["offset"], places=3)
-        self.assertAlmostEqual(res.p["amplitude"], true_params["amplitude"], places=3)
+        self.assertTrue(res.result.success or res.result.fun < 1e-6)
+        p = res.to_dict()
+        self.assertIsInstance(p, dict)
+        self.assertEqual(list(p.keys()), ["offset", "amplitude"])
+        self.assertAlmostEqual(p["offset"], true_params["offset"], places=3)
+        self.assertAlmostEqual(p["amplitude"],
+                               true_params["amplitude"], places=3)
 
     def test_with_real_data(self):
         """fit() should converge on real dummy data."""
         data = read_data(DUMMY_DATA_FULL)
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
         res = fit(p_data.Timedays.values, p_data.Mel.values, f=bsbcf)
-        self.assertTrue(res.success or res.fun < 1.0)
-        self.assertIsInstance(res.p, dict)
-        self.assertEqual(list(res.p.keys()), BSBCF_PARAM_NAMES)
+        self.assertTrue(res.result.success or res.result.fun < 1.0)
+        p = res.to_dict()
+        self.assertIsInstance(p, dict)
+        self.assertEqual(list(p.keys()), BSBCF_PARAM_NAMES)
 
 
 # ---------------------------------------------------------------------------
@@ -420,17 +458,28 @@ class TestFit(unittest.TestCase):
 class TestAmplitude(unittest.TestCase):
     """Tests for amplitude()."""
 
+    def test_returns_amplitude_result(self):
+        result = amplitude(np.array([2.0, 5.0, 10.0, 3.0]))
+        self.assertIsInstance(result, AmplitudeResult)
+
     def test_known_amplitude(self):
         self.assertAlmostEqual(
-            amplitude(np.array([2.0, 5.0, 10.0, 3.0])), 8.0)
+            amplitude(np.array([2.0, 5.0, 10.0, 3.0])).amplitude, 8.0)
 
     def test_flat_signal_is_zero(self):
-        self.assertAlmostEqual(amplitude(np.full(100, 5.0)), 0.0)
+        self.assertAlmostEqual(amplitude(np.full(100, 5.0)).amplitude, 0.0)
 
     def test_amplitude_on_waveform(self):
-        ampl = amplitude(bsbcf(t=T, p=BSBCF_PARAMS_ARRAY))
-        self.assertGreater(ampl, 0.0)
-        self.assertTrue(np.isfinite(ampl))
+        result = amplitude(bsbcf(t=T, p=BSBCF_PARAMS_ARRAY))
+        self.assertGreater(result.amplitude, 0.0)
+        self.assertTrue(np.isfinite(result.amplitude))
+
+    def test_to_dict_returns_dict(self):
+        result = amplitude(np.array([2.0, 5.0, 10.0, 3.0]))
+        d = result.to_dict()
+        self.assertIsInstance(d, dict)
+        self.assertIn("amplitude", d)
+        self.assertAlmostEqual(d["amplitude"], 8.0)
 
 
 # ---------------------------------------------------------------------------
@@ -447,34 +496,52 @@ class TestMidpoint(unittest.TestCase):
             periods=len(T),
             freq=pd.Timedelta(minutes=1))
 
-    def test_returns_four_values(self):
-        self.assertEqual(len(midpoint(self.times, self.values, 0.25)), 4)
+    def test_returns_midpoint_result(self):
+        result = midpoint(self.times, self.values, 0.25)
+        self.assertIsInstance(result, MidpointResult)
 
     def test_all_phases_in_range(self):
-        midpt, dlmon, dlmoff, _ = midpoint(self.times, self.values, 0.25)
-        for val in [midpt, dlmon, dlmoff]:
+        result = midpoint(self.times, self.values, 0.25)
+        for val in [result.midpoint, result.dlmon, result.dlmoff]:
             self.assertGreaterEqual(val, 0.0)
             self.assertLess(val, 1.0)
 
     def test_relative_threshold_converted_correctly(self):
-        _, _, _, thresh = midpoint(self.times, self.values, 0.25)
-        self.assertAlmostEqual(thresh, abs_threshold(self.values, 0.25))
+        result = midpoint(self.times, self.values, 0.25)
+        self.assertAlmostEqual(result.threshold,
+                               abs_threshold(self.values, 0.25))
 
     def test_absolute_threshold_mode(self):
-        _, _, _, thresh = midpoint(
-            self.times, self.values, 10.0, thresh_abs=True)
-        self.assertAlmostEqual(thresh, 10.0)
+        result = midpoint(self.times, self.values, 10.0, thresh_abs=True)
+        self.assertAlmostEqual(result.threshold, 10.0)
+
+    def test_to_dict_returns_dict(self):
+        result = midpoint(self.times, self.values, 0.25)
+        d = result.to_dict()
+        self.assertIsInstance(d, dict)
+        for key in ["dlmon", "dlmoff", "midpoint"]:
+            self.assertIn(key, d)
+            self.assertIsInstance(d[key], str)
+        self.assertIn("threshold", d)
+        self.assertIsInstance(d["threshold"], float)
+
+    def test_to_dict_match_phase_to_string(self):
+        result = midpoint(self.times, self.values, 0.25)
+        d = result.to_dict()
+        self.assertEqual(d["dlmon"], phase_to_string(result.dlmon))
+        self.assertEqual(d["dlmoff"], phase_to_string(result.dlmoff))
+        self.assertEqual(d["midpoint"], phase_to_string(result.midpoint))
 
     def test_with_real_data(self):
         data = read_data(DUMMY_DATA_FULL)
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
         res = fit(p_data.Timedays.values, p_data.Mel.values, f=bsbcf)
         curve = compute_wave(p_data.Timedays.min(), p_data.Timedays.max(),
-                             1.0, bsbcf, res.p)
+                             1.0, bsbcf, res.to_dict())
         times = pd.date_range(p_data.Timestamp.min(), periods=len(curve),
                               freq=pd.Timedelta(minutes=1))
-        midpt, dlmon, dlmoff, _ = midpoint(times, curve, 0.25)
-        for val in [midpt, dlmon, dlmoff]:
+        result = midpoint(times, curve, 0.25)
+        for val in [result.midpoint, result.dlmon, result.dlmoff]:
             self.assertGreaterEqual(val, 0.0)
             self.assertLess(val, 1.0)
 
@@ -493,36 +560,51 @@ class TestAreaCog(unittest.TestCase):
             periods=len(T),
             freq=pd.Timedelta(minutes=1))
 
-    def test_returns_two_values(self):
-        self.assertEqual(len(area_cog(self.times, self.values)), 2)
+    def test_returns_area_cog_result(self):
+        result = area_cog(self.times, self.values)
+        self.assertIsInstance(result, AreaCogResult)
 
     def test_area_is_positive(self):
-        area, _ = area_cog(self.times, self.values)
-        self.assertGreater(area, 0.0)
+        result = area_cog(self.times, self.values)
+        self.assertGreater(result.area, 0.0)
 
     def test_cog_in_range(self):
-        _, cog = area_cog(self.times, self.values)
-        self.assertGreaterEqual(cog, 0.0)
-        self.assertLess(cog, 1.0)
+        result = area_cog(self.times, self.values)
+        self.assertGreaterEqual(result.cog, 0.0)
+        self.assertLess(result.cog, 1.0)
 
     def test_custom_baseline_changes_area(self):
-        area_default, _ = area_cog(self.times, self.values)
-        area_custom, _  = area_cog(self.times, self.values,
-                                   baseline=min(self.values) + 1.0)
-        self.assertNotAlmostEqual(area_default, area_custom)
+        r_default = area_cog(self.times, self.values)
+        r_custom  = area_cog(self.times, self.values,
+                             baseline=min(self.values) + 1.0)
+        self.assertNotAlmostEqual(r_default.area, r_custom.area)
+
+    def test_to_dict_returns_dict(self):
+        result = area_cog(self.times, self.values)
+        d = result.to_dict()
+        self.assertIsInstance(d, dict)
+        self.assertIn("area", d)
+        self.assertIn("cog", d)
+        self.assertIsInstance(d["area"], float)
+        self.assertIsInstance(d["cog"], str)
+
+    def test_to_dict_match_phase_to_string(self):
+        result = area_cog(self.times, self.values)
+        d = result.to_dict()
+        self.assertEqual(d["cog"], phase_to_string(result.cog))
 
     def test_with_real_data(self):
         data = read_data(DUMMY_DATA_FULL)
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
         res = fit(p_data.Timedays.values, p_data.Mel.values, f=bsbcf)
         curve = compute_wave(p_data.Timedays.min(), p_data.Timedays.max(),
-                             1.0, bsbcf, res.p)
+                             1.0, bsbcf, res.to_dict())
         times = pd.date_range(p_data.Timestamp.min(), periods=len(curve),
                               freq=pd.Timedelta(minutes=1))
-        area, cog = area_cog(times, curve)
-        self.assertGreater(area, 0.0)
-        self.assertGreaterEqual(cog, 0.0)
-        self.assertLess(cog, 1.0)
+        result = area_cog(times, curve)
+        self.assertGreater(result.area, 0.0)
+        self.assertGreaterEqual(result.cog, 0.0)
+        self.assertLess(result.cog, 1.0)
 
 
 # ---------------------------------------------------------------------------
@@ -620,7 +702,7 @@ class TestComputeWave(unittest.TestCase):
     def test_accepts_fit_result_param_dict(self):
         """compute_wave should accept res.p directly."""
         res = fit(T, bsbcf(t=T, p=BSBCF_PARAMS_ARRAY), f=bsbcf)
-        result = compute_wave(0.0, 1.0, 1.0, bsbcf, res.p)
+        result = compute_wave(0.0, 1.0, 1.0, bsbcf, res.to_dict())
         self.assertIsInstance(result, np.ndarray)
         self.assertTrue(np.all(np.isfinite(result)))
 
@@ -633,29 +715,28 @@ class TestDayProfile(unittest.TestCase):
     """Tests for day_profile()."""
 
     def setUp(self):
-        times = pd.date_range("2024-01-01", periods=len(T2), freq="1min")
-        values = (bsbcf(t=T2, p=BSBCF_PARAMS_ARRAY) + 
+        self.times = pd.date_range("2024-01-01", periods=len(T2), freq="1min")
+        self.values = (bsbcf(t=T2, p=BSBCF_PARAMS_ARRAY) + 
                   np.random.normal(0, 5, size=T2.shape))
-        values = values - np.min(values) + 1.0
-        self.series = pd.Series(index=times, data=values)
+        self.values = self.values - np.min(self.values) + 1.0
 
     def test_returns_two_series(self):
-        mean, std = day_profile(self.series)
+        mean, std = day_profile(self.times, self.values)
         self.assertIsInstance(mean, pd.Series)
         self.assertIsInstance(std, pd.Series)
 
     def test_double_doubles_length(self):
-        mean_single, _ = day_profile(self.series, double=False)
-        mean_double, _ = day_profile(self.series, double=True)
+        mean_single, _ = day_profile(self.times, self.values, double=False)
+        mean_double, _ = day_profile(self.times, self.values, double=True)
         self.assertEqual(len(mean_double), 2 * len(mean_single))
 
     def test_repfirst_adds_one_row(self):
-        mean_normal,   _ = day_profile(self.series, repfirst=False)
-        mean_repfirst, _ = day_profile(self.series, repfirst=True)
+        mean_normal,   _ = day_profile(self.times, self.values, repfirst=False)
+        mean_repfirst, _ = day_profile(self.times, self.values, repfirst=True)
         self.assertEqual(len(mean_repfirst), len(mean_normal) + 1)
 
     def test_mean_std_values_are_finite(self):
-        mean, std = day_profile(self.series)
+        mean, std = day_profile(self.times, self.values)
         self.assertTrue(np.all(np.isfinite(mean.values)))
         self.assertTrue(np.all(np.isfinite(std.values)))
 
@@ -829,10 +910,262 @@ class TestParamsToString(unittest.TestCase):
     def test_fit_result_dict_works(self):
         """params_to_string should accept res.p directly."""
         res = fit(T, bsbcf(t=T, p=BSBCF_PARAMS_ARRAY), f=bsbcf)
-        result = params_to_string(res.p)
+        result = params_to_string(res.to_dict())
         self.assertIsInstance(result, str)
         for key in BSBCF_PARAM_NAMES:
             self.assertIn(key, result)
+
+
+# ---------------------------------------------------------------------------
+# utils.py — string_to_phase tests
+# ---------------------------------------------------------------------------
+
+class TestStringToPhase(unittest.TestCase):
+    """Tests for string_to_phase()."""
+
+    def test_zero(self):
+        self.assertAlmostEqual(string_to_phase("00:00"), 0.0)
+
+    def test_quarter(self):
+        self.assertAlmostEqual(string_to_phase("06:00"), 0.25)
+
+    def test_half(self):
+        self.assertAlmostEqual(string_to_phase("12:00"), 0.5)
+
+    def test_three_quarters(self):
+        self.assertAlmostEqual(string_to_phase("18:00"), 0.75)
+
+    def test_with_minutes(self):
+        self.assertAlmostEqual(string_to_phase("06:30"),
+                               6.5 / 24.0, places=10)
+
+    def test_negative(self):
+        self.assertAlmostEqual(string_to_phase("-06:00"), -0.25)
+
+    def test_negative_with_minutes(self):
+        self.assertAlmostEqual(string_to_phase("-02:30"),
+                               -2.5 / 24.0, places=10)
+
+    def test_inverse_of_phase_to_string(self):
+        """string_to_phase should be the inverse of phase_to_string."""
+        for phase in [0.0, 0.25, 0.5, 0.75, 0.875, -0.25, -0.5]:
+            roundtripped = string_to_phase(phase_to_string(phase))
+            self.assertAlmostEqual(roundtripped, phase, places=4)
+
+    def test_invalid_format_raises(self):
+        with self.assertRaises(ValueError):
+            string_to_phase("not a time")
+
+    def test_too_many_parts_raises(self):
+        with self.assertRaises(ValueError):
+            string_to_phase("12:30:45")
+
+    def test_strips_whitespace(self):
+        self.assertAlmostEqual(string_to_phase("  06:00  "), 0.25)
+
+
+# ---------------------------------------------------------------------------
+# markers.py — AnalysisInfo tests
+# ---------------------------------------------------------------------------
+
+class TestAnalysisInfo(unittest.TestCase):
+    """Tests for AnalysisInfo dataclass."""
+
+    def test_construction_with_all_fields(self):
+        meta = AnalysisInfo(participant=1,
+                        start=pd.Timestamp("2024-01-01 21:00"),
+                        func="BSBCF",
+                        r2=0.95)
+        self.assertEqual(meta.participant, 1)
+        self.assertEqual(meta.func, "BSBCF")
+        self.assertAlmostEqual(meta.r2, 0.95)
+
+    def test_default_r2_is_nan(self):
+        """r2 should default to NaN when not provided."""
+        meta = AnalysisInfo(participant=1,
+                        start=pd.Timestamp("2024-01-01 21:00"),
+                        func="BCF")
+        self.assertTrue(np.isnan(meta.r2))
+
+    def test_string_participant(self):
+        """participant field should accept strings."""
+        meta = AnalysisInfo(participant="P01",
+                        start=pd.Timestamp("2024-01-01"),
+                        func="BSBCF")
+        self.assertEqual(meta.participant, "P01")
+
+    def test_to_dict_returns_dict(self):
+        meta = AnalysisInfo(participant=1,
+                        start=pd.Timestamp("2024-01-01 21:00"),
+                        func="BSBCF",
+                        r2=0.95)
+        d = meta.to_dict()
+        self.assertIsInstance(d, dict)
+        for key in ["participant", "start", "func", "r2"]:
+            self.assertIn(key, d)
+        self.assertEqual(d["participant"], 1)
+        self.assertEqual(d["func"], "BSBCF")
+        self.assertAlmostEqual(d["r2"], 0.95)
+
+
+# ---------------------------------------------------------------------------
+# utils.py — ResultsCollector tests
+# ---------------------------------------------------------------------------
+
+class TestResultsCollector(unittest.TestCase):
+    """Tests for ResultsCollector."""
+
+    def setUp(self):
+        self.tmpdir = "/tmp/melafit_test_results/"
+        self.filename = "test_results"
+        # Generate one analysis run for testing
+        self.func = bsbcf
+        self.values = self.func(t=T, p=BSBCF_PARAMS_ARRAY)
+        self.times = pd.date_range(
+            start="2024-01-01 00:00",
+            periods=len(T),
+            freq=pd.Timedelta(minutes=1))
+        self.res = fit(T, self.values, f=self.func)
+        self.meta = AnalysisInfo(participant=1,
+                             start=pd.Timestamp("2024-01-01 00:00"),
+                             func="BSBCF",
+                             r2=0.99)
+        self.ampl = amplitude(self.values)
+        self.mid = midpoint(self.times, self.values, 0.25)
+        self.ac = area_cog(self.times, self.values)
+
+    def tearDown(self):
+        import shutil
+        import os
+        if os.path.exists(self.tmpdir):
+            shutil.rmtree(self.tmpdir)
+
+    def test_empty_collector_save_does_nothing(self):
+        """Saving an empty collector should not raise or create files."""
+        import os
+        collector = ResultsCollector()
+        collector.save(self.tmpdir, self.filename)
+        filepath = os.path.join(self.tmpdir, self.filename + ".xlsx")
+        self.assertFalse(os.path.exists(filepath))
+
+    def test_add_requires_meta_info(self):
+        """add() should raise ValueError if no AnalysisInfo is provided."""
+        collector = ResultsCollector()
+        with self.assertRaises(ValueError):
+            collector.add(self.res, self.ampl)
+
+    def test_add_rejects_unknown_type(self):
+        """add() should raise TypeError on unsupported argument type."""
+        collector = ResultsCollector()
+        with self.assertRaises(TypeError):
+            collector.add(self.meta, "not a valid object")
+
+    def test_add_full_profile(self):
+        """add() should accept all marker types together."""
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        self.assertEqual(len(collector._records), 1)
+
+    def test_add_partial_dlmo(self):
+        """add() should work with only AnalysisInfo, fit result and midpoint."""
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.mid)
+        self.assertEqual(len(collector._records), 1)
+
+    def test_argument_order_irrelevant(self):
+        """add() should produce identical records regardless of arg order."""
+        c1 = ResultsCollector()
+        c2 = ResultsCollector()
+        c1.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        c2.add(self.ac, self.mid, self.ampl, self.res, self.meta)
+        self.assertEqual(c1._records, c2._records)
+
+    def test_record_contains_meta_fields(self):
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        record = collector._records[0]
+        for key in ["participant", "start", "func", "r2"]:
+            self.assertIn(key, record)
+
+    def test_record_contains_marker_fields(self):
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        record = collector._records[0]
+        for key in ["amplitude", "dlmon", "dlmoff", "midpoint",
+                    "threshold", "area", "cog"] + BUILTIN_PARAM_NAMES[self.func]:
+            self.assertIn(key, record)
+
+    def test_record_timing_fields_are_strings(self):
+        """Timing fields should be stored as HH:MM strings."""
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        record = collector._records[0]
+        for key in ["dlmon", "dlmoff", "midpoint", "cog"]:
+            self.assertIsInstance(record[key], str)
+
+    def test_save_creates_file(self):
+        """save() should create the Excel file at the expected location."""
+        import os
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        collector.save(self.tmpdir, self.filename)
+        filepath = os.path.join(self.tmpdir, self.filename + ".xlsx")
+        self.assertTrue(os.path.exists(filepath))
+
+    def test_save_creates_directory(self):
+        """save() should create the result directory if missing."""
+        import os
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        collector.save(self.tmpdir, self.filename)
+        self.assertTrue(os.path.isdir(self.tmpdir))
+
+    def test_saved_excel_readable(self):
+        """Saved Excel file should be readable with expected columns."""
+        import os
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        collector.save(self.tmpdir, self.filename)
+        filepath = os.path.join(self.tmpdir, self.filename + ".xlsx")
+        df = pd.read_excel(filepath, index_col="participant")
+        self.assertGreater(len(df), 0)
+        for col in ["func", "r2", "amplitude", "dlmon", "dlmoff",
+                    "midpoint", "area", "cog"] + BUILTIN_PARAM_NAMES[self.func]:
+            self.assertIn(col, df.columns)
+
+    def test_multiple_participants_sorted_in_excel(self):
+        """Excel output should have participants sorted by ID."""
+        import os
+        collector = ResultsCollector()
+        meta2 = AnalysisInfo(participant=3,
+                         start=pd.Timestamp("2024-01-02 00:00"),
+                         func="BSBCF", r2=0.97)
+        meta3 = AnalysisInfo(participant=2,
+                         start=pd.Timestamp("2024-01-03 00:00"),
+                         func="BSBCF", r2=0.98)
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        collector.add(meta2, self.res, self.ampl, self.mid, self.ac)
+        collector.add(meta3, self.res, self.ampl, self.mid, self.ac)
+        collector.save(self.tmpdir, self.filename)
+        filepath = os.path.join(self.tmpdir, self.filename + ".xlsx")
+        df = pd.read_excel(filepath, index_col="participant")
+        self.assertEqual(list(df.index), [1, 2, 3])
+
+    def test_dlmo_workflow_nan_fields(self):
+        """A DLMO-style add() should leave non-applicable fields as NaN."""
+        import os
+        meta_dlmo = AnalysisInfo(participant=1,
+                             start=pd.Timestamp("2024-01-01 18:00"),
+                             func="BSBCF")  # r2 defaults to NaN
+        collector = ResultsCollector()
+        collector.add(meta_dlmo, self.res, self.mid)
+        collector.save(self.tmpdir, self.filename)
+        filepath = os.path.join(self.tmpdir, self.filename + ".xlsx")
+        df = pd.read_excel(filepath, index_col="participant")
+        # r2 should be NaN since it wasn't computed
+        self.assertTrue(pd.isna(df["r2"].iloc[0]))
+        # area and cog should be missing as columns (no AreaCogResult added)
+        self.assertNotIn("area", df.columns)
 
 
 if __name__ == "__main__":

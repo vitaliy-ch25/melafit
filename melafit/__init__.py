@@ -1,5 +1,5 @@
 """
-# melafit: Melatonin Data Fitting and Circadian Rhythm Analysis
+melafit: Melatonin Data Fitting and Circadian Rhythm Analysis
 
 This is a Python package for fitting circadian rhythm melatonin data using
 parametric wave approximation models and computing circadian phase markers.
@@ -19,6 +19,7 @@ The package provides functionality for:
 
 Submodules:
 -----------
+results : Structured result classes for all analysis outputs
 fitting : Melatonin wave approximation functions and curve fitting
 markers : Circadian phase marker computation (DLMOn/Off, amplitude, etc.)
 utils : Data I/O, preprocessing, and utility functions
@@ -34,6 +35,7 @@ References:
   sustained wakefulness" https://doi.org/10.1038/s41598-017-07060-8
 """
 
+from .results import *
 from .fitting import *
 from .markers import *
 from .utils import *
