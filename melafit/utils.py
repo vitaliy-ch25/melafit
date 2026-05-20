@@ -55,6 +55,7 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import scipy.optimize as opt
+from collections.abc import Mapping
 
 
 def read_data(data_pathname: str) -> pd.DataFrame:
@@ -137,7 +138,7 @@ def compute_wave(tmin: np.float64,
                  tmax: np.float64,
                  dt_minutes: np.float64,
                  f: callable,
-                 p: dict | np.ndarray,
+                 p: Mapping | np.ndarray,
                  full_wave: bool = True) -> np.ndarray:
     """
     Compute waveform resampled to given time resolution.
@@ -152,7 +153,7 @@ def compute_wave(tmin: np.float64,
             Time increment in minutes
         f : callable
             Waveform function
-        p : Dictionary or Numpy array of floats
+        p : Mapping, FitResult, or Numpy array of floats
             Waveform parameter vector
         full_wave : bool
             If True and (tmax-tmin) < 1.0, tmax = tmin + 1.0 (defaults to

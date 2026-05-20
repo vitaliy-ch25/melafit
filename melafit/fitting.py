@@ -50,15 +50,17 @@ Constants:
 
 import scipy.optimize as opt
 import numpy as np
+from collections.abc import Mapping
 from melafit.markers import AnalysisResult
 
-class FitResult(AnalysisResult):
+class FitResult(AnalysisResult, Mapping):
     """
     Wrapper of optimization result implementing the :class:`AnalysisResult`
-    interface that adds :meth:`to_dict`, making it compatible with
-    :class:`melafit.utils.ResultsCollector`. All standard scipy attributes
-    (``x``, ``fun``, ``success``, ``nit``, etc.) are preserved in the field
-    ``result`` of type :class:`scipy.optimize.OptimizeResult`.
+    and :class:`collections.abc.Mapping` interfaces. Mapping support allows
+    ``FitResult`` to be passed directly wherever a parameter dict is accepted
+    (waveform functions, :func:`compute_wave`, etc.). All standard scipy
+    attributes (``x``, ``fun``, ``success``, ``nit``, etc.) are preserved in
+    the field ``result`` of type :class:`scipy.optimize.OptimizeResult`.
 
     Attributes
     ----------
@@ -72,10 +74,29 @@ class FitResult(AnalysisResult):
 
     def __init__(self, result: opt.OptimizeResult, wave_func: callable,
                  param_names: list | None):
-        super().__init__()
         self.wave_func = wave_func
         self.result = result
         self._param_names = param_names
+
+    # ------------------------------------------------------------------
+    # Mapping protocol — enables direct use as a parameter dict
+    # ------------------------------------------------------------------
+
+    def __getitem__(self, key):
+        if self._param_names is None:
+            raise KeyError(key)
+        try:
+            return self.result.x[self._param_names.index(key)]
+        except ValueError:
+            raise KeyError(key)
+
+    def __iter__(self):
+        return iter(self._param_names or [])
+
+    def __len__(self):
+        return len(self._param_names or [])
+
+    # ------------------------------------------------------------------
 
     def to_dict(self) -> dict:
         """
@@ -88,9 +109,7 @@ class FitResult(AnalysisResult):
                 empty dict if no parameter names are available (e.g. a
                 custom function with array-only bounds).
         """
-        if self._param_names is None:
-            return {}
-        return dict(zip(self._param_names, self.result.x))
+        return dict(self)
 
 
 # Parameter names for melatonin wave approximation functions
@@ -99,12 +118,12 @@ SBCF_PARAM_NAMES  = ["phi", "b", "H", "c", "v"]
 BBCF_PARAM_NAMES  = ["phi", "b", "H", "c", "m"]
 BSBCF_PARAM_NAMES = ["phi", "b", "H", "c", "v", "m"]
 
-def _resolve_params(p: np.ndarray | dict) -> np.ndarray:
+def _resolve_params(p: np.ndarray | Mapping) -> np.ndarray:
     """
-    Convert parameter dict to array if needed, pass array through unchanged.
+    Convert parameter mapping to array if needed, pass array through unchanged.
+    Accepts plain dicts, FitResult, or any Mapping.
     """
-    
-    if isinstance(p, dict):
+    if isinstance(p, Mapping):
         return np.array(list(p.values()))
     return p
 

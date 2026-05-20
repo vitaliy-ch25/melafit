@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import scipy.optimize as opt
+from collections.abc import Mapping
 
 from melafit.fitting import (bcf, sbcf, bbcf, bsbcf, cost, rsquared,
                               func_defaults, fit, FitResult,
@@ -315,6 +316,7 @@ class TestFit(unittest.TestCase):
         self.assertIsInstance(res, FitResult)
         self.assertIsInstance(res.result, opt.OptimizeResult)
         self.assertIsInstance(res, AnalysisResult)
+        self.assertIsInstance(res, Mapping)
         self.assertIn('x', res.result)
 
     def test_returns_param_dict(self):
@@ -392,6 +394,16 @@ class TestFit(unittest.TestCase):
         for key in BSBCF_PARAM_NAMES:
             self.assertIn(key, p.keys())
             self.assertIsInstance(p[key], float)
+
+    def test_fitresult_usable_as_wave_param(self):
+        res = fit(self.t, self.y, f=bsbcf)
+        # FitResult should be passable directly wherever a param dict is accepted
+        curve_direct = bsbcf(t=self.t, p=res)
+        curve_dict   = bsbcf(t=self.t, p=res.to_dict())
+        np.testing.assert_array_almost_equal(curve_direct, curve_dict)
+        wave_direct = compute_wave(0.0, 1.0, 1.0, bsbcf, res)
+        wave_dict   = compute_wave(0.0, 1.0, 1.0, bsbcf, res.to_dict())
+        np.testing.assert_array_almost_equal(wave_direct, wave_dict)
 
     def test_cost_p_passed_through(self):
         res = fit(self.t, self.y, f=bsbcf, cost_p={"eps": 1e-6})
