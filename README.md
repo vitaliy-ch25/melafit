@@ -221,8 +221,7 @@ on <Date>.
   `phase_to_string`)
 - `day_profile()` accepts separate times and values parameters
 - `PARAM_NAMES` renamed to `BUILTIN_PARAM_NAMES`
-- Example scripts simplified using `ResultsCollector` and direct `FitResult`
-  use without `.to_dict()`
+- Example scripts simplified via `ResultsCollector` and result classes
 - Unit tests for all new classes and methods
 
 ### [v0.1.3](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.1.3)
