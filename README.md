@@ -206,22 +206,25 @@ on <Date>.
 ## Revision History
 
 ### [v0.2.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.2.0) - Simplified API
-- New abstract base class AnalysisResult in markers.py defining the
-  to_dict() interface for all result types
-- New result dataclasses in markers.py inheriting from AnalysisResult:
-  AnalysisInfo, AmplitudeResult, MidpointResult, AreaCogResult
-- New FitResult class in fitting.py inheriting from both AnalysisResult and
-  OptimizeResult; fit() now returns FitResult
-- amplitude(), midpoint() and area_cog() now return their respective
-  dataclasses instead of tuples/floats
-- to_dict() on all result classes: timing fields returned as HH:MM
+- New result classes in markers.py: `AnalysisResult` (abstract base) and its 
+  descendants `AnalysisInfo`, `AmplitudeResult`, `MidpointResult` and
+  `AreaCogResult`
+- New `FitResult` class in `fitting.py` wraps `scipy.optimize.OptimizeResult` 
+  in its `result` field; `fit()` now returns `FitResult`
+- `FitResult` can be passed directly to waveform functions and `compute_wave`
+- `amplitude()`, `midpoint()` and `area_cog()` now return their respective
+  result classes instead of tuples/floats
+- `to_dict()` on all result classes: timing fields returned as `HH:MM`
   strings, other fields as native types
-- AnalysisInfo.r2 defaults to NaN for convenience in DLMO workflows
-- New ResultsCollector class in utils.py; add() accepts any AnalysisResult
-  subclass instance in any order
-- New string_to_phase() utility function in utils.py (inverse of
-  phase_to_string)
-- Example scripts simplified using ResultsCollector
+- `AnalysisInfo.r2` defaults to `NaN` for convenience in DLMO workflows
+- New `ResultsCollector` class in `utils.py`; `add()` accepts any 
+  `AnalysisResult` subclass instance in any order
+- New `string_to_phase()` utility function in `utils.py` (inverse of
+  `phase_to_string`)
+- `day_profile()` accepts separate times and values parameters
+- `PARAM_NAMES` renamed to `BUILTIN_PARAM_NAMES`
+- Example scripts simplified using `ResultsCollector` and direct `FitResult`
+  use without `.to_dict()`
 - Unit tests for all new classes and methods
 
 ### [v0.1.3](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.1.3)
