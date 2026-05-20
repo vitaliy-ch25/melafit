@@ -125,7 +125,7 @@ If you use [melafit](https://github.com/vitaliy-ch25/melafit) in your research, 
 
 If there is no associated publication on `melafit` yet, please cite the package directly using the following reference:
 
-[Kolodyazhniy, V., & Cajochen, C. (2026). melafit: High-precision circadian melatonin profile analysis. Retrieved from https://github.com/vitaliy-ch25/melafit](https://github.com/vitaliy-ch25/melafit).
+Kolodyazhniy, V., & Cajochen, C. (2026). melafit: High-precision circadian melatonin profile analysis, version <x.y.z>. Retrieved from [https://github.com/vitaliy-ch25/melafit](https://github.com/vitaliy-ch25/melafit) on <Date>.
 
 ## Authors
 * Vitaliy Kolodyazhniy – Lead Developer
@@ -133,7 +133,21 @@ If there is no associated publication on `melafit` yet, please cite the package 
 
 ## Revision History
 
-### [v0.2.0]
+### [v0.2.0] (https://github.com/vitaliy-ch25/melafit/releases/tag/v0.2.0)
+Structured result dataclasses and simplified result collection
+- New result dataclasses in markers.py: MetaInfo, AmplitudeResult,
+  MidpointResult, AreaCogResult
+- amplitude(), midpoint() and area_cog() now return their respective
+  dataclasses instead of tuples/floats
+- New as_strings() method on MidpointResult and AreaCogResult returning
+  HH:MM string representations of timing fields
+- MetaInfo.r2 defaults to NaN for convenience in DLMO workflows
+- New ResultsCollector class in utils.py with type-dispatched add() method
+  accepting any combination of result objects in any order
+- New string_to_phase() utility function in utils.py (inverse of
+  phase_to_string)
+- Example scripts simplified using ResultsCollector
+- Unit tests for new dataclasses, ResultsCollector and string_to_phase
 
 ### [v0.1.3](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.1.3)
 - Improved documentation

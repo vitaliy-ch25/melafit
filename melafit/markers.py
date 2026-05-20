@@ -1,29 +1,41 @@
 """
-# melafit.markers: Circadian Phase Markers from Melatonin Data
+melafit.markers: Circadian Phase Markers from Melatonin Data
 
 This module provides functions to compute clinically relevant circadian phase
-markers and rhythm characteristics from melatonin concentration curves.
+markers and rhythm characteristics from melatonin concentration curves,
+together with structured result dataclasses.
 
 Markers Computed:
 -----------------
-- Amplitude : Peak-to-baseline difference of the melatonin curve
-    Indicator of circadian rhythm strength/robustness
-    
+- Amplitude : Peak-to-baseline difference of the melatonin curve.
+    Indicator of circadian rhythm strength/robustness.
+
 - DLMOn/DLMOff (Dim Light Melatonin Onset/Offset) : Times when melatonin
     crosses a given threshold (absolute or relative). Key markers of
-    circadian phase for clinical assessment
+    circadian phase for clinical assessment.
 
-- Midpoint : Time of melatonin level in the middle between DLMOn and DLMOff. 
-    Used to define melatonin phase angle
-    
-- Area Under Curve : Total melatonin secretion over 24 hours. Indicator of total 
-    circulating melatonin quantity
-    
+- Midpoint : Time of melatonin level in the middle between DLMOn and DLMOff.
+    Used to define melatonin phase angle.
+
+- Area Under Curve : Total melatonin secretion over 24 hours. Indicator of
+    total circulating melatonin quantity.
+
 - Center of Gravity (COG) : Shape-based phase marker computed as the weighted
-    average time of melatonin secretion. Used to define melatonin phase angle. 
-    More robust to noise and partial data than threshold-based markers 
-    including DLMOn/Off and midpoint. Coincides with midpoint for symmetric 
+    average time of melatonin secretion. Used to define melatonin phase angle.
+    More robust to noise and partial data than threshold-based markers
+    including DLMOn/Off and midpoint. Coincides with midpoint for symmetric
     curves.
+
+Result Dataclasses:
+-------------------
+- MetaInfo : Identifying information about an analysis (participant, start,
+    waveform function name, goodness of fit)
+- AmplitudeResult : Wrapper for amplitude marker
+- MidpointResult : Wrapper for midpoint, DLMOn, DLMOff and threshold
+- AreaCogResult : Wrapper for area under curve and center of gravity
+
+Each result dataclass provides an `as_strings()` method that returns its
+timing fields as HH:MM strings.
 
 Functions:
 ----------
@@ -33,10 +45,10 @@ Functions:
 
 Notes:
 ------
-- All timing outputs are in phase representation (0.0 to 1.0, where 1.0 = 24h)
-- Threshold-based markers (DLMOn/Off) require at least 24h of data or a 
+- All timing fields in result dataclasses are stored as phase values
+  (0.0 to 1.0, where 1.0 = 24h)
+- Threshold-based markers (DLMOn/Off) require at least 24h of data or a
   full 24h fitted curve
-- Functions typically work with complete circadian cycles for accuracy
 
 References:
 -----------
@@ -46,11 +58,129 @@ References:
 
 import numpy as np
 import pandas as pd
-from melafit.utils import day_profile, abs_threshold, time_to_phase
+from dataclasses import dataclass
+from melafit.utils import (day_profile, abs_threshold, time_to_phase,
+                            phase_to_string)
 
-def amplitude(values: np.ndarray) -> np.float64:
+
+@dataclass
+class MetaInfo:
     """
-    Peak-to-baseline amplitude of fitted waveform
+    Identifying information about a single melatonin analysis.
+
+    Attributes
+    ----------
+        participant : int or str
+            Participant identifier
+        start : pd.Timestamp
+            Start timestamp of the analysis session
+        func : str
+            Name of the waveform function used for fitting
+        r2 : float
+            R² goodness of fit (defaults to NaN if not provided, which is
+            convenient when r2 is not computed, e.g. for partial-data DLMO
+            detection)
+    """
+
+    participant: int | str
+    start: pd.Timestamp
+    func: str
+    r2: np.float64 = float("nan")
+
+
+@dataclass
+class AmplitudeResult:
+    """
+    Result of peak-to-baseline amplitude computation.
+
+    Attributes
+    ----------
+        amplitude : float
+            Peak-to-baseline amplitude of the waveform
+    """
+
+    amplitude: np.float64
+
+
+@dataclass
+class MidpointResult:
+    """
+    Result of midpoint, DLMOn and DLMOff computation.
+
+    Timing fields are stored as phase values (0.0 to 1.0, 1.0 = 24h).
+    Use :meth:`as_strings` to obtain HH:MM string representations.
+
+    Attributes
+    ----------
+        dlmon : float
+            Dim light melatonin onset time as phase
+        dlmoff : float
+            Dim light melatonin offset time as phase
+        midpoint : float
+            Melatonin midpoint time as phase
+        threshold : float
+            Absolute threshold value used for the computation
+    """
+
+    dlmon: np.float64
+    dlmoff: np.float64
+    midpoint: np.float64
+    threshold: np.float64
+
+    def as_strings(self) -> dict:
+        """
+        Return timing fields as HH:MM string representations.
+
+        Returns
+        -------
+            d : dict
+                Dictionary with keys 'dlmon', 'dlmoff', 'midpoint' mapped
+                to their HH:MM string representations. 'threshold' is
+                included unchanged as a float.
+        """
+        return {
+            "dlmon": phase_to_string(self.dlmon),
+            "dlmoff": phase_to_string(self.dlmoff),
+            "midpoint": phase_to_string(self.midpoint),
+            "threshold": self.threshold,
+        }
+
+
+@dataclass
+class AreaCogResult:
+    """
+    Result of area under curve and center of gravity computation.
+
+    Attributes
+    ----------
+        area : float
+            Area under the curve
+        cog : float
+            Center of gravity as phase (0.0 to 1.0, 1.0 = 24h)
+    """
+
+    area: np.float64
+    cog: np.float64
+
+    def as_strings(self) -> dict:
+        """
+        Return timing fields as HH:MM string representations.
+
+        Returns
+        -------
+            d : dict
+                Dictionary with key 'cog' mapped to its HH:MM string
+                representation. 'area' is included unchanged as a float.
+        """
+        return {
+            "area": self.area,
+            "cog": phase_to_string(self.cog),
+        }
+
+
+def amplitude(values: np.ndarray) -> AmplitudeResult:
+    """
+    Peak-to-baseline amplitude of fitted waveform.
 
     Parameters
     ----------
@@ -59,24 +189,24 @@ def amplitude(values: np.ndarray) -> np.float64:
 
     Returns
     -------
-        ampl : float
-            Peak-to-baseline amplitude
+        result : AmplitudeResult
+            Wrapped amplitude value
     """
 
-    return np.max(values) - np.min(values)
+    return AmplitudeResult(amplitude=np.max(values) - np.min(values))
 
 
 def midpoint(times: pd.DatetimeIndex,
              values: np.ndarray,
              threshold: np.float64,
-             thresh_abs: bool = False
-             ) -> tuple[np.float64, np.float64, np.float64, np.float64]:
+             thresh_abs: bool = False) -> MidpointResult:
     """
-    Compute melatonin midpoint, DLMOn and DLMOff times. NOTE: This function
-    assumes that there is at least 24h of data. If this is not the case, the
-    results may be inaccurate. When working with waveforms, make sure to
-    generate a full 24h curve which is usually possible even with shorter
-    raw data the curve was fitted to.
+    Compute melatonin midpoint, DLMOn and DLMOff times.
+
+    NOTE: This function assumes that there is at least 24h of data. If
+    this is not the case, the results may be inaccurate. When working
+    with waveforms, make sure to generate a full 24h curve which is
+    usually possible even with shorter raw data the curve was fitted to.
 
     Parameters
     ----------
@@ -84,23 +214,24 @@ def midpoint(times: pd.DatetimeIndex,
             Datetime values
         values : Numpy array of floats
             Melatonin waveform values
-        threshold: float
-            Relative threshold, fraction of range peak-to-baseline (0 to 1)
-        thresh_abs: bool
+        threshold : float
+            Relative threshold, fraction of range peak-to-baseline (0 to 1),
+            or absolute threshold value if thresh_abs=True
+        thresh_abs : bool
             If True, the given threshold is absolute. Otherwise, the absolute
             threshold is computed from the given relative threshold and the
             range of values (defaults to False)
 
     Returns
     -------
-        result : tuple[float, float, float, float]
-            Melatonin midpoint, DLMOn and DLMOff times as phase (from 0.0 to
-            1.0, 1.0 = 24h), and absolute threshold
+        result : MidpointResult
+            Dataclass containing dlmon, dlmoff, midpoint (all as phase
+            values) and the absolute threshold used
 
     See also
     --------
-         :func:`melafit.utils.compute_wave`: Compute waveform resampled to
-         given time resolution
+        :func:`melafit.utils.compute_wave` : Compute waveform resampled to
+        given time resolution
     """
 
     d_profile = day_profile(times, values, binsize=1)[0]
@@ -125,14 +256,17 @@ def midpoint(times: pd.DatetimeIndex,
     time_on = time_to_phase(time_on)
     time_off = time_to_phase(time_off)
 
-    return time_midpoint, time_on, time_off, threshold
+    return MidpointResult(dlmon=time_on,
+                          dlmoff=time_off,
+                          midpoint=time_midpoint,
+                          threshold=threshold)
+
 
 def area_cog(times: pd.DatetimeIndex,
              values: np.ndarray,
-             baseline: np.float64 | None = None
-             ) -> tuple[np.float64, np.float64]:
+             baseline: np.float64 | None = None) -> AreaCogResult:
     """
-    Center of gravity of area under the curve
+    Area under the curve and center of gravity of melatonin waveform.
 
     Parameters
     ----------
@@ -142,25 +276,23 @@ def area_cog(times: pd.DatetimeIndex,
             Waveform values
         baseline : float or None
             Baseline for area computation. Equals to minimum of values if
-            None is given (default)
+            None is given (defaults to None)
 
     Returns
     -------
-        area : float
-            Area under the curve
-        cog : float
-            Center of gravity of area under the curve as phase (from 0.0 to
-            1.0, 1.0 = 24h)
+        result : AreaCogResult
+            Dataclass containing area under the curve and center of gravity
+            as phase (0.0 to 1.0, 1.0 = 24h)
 
     See also
     --------
-         :func:`melafit.utils.compute_wave`: Compute waveform resampled to
-         given time resolution
+        :func:`melafit.utils.compute_wave` : Compute waveform resampled to
+        given time resolution
     """
 
     if baseline is None:
         baseline = np.min(values)
-    
+
     bin_minutes = 1
 
     d_profile = day_profile(times, values, binsize=bin_minutes)[0]
@@ -180,6 +312,7 @@ def area_cog(times: pd.DatetimeIndex,
     # Convert COG to phase (from 0.0 to 1.0, 1.0 = 24h)
     cog = time_to_phase(cog)
 
-    area /= (24.0 * 60.0 / bin_minutes) # Normalize by bin size in minutes
+    # Normalize area by bin size in minutes
+    area /= (24.0 * 60.0 / bin_minutes)
 
-    return area, cog
+    return AreaCogResult(area=area, cog=cog)

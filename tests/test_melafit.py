@@ -19,10 +19,13 @@ from melafit.fitting import (bcf, sbcf, bbcf, bsbcf, cost, rsquared,
                               BCF_PARAM_NAMES, SBCF_PARAM_NAMES,
                               BBCF_PARAM_NAMES, BSBCF_PARAM_NAMES,
                               PARAM_NAMES)
-from melafit.markers import amplitude, midpoint, area_cog
+from melafit.markers import (amplitude, midpoint, area_cog,
+                              MetaInfo, AmplitudeResult, MidpointResult,
+                              AreaCogResult)
 from melafit.utils import (read_data, prepare_part_data, compute_wave,
                             day_profile, time_to_phase, phase_to_string,
-                            abs_threshold, phase_diff, params_to_string)
+                            string_to_phase, abs_threshold, phase_diff,
+                            params_to_string, ResultsCollector)
 
 # ---------------------------------------------------------------------------
 # Shared test fixtures
@@ -420,17 +423,21 @@ class TestFit(unittest.TestCase):
 class TestAmplitude(unittest.TestCase):
     """Tests for amplitude()."""
 
+    def test_returns_amplitude_result(self):
+        result = amplitude(np.array([2.0, 5.0, 10.0, 3.0]))
+        self.assertIsInstance(result, AmplitudeResult)
+
     def test_known_amplitude(self):
         self.assertAlmostEqual(
-            amplitude(np.array([2.0, 5.0, 10.0, 3.0])), 8.0)
+            amplitude(np.array([2.0, 5.0, 10.0, 3.0])).amplitude, 8.0)
 
     def test_flat_signal_is_zero(self):
-        self.assertAlmostEqual(amplitude(np.full(100, 5.0)), 0.0)
+        self.assertAlmostEqual(amplitude(np.full(100, 5.0)).amplitude, 0.0)
 
     def test_amplitude_on_waveform(self):
-        ampl = amplitude(bsbcf(t=T, p=BSBCF_PARAMS_ARRAY))
-        self.assertGreater(ampl, 0.0)
-        self.assertTrue(np.isfinite(ampl))
+        result = amplitude(bsbcf(t=T, p=BSBCF_PARAMS_ARRAY))
+        self.assertGreater(result.amplitude, 0.0)
+        self.assertTrue(np.isfinite(result.amplitude))
 
 
 # ---------------------------------------------------------------------------
@@ -447,23 +454,40 @@ class TestMidpoint(unittest.TestCase):
             periods=len(T),
             freq=pd.Timedelta(minutes=1))
 
-    def test_returns_four_values(self):
-        self.assertEqual(len(midpoint(self.times, self.values, 0.25)), 4)
+    def test_returns_midpoint_result(self):
+        result = midpoint(self.times, self.values, 0.25)
+        self.assertIsInstance(result, MidpointResult)
 
     def test_all_phases_in_range(self):
-        midpt, dlmon, dlmoff, _ = midpoint(self.times, self.values, 0.25)
-        for val in [midpt, dlmon, dlmoff]:
+        result = midpoint(self.times, self.values, 0.25)
+        for val in [result.midpoint, result.dlmon, result.dlmoff]:
             self.assertGreaterEqual(val, 0.0)
             self.assertLess(val, 1.0)
 
     def test_relative_threshold_converted_correctly(self):
-        _, _, _, thresh = midpoint(self.times, self.values, 0.25)
-        self.assertAlmostEqual(thresh, abs_threshold(self.values, 0.25))
+        result = midpoint(self.times, self.values, 0.25)
+        self.assertAlmostEqual(result.threshold,
+                               abs_threshold(self.values, 0.25))
 
     def test_absolute_threshold_mode(self):
-        _, _, _, thresh = midpoint(
-            self.times, self.values, 10.0, thresh_abs=True)
-        self.assertAlmostEqual(thresh, 10.0)
+        result = midpoint(self.times, self.values, 10.0, thresh_abs=True)
+        self.assertAlmostEqual(result.threshold, 10.0)
+
+    def test_as_strings_returns_dict(self):
+        result = midpoint(self.times, self.values, 0.25)
+        d = result.as_strings()
+        self.assertIsInstance(d, dict)
+        for key in ["dlmon", "dlmoff", "midpoint"]:
+            self.assertIn(key, d)
+            self.assertIsInstance(d[key], str)
+        self.assertIn("threshold", d)
+
+    def test_as_strings_match_phase_to_string(self):
+        result = midpoint(self.times, self.values, 0.25)
+        d = result.as_strings()
+        self.assertEqual(d["dlmon"], phase_to_string(result.dlmon))
+        self.assertEqual(d["dlmoff"], phase_to_string(result.dlmoff))
+        self.assertEqual(d["midpoint"], phase_to_string(result.midpoint))
 
     def test_with_real_data(self):
         data = read_data(DUMMY_DATA_FULL)
@@ -473,8 +497,8 @@ class TestMidpoint(unittest.TestCase):
                              1.0, bsbcf, res.p)
         times = pd.date_range(p_data.Timestamp.min(), periods=len(curve),
                               freq=pd.Timedelta(minutes=1))
-        midpt, dlmon, dlmoff, _ = midpoint(times, curve, 0.25)
-        for val in [midpt, dlmon, dlmoff]:
+        result = midpoint(times, curve, 0.25)
+        for val in [result.midpoint, result.dlmon, result.dlmoff]:
             self.assertGreaterEqual(val, 0.0)
             self.assertLess(val, 1.0)
 
@@ -493,23 +517,37 @@ class TestAreaCog(unittest.TestCase):
             periods=len(T),
             freq=pd.Timedelta(minutes=1))
 
-    def test_returns_two_values(self):
-        self.assertEqual(len(area_cog(self.times, self.values)), 2)
+    def test_returns_area_cog_result(self):
+        result = area_cog(self.times, self.values)
+        self.assertIsInstance(result, AreaCogResult)
 
     def test_area_is_positive(self):
-        area, _ = area_cog(self.times, self.values)
-        self.assertGreater(area, 0.0)
+        result = area_cog(self.times, self.values)
+        self.assertGreater(result.area, 0.0)
 
     def test_cog_in_range(self):
-        _, cog = area_cog(self.times, self.values)
-        self.assertGreaterEqual(cog, 0.0)
-        self.assertLess(cog, 1.0)
+        result = area_cog(self.times, self.values)
+        self.assertGreaterEqual(result.cog, 0.0)
+        self.assertLess(result.cog, 1.0)
 
     def test_custom_baseline_changes_area(self):
-        area_default, _ = area_cog(self.times, self.values)
-        area_custom, _  = area_cog(self.times, self.values,
-                                   baseline=min(self.values) + 1.0)
-        self.assertNotAlmostEqual(area_default, area_custom)
+        r_default = area_cog(self.times, self.values)
+        r_custom  = area_cog(self.times, self.values,
+                             baseline=min(self.values) + 1.0)
+        self.assertNotAlmostEqual(r_default.area, r_custom.area)
+
+    def test_as_strings_returns_dict(self):
+        result = area_cog(self.times, self.values)
+        d = result.as_strings()
+        self.assertIsInstance(d, dict)
+        self.assertIn("area", d)
+        self.assertIn("cog", d)
+        self.assertIsInstance(d["cog"], str)
+
+    def test_as_strings_match_phase_to_string(self):
+        result = area_cog(self.times, self.values)
+        d = result.as_strings()
+        self.assertEqual(d["cog"], phase_to_string(result.cog))
 
     def test_with_real_data(self):
         data = read_data(DUMMY_DATA_FULL)
@@ -519,10 +557,10 @@ class TestAreaCog(unittest.TestCase):
                              1.0, bsbcf, res.p)
         times = pd.date_range(p_data.Timestamp.min(), periods=len(curve),
                               freq=pd.Timedelta(minutes=1))
-        area, cog = area_cog(times, curve)
-        self.assertGreater(area, 0.0)
-        self.assertGreaterEqual(cog, 0.0)
-        self.assertLess(cog, 1.0)
+        result = area_cog(times, curve)
+        self.assertGreater(result.area, 0.0)
+        self.assertGreaterEqual(result.cog, 0.0)
+        self.assertLess(result.cog, 1.0)
 
 
 # ---------------------------------------------------------------------------
@@ -832,6 +870,244 @@ class TestParamsToString(unittest.TestCase):
         self.assertIsInstance(result, str)
         for key in BSBCF_PARAM_NAMES:
             self.assertIn(key, result)
+
+
+# ---------------------------------------------------------------------------
+# utils.py — string_to_phase tests
+# ---------------------------------------------------------------------------
+
+class TestStringToPhase(unittest.TestCase):
+    """Tests for string_to_phase()."""
+
+    def test_zero(self):
+        self.assertAlmostEqual(string_to_phase("00:00"), 0.0)
+
+    def test_quarter(self):
+        self.assertAlmostEqual(string_to_phase("06:00"), 0.25)
+
+    def test_half(self):
+        self.assertAlmostEqual(string_to_phase("12:00"), 0.5)
+
+    def test_three_quarters(self):
+        self.assertAlmostEqual(string_to_phase("18:00"), 0.75)
+
+    def test_with_minutes(self):
+        self.assertAlmostEqual(string_to_phase("06:30"),
+                               6.5 / 24.0, places=10)
+
+    def test_negative(self):
+        self.assertAlmostEqual(string_to_phase("-06:00"), -0.25)
+
+    def test_negative_with_minutes(self):
+        self.assertAlmostEqual(string_to_phase("-02:30"),
+                               -2.5 / 24.0, places=10)
+
+    def test_inverse_of_phase_to_string(self):
+        """string_to_phase should be the inverse of phase_to_string."""
+        for phase in [0.0, 0.25, 0.5, 0.75, 0.875, -0.25, -0.5]:
+            roundtripped = string_to_phase(phase_to_string(phase))
+            self.assertAlmostEqual(roundtripped, phase, places=4)
+
+    def test_invalid_format_raises(self):
+        with self.assertRaises(ValueError):
+            string_to_phase("not a time")
+
+    def test_too_many_parts_raises(self):
+        with self.assertRaises(ValueError):
+            string_to_phase("12:30:45")
+
+    def test_strips_whitespace(self):
+        self.assertAlmostEqual(string_to_phase("  06:00  "), 0.25)
+
+
+# ---------------------------------------------------------------------------
+# markers.py — MetaInfo tests
+# ---------------------------------------------------------------------------
+
+class TestMetaInfo(unittest.TestCase):
+    """Tests for MetaInfo dataclass."""
+
+    def test_construction_with_all_fields(self):
+        meta = MetaInfo(participant=1,
+                        start=pd.Timestamp("2024-01-01 21:00"),
+                        func="BSBCF",
+                        r2=0.95)
+        self.assertEqual(meta.participant, 1)
+        self.assertEqual(meta.func, "BSBCF")
+        self.assertAlmostEqual(meta.r2, 0.95)
+
+    def test_default_r2_is_nan(self):
+        """r2 should default to NaN when not provided."""
+        meta = MetaInfo(participant=1,
+                        start=pd.Timestamp("2024-01-01 21:00"),
+                        func="BCF")
+        self.assertTrue(np.isnan(meta.r2))
+
+    def test_string_participant(self):
+        """participant field should accept strings."""
+        meta = MetaInfo(participant="P01",
+                        start=pd.Timestamp("2024-01-01"),
+                        func="BSBCF")
+        self.assertEqual(meta.participant, "P01")
+
+
+# ---------------------------------------------------------------------------
+# utils.py — ResultsCollector tests
+# ---------------------------------------------------------------------------
+
+class TestResultsCollector(unittest.TestCase):
+    """Tests for ResultsCollector."""
+
+    def setUp(self):
+        self.tmpdir = "/tmp/melafit_test_results/"
+        self.filename = "test_results"
+        # Generate one analysis run for testing
+        self.values = bsbcf(t=T, p=BSBCF_PARAMS_ARRAY)
+        self.times = pd.date_range(
+            start="2024-01-01 00:00",
+            periods=len(T),
+            freq=pd.Timedelta(minutes=1))
+        self.res = fit(T, self.values, f=bsbcf)
+        self.meta = MetaInfo(participant=1,
+                             start=pd.Timestamp("2024-01-01 00:00"),
+                             func="BSBCF",
+                             r2=0.99)
+        self.ampl = amplitude(self.values)
+        self.mid = midpoint(self.times, self.values, 0.25)
+        self.ac = area_cog(self.times, self.values)
+
+    def tearDown(self):
+        import shutil
+        import os
+        if os.path.exists(self.tmpdir):
+            shutil.rmtree(self.tmpdir)
+
+    def test_empty_collector_save_does_nothing(self):
+        """Saving an empty collector should not raise or create files."""
+        import os
+        collector = ResultsCollector()
+        collector.save(self.tmpdir, self.filename)
+        filepath = os.path.join(self.tmpdir, self.filename + ".xlsx")
+        self.assertFalse(os.path.exists(filepath))
+
+    def test_add_requires_meta_info(self):
+        """add() should raise ValueError if no MetaInfo is provided."""
+        collector = ResultsCollector()
+        with self.assertRaises(ValueError):
+            collector.add(self.res, self.ampl)
+
+    def test_add_rejects_unknown_type(self):
+        """add() should raise TypeError on unsupported argument type."""
+        collector = ResultsCollector()
+        with self.assertRaises(TypeError):
+            collector.add(self.meta, "not a valid object")
+
+    def test_add_full_profile(self):
+        """add() should accept all marker types together."""
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        self.assertEqual(len(collector._records), 1)
+
+    def test_add_partial_dlmo(self):
+        """add() should work with only MetaInfo, fit result and midpoint."""
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.mid)
+        self.assertEqual(len(collector._records), 1)
+
+    def test_argument_order_irrelevant(self):
+        """add() should produce identical records regardless of arg order."""
+        c1 = ResultsCollector()
+        c2 = ResultsCollector()
+        c1.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        c2.add(self.ac, self.mid, self.ampl, self.res, self.meta)
+        self.assertEqual(c1._records, c2._records)
+
+    def test_record_contains_meta_fields(self):
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        record = collector._records[0]
+        for key in ["participant", "start", "func", "r2"]:
+            self.assertIn(key, record)
+
+    def test_record_contains_marker_fields(self):
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        record = collector._records[0]
+        for key in ["amplitude", "dlmon", "dlmoff", "midpoint",
+                    "threshold", "area", "cog", "func_params"]:
+            self.assertIn(key, record)
+
+    def test_record_timing_fields_are_strings(self):
+        """Timing fields should be stored as HH:MM strings."""
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        record = collector._records[0]
+        for key in ["dlmon", "dlmoff", "midpoint", "cog"]:
+            self.assertIsInstance(record[key], str)
+
+    def test_save_creates_file(self):
+        """save() should create the Excel file at the expected location."""
+        import os
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        collector.save(self.tmpdir, self.filename)
+        filepath = os.path.join(self.tmpdir, self.filename + ".xlsx")
+        self.assertTrue(os.path.exists(filepath))
+
+    def test_save_creates_directory(self):
+        """save() should create the result directory if missing."""
+        import os
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        collector.save(self.tmpdir, self.filename)
+        self.assertTrue(os.path.isdir(self.tmpdir))
+
+    def test_saved_excel_readable(self):
+        """The saved Excel file should be readable and contain expected columns."""
+        import os
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        collector.save(self.tmpdir, self.filename)
+        filepath = os.path.join(self.tmpdir, self.filename + ".xlsx")
+        df = pd.read_excel(filepath, index_col="participant")
+        self.assertGreater(len(df), 0)
+        for col in ["func", "r2", "amplitude", "dlmon", "dlmoff",
+                    "midpoint", "area", "cog", "func_params"]:
+            self.assertIn(col, df.columns)
+
+    def test_multiple_participants_sorted_in_excel(self):
+        """Excel output should have participants sorted by ID."""
+        import os
+        collector = ResultsCollector()
+        meta2 = MetaInfo(participant=3,
+                         start=pd.Timestamp("2024-01-02 00:00"),
+                         func="BSBCF", r2=0.97)
+        meta3 = MetaInfo(participant=2,
+                         start=pd.Timestamp("2024-01-03 00:00"),
+                         func="BSBCF", r2=0.98)
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        collector.add(meta2, self.res, self.ampl, self.mid, self.ac)
+        collector.add(meta3, self.res, self.ampl, self.mid, self.ac)
+        collector.save(self.tmpdir, self.filename)
+        filepath = os.path.join(self.tmpdir, self.filename + ".xlsx")
+        df = pd.read_excel(filepath, index_col="participant")
+        self.assertEqual(list(df.index), [1, 2, 3])
+
+    def test_dlmo_workflow_nan_fields(self):
+        """A DLMO-style add() should leave non-applicable fields as NaN."""
+        import os
+        meta_dlmo = MetaInfo(participant=1,
+                             start=pd.Timestamp("2024-01-01 18:00"),
+                             func="BSBCF")  # r2 defaults to NaN
+        collector = ResultsCollector()
+        collector.add(meta_dlmo, self.res, self.mid)
+        collector.save(self.tmpdir, self.filename)
+        filepath = os.path.join(self.tmpdir, self.filename + ".xlsx")
+        df = pd.read_excel(filepath, index_col="participant")
+        # r2 should be NaN since it wasn't computed
+        self.assertTrue(pd.isna(df["r2"].iloc[0]))
+        # area and cog should be missing as columns (no AreaCogResult added)
+        self.assertNotIn("area", df.columns)
 
 
 if __name__ == "__main__":
