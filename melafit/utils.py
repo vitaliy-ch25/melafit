@@ -407,7 +407,7 @@ def phase_diff(phase1: np.float64,
     return dp
 
 
-def params_to_string(params: dict | np.ndarray, ndec: int = 3) -> str:
+def params_to_string(params: Mapping | np.ndarray, ndec: int = 3) -> str:
     """
     Convert curve fitting parameters to string.
 
@@ -424,7 +424,7 @@ def params_to_string(params: dict | np.ndarray, ndec: int = 3) -> str:
             String representation of curve fitting parameters
     """
 
-    if isinstance(params, dict):
+    if isinstance(params, Mapping):
         param_strs = [f"{key}={value:.{ndec}f}"
                       for key, value in params.items()]
     else:

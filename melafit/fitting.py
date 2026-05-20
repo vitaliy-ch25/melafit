@@ -128,7 +128,7 @@ def _resolve_params(p: np.ndarray | Mapping) -> np.ndarray:
     return p
 
 def bcf(t: np.ndarray,
-        p: dict | np.ndarray) -> np.ndarray:
+        p: Mapping | np.ndarray) -> np.ndarray:
     """
     Baseline cosine function
     [Ruf '92](https://doi.org/10.1076/brhm.27.2.153.12942)
@@ -167,7 +167,7 @@ def bcf(t: np.ndarray,
     return bcf_val
 
 def sbcf(t: np.ndarray,
-         p: dict | np.ndarray) -> np.ndarray:
+         p: Mapping | np.ndarray) -> np.ndarray:
     """
     Skewed baseline cosine function
     [Van Someren & Nagtegaal '07](https://doi.org/10.1016/j.sleep.2007.03.012)
@@ -208,7 +208,7 @@ def sbcf(t: np.ndarray,
     return sbcf_val
 
 def bbcf(t: np.ndarray,
-         p: dict | np.ndarray) -> np.ndarray:
+         p: Mapping | np.ndarray) -> np.ndarray:
     """
     Bimodal baseline cosine function
     [Van Someren & Nagtegaal '07](https://doi.org/10.1016/j.sleep.2007.03.012)
@@ -249,7 +249,7 @@ def bbcf(t: np.ndarray,
     return bbcf_val
 
 def bsbcf(t: np.ndarray,
-          p: np.ndarray) -> np.ndarray:
+          p: Mapping | np.ndarray) -> np.ndarray:
     """
     Bimodal skewed baseline cosine function
     [Van Someren & Nagtegaal '07](https://doi.org/10.1016/j.sleep.2007.03.012)
@@ -258,12 +258,12 @@ def bsbcf(t: np.ndarray,
     ----------
         t : Numpy array of floats
             Time values for the bsbcf waveform
-        p : Numpy array of floats
+        p : Dictionary or Numpy array of floats
             BSBCF parameters phi, b, H, c, v, m
 
     Returns
     -------
-        bsbcf_val : Dictionary or Numpy array of floats
+        bsbcf_val : Numpy array of floats
             Values of the BSBCF function for the respective time points
 
     See also
@@ -301,13 +301,13 @@ BUILTIN_PARAM_NAMES = {
     bsbcf: BSBCF_PARAM_NAMES,
 }
 
-def params_to_array(params: dict) -> np.ndarray:
+def params_to_array(params: Mapping) -> np.ndarray:
     """
     Convert parameter dictionary to numpy array for scipy.optimize.
 
     Parameters
     ----------
-        params : dict
+        params : Mapping
             Dictionary of parameter names and values
     Returns
     -------
@@ -558,9 +558,9 @@ def func_defaults(data_fit: np.ndarray,
 def fit(time_fit: np.ndarray,
         data_fit: np.ndarray,
         f: callable=bsbcf,
-        p0: np.ndarray | None = None,
-        lb: np.ndarray | None = None,
-        ub: np.ndarray | None = None,
+        p0: dict | np.ndarray | None = None,
+        lb: dict | np.ndarray | None = None,
+        ub: dict | np.ndarray | None = None,
         cost_f: callable=cost,
         cost_p: dict | None = None) -> FitResult:
     """
@@ -574,13 +574,13 @@ def fit(time_fit: np.ndarray,
             Y-values for curve fitting (melatonin levels)
         f : callable
             Melatonin wave approximation function (defaults to `bsbcf`)
-        p0 : Numpy array of floats or None
+        p0 : dict, Numpy array of floats, or None
             Non-standard initial values for wave approximation function
             (defaults to 'None')
-        lb : Numpy array of floats or None
+        lb : dict, Numpy array of floats, or None
             Non-standard lower bounds for wave approximation function
             parameters (defaults to 'None')
-        ub : Numpy array of floats or None
+        ub : dict, Numpy array of floats, or None
             Non-standard upper bounds for wave approximation function
             parameters (defaults to 'None')
         cost_f : callable
