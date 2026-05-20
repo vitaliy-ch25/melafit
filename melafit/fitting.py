@@ -39,7 +39,7 @@ Functions:
 
 Classes:
 --------
-None
+- FitResult : OptimizeResult subclass implementing the MelaResult interface
 
 Constants:
 ----------
@@ -50,6 +50,41 @@ Constants:
 
 import scipy.optimize as opt
 import numpy as np
+from melafit.markers import MelaResult
+from melafit.utils import params_to_string
+
+class FitResult(MelaResult, opt.OptimizeResult):
+    """
+    Optimization result implementing the :class:`MelaResult` interface.
+
+    A thin subclass of :class:`scipy.optimize.OptimizeResult` that adds
+    :meth:`to_dict`, making it compatible with
+    :class:`melafit.utils.ResultsCollector`. All standard scipy attributes
+    (``x``, ``fun``, ``success``, ``nit``, etc.) are preserved.
+
+    Attributes
+    ----------
+        p : dict or None
+            Fitted parameters as a named dictionary, or None if no
+            parameter names are available (e.g. custom functions with
+            array-only bounds)
+    """
+
+    def to_dict(self) -> dict:
+        """
+        Return fitted parameters as a dictionary entry.
+
+        Returns
+        -------
+            d : dict
+                ``{'func_params': <str>}`` with parameters formatted by
+                :func:`melafit.utils.params_to_string`, or
+                ``{'func_params': None}`` if no parameter names are
+                available.
+        """
+        return {"func_params": (params_to_string(self.p)
+                                if self.p is not None else None)}
+
 
 # Parameter names for melatonin wave approximation functions
 BCF_PARAM_NAMES   = ["phi", "b", "H", "c"]
@@ -501,7 +536,7 @@ def fit(time_fit: np.ndarray,
         lb: np.ndarray | None = None,
         ub: np.ndarray | None = None,
         cost_f: callable=cost,
-        cost_p: dict | None = None) -> opt.OptimizeResult:
+        cost_p: dict | None = None) -> FitResult:
     """
     Melatonin data fitting routine
 
@@ -529,7 +564,7 @@ def fit(time_fit: np.ndarray,
 
     Returns
     -------
-        res : OptimizeResult
+        res : FitResult
             Optimization result including parameters of the fitted function
             in the field `x`
 
@@ -580,4 +615,4 @@ def fit(time_fit: np.ndarray,
         res.p = (dict(zip(param_names, res.x))
                  if param_names is not None else None)
 
-    return res
+    return FitResult(res)

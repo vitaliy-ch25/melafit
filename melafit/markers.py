@@ -28,16 +28,17 @@ Markers Computed:
 
 Result Dataclasses:
 -------------------
+- MelaResult : Abstract base class defining the to_dict() interface for
+    all result types
 - AnalysisInfo : Identifying information about an analysis (participant, start,
     waveform function name, goodness of fit)
 - AmplitudeResult : Wrapper for amplitude marker
 - MidpointResult : Wrapper for midpoint, DLMOn, DLMOff and threshold
 - AreaCogResult : Wrapper for area under curve and center of gravity
 
-Each result dataclass provides a `to_dict()` method returning a
-dictionary suitable for tabular output. Timing fields (phase values)
-are formatted as HH:MM strings; other fields are returned as native
-types.
+All result dataclasses inherit from MelaResult and implement `to_dict()`,
+returning a dictionary suitable for tabular output. Timing fields (phase
+values) are formatted as HH:MM strings; other fields as native types.
 
 Functions:
 ----------
@@ -60,13 +61,29 @@ References:
 
 import numpy as np
 import pandas as pd
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 from melafit.utils import (day_profile, abs_threshold, time_to_phase,
                             phase_to_string)
 
 
+class MelaResult(ABC):
+    """
+    Abstract base class for all melafit result types.
+
+    All subclasses must implement :meth:`to_dict`, returning a dictionary
+    suitable for tabular output (e.g. for use with
+    :class:`melafit.utils.ResultsCollector`).
+    """
+
+    @abstractmethod
+    def to_dict(self) -> dict:
+        """Return result fields as a dictionary for tabular output."""
+        ...
+
+
 @dataclass
-class AnalysisInfo:
+class AnalysisInfo(MelaResult):
     """
     Identifying information about a single melatonin analysis.
 
@@ -102,7 +119,7 @@ class AnalysisInfo:
 
 
 @dataclass
-class AmplitudeResult:
+class AmplitudeResult(MelaResult):
     """
     Result of peak-to-baseline amplitude computation.
 
@@ -127,7 +144,7 @@ class AmplitudeResult:
 
 
 @dataclass
-class MidpointResult:
+class MidpointResult(MelaResult):
     """
     Result of midpoint, DLMOn and DLMOff computation.
 
@@ -171,7 +188,7 @@ class MidpointResult:
 
 
 @dataclass
-class AreaCogResult:
+class AreaCogResult(MelaResult):
     """
     Result of area under curve and center of gravity computation.
 

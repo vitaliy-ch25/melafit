@@ -206,19 +206,23 @@ on <Date>.
 ## Revision History
 
 ### [v0.2.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.2.0) - Simplified API
-- New result dataclasses in markers.py: AnalysisInfo, AmplitudeResult,
-  MidpointResult, AreaCogResult
+- New abstract base class MelaResult in markers.py defining the
+  to_dict() interface for all result types
+- New result dataclasses in markers.py inheriting from MelaResult:
+  AnalysisInfo, AmplitudeResult, MidpointResult, AreaCogResult
+- New FitResult class in fitting.py inheriting from both MelaResult and
+  OptimizeResult; fit() now returns FitResult
 - amplitude(), midpoint() and area_cog() now return their respective
   dataclasses instead of tuples/floats
-- New to_dict() method on all result dataclasses: timing fields
-  returned as HH:MM strings, other fields as native types
+- to_dict() on all result classes: timing fields returned as HH:MM
+  strings, other fields as native types
 - AnalysisInfo.r2 defaults to NaN for convenience in DLMO workflows
-- New ResultsCollector class in utils.py with type-dispatched add() method
-  accepting any combination of result objects in any order
+- New ResultsCollector class in utils.py; add() accepts any MelaResult
+  subclass instance in any order
 - New string_to_phase() utility function in utils.py (inverse of
   phase_to_string)
 - Example scripts simplified using ResultsCollector
-- Unit tests for new dataclasses, ResultsCollector and string_to_phase
+- Unit tests for all new classes and methods
 
 ### [v0.1.3](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.1.3)
 - Improved documentation

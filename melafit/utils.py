@@ -440,12 +440,11 @@ class ResultsCollector:
     Accumulates per-participant melatonin marker results and saves them to
     an Excel spreadsheet.
 
-    The :meth:`add` method accepts any combination of typed result objects
-    (AnalysisInfo, OptimizeResult, AmplitudeResult, MidpointResult,
-     AreaCogResult)
-    in any order. The collector identifies each by type and merges its fields
-    into a single row per participant. Missing fields appear as NaN in the
-    output. Timing fields are stored as HH:MM strings in the Excel output.
+    The :meth:`add` method accepts any combination of
+    :class:`~melafit.markers.MelaResult` subclass instances in any order.
+    It calls :meth:`to_dict` on each and merges the resulting fields into a
+    single row per participant. Missing fields appear as NaN in the output.
+    Timing fields are stored as HH:MM strings in the Excel output.
 
     The caller is responsible for appending the waveform function name to
     the filename when saving.
@@ -459,10 +458,10 @@ class ResultsCollector:
 
     See also
     --------
-        :class:`melafit.markers.AnalysisInfo` : Participant/run identification
-        :class:`melafit.markers.AmplitudeResult` : Amplitude marker result
-        :class:`melafit.markers.MidpointResult` : Midpoint/DLMO marker result
-        :class:`melafit.markers.AreaCogResult` : Area/COG marker result
+        :class:`melafit.markers.MelaResult` : Abstract base class for all
+        result types
+        :class:`melafit.fitting.FitResult` : Optimization result with
+        MelaResult interface
     """
 
     def __init__(self):
@@ -472,41 +471,38 @@ class ResultsCollector:
         """
         Add one analysis run to the collector.
 
-        Accepts any combination of AnalysisInfo, OptimizeResult and marker
-        result dataclasses in any order. Exactly one AnalysisInfo is required.
+        Accepts any combination of :class:`~melafit.markers.MelaResult`
+        subclass instances in any order. Exactly one
+        :class:`~melafit.markers.AnalysisInfo` is required.
 
         Parameters
         ----------
-            *args : AnalysisInfo, OptimizeResult, AmplitudeResult,
-                    MidpointResult, AreaCogResult
-                Result objects from one analysis run
+            *args : MelaResult
+                Any combination of MelaResult subclass instances from
+                one analysis run
 
         Raises
         ------
+            TypeError
+                If any argument is not a MelaResult subclass instance
             ValueError
                 If no AnalysisInfo is provided among the arguments
         """
 
         # Local import to avoid circular dependency
-        from melafit.markers import (AnalysisInfo, AmplitudeResult,
-                                       MidpointResult, AreaCogResult)
+        from melafit.markers import MelaResult, AnalysisInfo
 
         record = {}
         meta_found = False
 
         for obj in args:
-            if isinstance(obj, AnalysisInfo):
-                record.update(obj.to_dict())
-                meta_found = True
-            elif isinstance(obj, opt.OptimizeResult):
-                record["func_params"] = params_to_string(obj.p)
-            elif isinstance(obj, (AmplitudeResult, MidpointResult,
-                                   AreaCogResult)):
-                record.update(obj.to_dict())
-            else:
+            if not isinstance(obj, MelaResult):
                 raise TypeError(
                     f"ResultsCollector.add() received unsupported type "
                     f"{type(obj).__name__}")
+            if isinstance(obj, AnalysisInfo):
+                meta_found = True
+            record.update(obj.to_dict())
 
         if not meta_found:
             raise ValueError("ResultsCollector.add() requires an AnalysisInfo "
