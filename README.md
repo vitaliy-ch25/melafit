@@ -270,7 +270,7 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 
 ## Revision History
 
-### [v0.4.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.0)
+### [v0.4.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.0) - Improved API and examples
 - New minimal getting-started example `example_one_fit.py`: single-participant
   fit with `bsbcf`, `area_cog`, result collection, plot and Excel export
 - `os.makedirs(result_path, exist_ok=True)` added to `example_dlmo.py` and
