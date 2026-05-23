@@ -46,8 +46,10 @@ Constants:
 
 import scipy.optimize as opt
 import numpy as np
+import pandas as pd
 from collections.abc import Mapping
 from melafit.results import FitResult
+from melafit.utils import to_days
 
 # Parameter names for melatonin wave approximation functions
 BCF_PARAM_NAMES   = ["phi", "b", "H", "c"]
@@ -492,7 +494,7 @@ def func_defaults(data_fit: np.ndarray,
             array_to_params(lb, f),
             array_to_params(ub, f))
 
-def fit(time_fit: np.ndarray,
+def fit(time_fit: np.ndarray | pd.Series,
         data_fit: np.ndarray,
         f: callable=bsbcf,
         p0: dict | np.ndarray | None = None,
@@ -505,8 +507,11 @@ def fit(time_fit: np.ndarray,
 
     Parameters
     ----------
-        time_fit : Numpy array of floats
-            X-values for curve fitting (time)
+        time_fit : np.ndarray or pd.Series
+            X-values for curve fitting (time). Accepts a float array of
+            days since UTC epoch (e.g. from :func:`melafit.utils.gen_time_range`)
+            or a datetime64 array / pandas Timestamp Series, which is converted
+            automatically via :func:`melafit.utils.to_days`
         data_fit : Numpy array of floats
             Y-values for curve fitting (melatonin levels)
         f : callable
@@ -536,6 +541,9 @@ def fit(time_fit: np.ndarray,
         :func:`cost`, :func:`func_defaults`: Cost function, default initial 
         conditions and bounds for fitting
     """
+
+    if hasattr(time_fit, 'dtype') and np.issubdtype(time_fit.dtype, np.datetime64):
+        time_fit = to_days(time_fit)
 
     # Only try to fetch defaults if we recognize the function
     if f in BUILTIN_PARAM_NAMES.keys():
@@ -575,4 +583,6 @@ def fit(time_fit: np.ndarray,
         else:
             param_names = None
 
-    return FitResult(result=res, wave_func=f, param_names=param_names)
+    r2 = rsquared(data_fit, f(t=time_fit, p=res.x))
+
+    return FitResult(result=res, wave_func=f, param_names=param_names, r2=r2)

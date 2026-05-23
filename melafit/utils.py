@@ -10,9 +10,11 @@ Data I/O Functions:
 - read_data : Load melatonin data from Excel spreadsheet
 - prepare_part_data : Extract and preprocess single participant's data
 
-Waveform Functions:
--------------------
-- compute_wave : Generate a full 24h waveform curve at specified time resolution
+Time Conversion:
+----------------
+- to_days        : Convert timestamps to float days since the Unix UTC epoch
+- from_days      : Convert float days since the Unix UTC epoch to DatetimeIndex
+- gen_time_range : Generate a time axis as float days since UTC epoch
 
 Time Series Analysis:
 ---------------------
@@ -51,6 +53,53 @@ import pandas as pd
 import datetime as dt
 import scipy.optimize as opt
 from collections.abc import Mapping
+
+_EPOCH = pd.Timestamp("1970-01-01", tz="UTC")
+
+
+def to_days(timestamps: np.ndarray | pd.Series | pd.DatetimeIndex) -> np.ndarray:
+    """
+    Convert timestamps to float days since the Unix UTC epoch (1970-01-01).
+
+    The integer part is the day count and the fractional part is the fraction
+    of the day. Timezone-naive input is assumed to be UTC; timezone-aware
+    input is converted to UTC before the calculation.
+
+    Parameters
+    ----------
+        timestamps : np.ndarray, pd.Series, or pd.DatetimeIndex
+            Timestamps to convert (datetime64, Timestamp, or compatible)
+
+    Returns
+    -------
+        days : np.ndarray of float
+            Float days since 1970-01-01 UTC
+    """
+    ts = pd.DatetimeIndex(timestamps)
+    if ts.tz is None:
+        ts = ts.tz_localize("UTC")
+    else:
+        ts = ts.tz_convert("UTC")
+    return ((ts - _EPOCH) / pd.Timedelta(days=1)).to_numpy()
+
+
+def from_days(days: np.ndarray) -> pd.DatetimeIndex:
+    """
+    Convert float days since the Unix UTC epoch to a DatetimeIndex.
+
+    Inverse of :func:`to_days`. Returns a timezone-aware DatetimeIndex (UTC).
+
+    Parameters
+    ----------
+        days : np.ndarray of float
+            Float days since 1970-01-01 UTC
+
+    Returns
+    -------
+        timestamps : pd.DatetimeIndex
+            UTC-aware timestamps corresponding to the input day values
+    """
+    return pd.DatetimeIndex(_EPOCH + pd.to_timedelta(days, unit='D'))
 
 
 def read_data(data_pathname: str) -> pd.DataFrame:
@@ -106,16 +155,10 @@ def prepare_part_data(data: pd.DataFrame,
             Prepared data for one participant
     """
 
-    p_data = data.loc[data.Participant == participant]
+    p_data = data.loc[data.Participant == participant].copy()
+    p_data = p_data.drop(columns=['Date', 'Time'])
 
-    base = p_data.Timestamp.min()
-    diff = p_data.Timestamp - base
-    p_data["Timedays"] = (diff.dt.total_seconds() / (24 * 60 * 60) +
-                          base.hour / 24 +
-                          base.minute / (24 * 60) +
-                          base.second / (24 * 60 * 60))
-
-    idiff = np.diff(p_data.Timedays) < 0
+    idiff = np.diff(to_days(p_data.Timestamp.values)) < 0
 
     if any(idiff):
         ix = np.where(idiff)
@@ -123,54 +166,67 @@ def prepare_part_data(data: pd.DataFrame,
         for i in ix:
             idx = p_data.index[i[0] + 1]
             p_data.loc[idx, 'Timestamp'] += pd.Timedelta(days=1)
-            p_data.loc[idx, 'Timedays'] += 1.0
             print(f"Corrected one timestamp for participant {participant}")
 
     return p_data
 
 
-def compute_wave(tmin: np.float64,
-                 tmax: np.float64,
-                 dt_minutes: np.float64,
-                 f: callable,
-                 p: Mapping | np.ndarray,
-                 full_wave: bool = True) -> np.ndarray:
+def gen_time_range(
+    series: pd.Series | None = None,
+    *,
+    tmin: pd.Timestamp | None = None,
+    tmax: pd.Timestamp | None = None,
+    step: str | pd.Timedelta,
+    full_day: bool = True,
+) -> np.ndarray:
     """
-    Compute waveform resampled to given time resolution.
+    Generate a resampled time axis as float days since the Unix UTC epoch.
+
+    The integer part of each value is the day count and the fractional part
+    is the fraction of the day. The returned array is compatible with the
+    waveform functions and plottable on matplotlib date axes.
 
     Parameters
     ----------
-        tmin : float
-            Start time (1.0 = 24 hours)
-        tmax : float
-            Stop time (inclusive, 1.0 = 24 hours)
-        dt_minutes : float
-            Time increment in minutes
-        f : callable
-            Waveform function
-        p : Mapping, FitResult, or Numpy array of floats
-            Waveform parameter vector
-        full_wave : bool
-            If True and (tmax-tmin) < 1.0, tmax = tmin + 1.0 (defaults to
-            True)
+        series : pd.Series, optional
+            Timestamp series used to infer tmin and/or tmax when not given
+            explicitly
+        tmin : pd.Timestamp, optional
+            Start of the time range; overrides series.min() when given
+        tmax : pd.Timestamp, optional
+            End of the time range (inclusive); overrides series.max() when given
+        step : str or pd.Timedelta
+            Time step as a pandas offset string (e.g. ``"1min"``, ``"5min"``,
+            ``"1h"``) or a :class:`pd.Timedelta`
+        full_day : bool
+            If True and (tmax - tmin) < 24 h, extend tmax to tmin + 24 h
+            (defaults to True)
 
     Returns
     -------
-        curve_val : Numpy array of floats
-            Values of the waveform function for the respective time points
+        time_range : Numpy array of floats
+            Time axis as float days since 1970-01-01 UTC
     """
+    if series is not None:
+        if tmin is None:
+            tmin = series.min()
+        if tmax is None:
+            tmax = series.max()
+    if tmin is None or tmax is None:
+        raise ValueError("Provide series or both tmin and tmax")
 
-    if full_wave and ((tmax - tmin) < 1.0):
-        tmax = tmin + 1.0
+    tmin_num = to_days([tmin])[0]
+    tmax_num = to_days([tmax])[0]
 
-    step = 1.0 / (dt_minutes * 24 * 60)
-    time_curve = np.arange(tmin, tmax + 1.1 * step, step)
-    curve_val = f(t=time_curve, p=p)
+    if full_day and (tmax_num - tmin_num) < 1.0:
+        tmax_num = tmin_num + 1.0
 
-    return curve_val
+    step_days = pd.Timedelta(step).total_seconds() / 86400
+    return np.arange(tmin_num, tmax_num + 1.1 * step_days, step_days)
 
 
-def day_profile(times: pd.DatetimeIndex,
+
+def day_profile(times: np.ndarray | pd.DatetimeIndex,
                 values: np.ndarray,
                 binsize: int = 60,
                 double: bool = False,
@@ -181,8 +237,9 @@ def day_profile(times: pd.DatetimeIndex,
 
     Parameters
     ----------
-        times : pandas DatetimeIndex
-            Time stamps
+        times : np.ndarray or pandas DatetimeIndex
+            Time stamps as a DatetimeIndex or as float days since the UTC
+            epoch (as returned by :func:`gen_time_range`)
         values : numpy array
             Data values
         binsize : int
@@ -199,6 +256,9 @@ def day_profile(times: pd.DatetimeIndex,
         profile : tuple[pd.Series, pd.Series]
             Bin averages and standard errors with index in hours (0..24)
     """
+
+    if isinstance(times, np.ndarray):
+        times = from_days(times)
 
     data = pd.Series(index=times, data=values)
 

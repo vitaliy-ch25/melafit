@@ -70,7 +70,7 @@ def amplitude(values: np.ndarray) -> AmplitudeResult:
     return AmplitudeResult(amplitude=np.max(values) - np.min(values))
 
 
-def midpoint(times: pd.DatetimeIndex,
+def midpoint(times: np.ndarray | pd.DatetimeIndex,
              values: np.ndarray,
              threshold: np.float64,
              thresh_abs: bool = False) -> MidpointResult:
@@ -84,8 +84,9 @@ def midpoint(times: pd.DatetimeIndex,
 
     Parameters
     ----------
-        times : pandas DatetimeIndex
-            Datetime values
+        times : np.ndarray or pandas DatetimeIndex
+            Datetime values as a DatetimeIndex or as float days since the
+            UTC epoch (as returned by :func:`melafit.utils.gen_time_range`)
         values : Numpy array of floats
             Melatonin waveform values
         threshold : float
@@ -104,8 +105,7 @@ def midpoint(times: pd.DatetimeIndex,
 
     See also
     --------
-        :func:`melafit.utils.compute_wave` : Compute waveform resampled to
-        given time resolution
+        :func:`melafit.utils.gen_time_range` : Generate resampled time axis
     """
 
     d_profile = day_profile(times, values, binsize=1)[0]
@@ -136,7 +136,7 @@ def midpoint(times: pd.DatetimeIndex,
                           threshold=threshold)
 
 
-def area_cog(times: pd.DatetimeIndex,
+def area_cog(times: np.ndarray | pd.DatetimeIndex,
              values: np.ndarray,
              baseline: np.float64 | None = None) -> AreaCogResult:
     """
@@ -144,8 +144,9 @@ def area_cog(times: pd.DatetimeIndex,
 
     Parameters
     ----------
-        times : pandas DatetimeIndex
-            Datetime values
+        times : np.ndarray or pandas DatetimeIndex
+            Datetime values as a DatetimeIndex or as float days since the
+            UTC epoch (as returned by :func:`melafit.utils.gen_time_range`)
         values : Numpy array of floats
             Waveform values
         baseline : float or None
@@ -160,8 +161,7 @@ def area_cog(times: pd.DatetimeIndex,
 
     See also
     --------
-        :func:`melafit.utils.compute_wave` : Compute waveform resampled to
-        given time resolution
+        :func:`melafit.utils.gen_time_range` : Generate resampled time axis
     """
 
     if baseline is None:

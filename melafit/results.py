@@ -6,14 +6,14 @@ pipeline and the :class:`ResultsCollector` utility for accumulating them.
 
 Classes:
 --------
-- AnalysisResult   : Abstract base class defining the to_dict() interface
-- AnalysisInfo     : Identifying information about an analysis session
+- AnalysisRecord   : Abstract base class defining the to_dict() interface
+- SessionInfo      : Identifying information about a data acquisition session
 - AmplitudeResult  : Wrapper for the peak-to-baseline amplitude marker
 - MidpointResult   : Wrapper for DLMOn, DLMOff, midpoint and threshold
 - AreaCogResult    : Wrapper for area under curve and center of gravity
 - FitResult        : Wrapper for a scipy optimization result; implements
     the Mapping protocol so it can be used directly wherever a parameter
-    dict is expected (waveform functions, compute_wave, etc.)
+    dict is expected (waveform functions, etc.)
 - ResultsCollector : Accumulates per-participant results and saves them
     to an Excel spreadsheet
 
@@ -30,11 +30,11 @@ import pandas as pd
 import scipy.optimize as opt
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, field, asdict, InitVar
 from melafit.utils import phase_to_string
 
 
-class AnalysisResult(ABC):
+class AnalysisRecord(ABC):
     """
     Abstract base class for all melafit analysis result types.
 
@@ -50,28 +50,36 @@ class AnalysisResult(ABC):
 
 
 @dataclass
-class AnalysisInfo(AnalysisResult):
+class SessionInfo(AnalysisRecord):
     """
-    Identifying information about a single melatonin analysis.
+    Identifying information about a data acquisition session.
+
+    Parameters
+    ----------
+        p_data : pd.DataFrame
+            Single-participant DataFrame as returned by
+            :func:`melafit.utils.prepare_part_data`. ``participant``,
+            ``start``, and ``end`` are derived from it automatically.
 
     Attributes
     ----------
         participant : int or str
             Participant identifier
         start : pd.Timestamp
-            Start timestamp of the analysis session
-        func : str
-            Name of the waveform function used for fitting
-        r2 : float
-            R² goodness of fit (defaults to NaN if not provided, which is
-            convenient when r2 is not computed, e.g. for partial-data DLMO
-            detection)
+            Start timestamp of the acquisition session
+        end : pd.Timestamp
+            End timestamp of the acquisition session
     """
 
-    participant: int | str
-    start: pd.Timestamp
-    func: str
-    r2: np.float64 = float("nan")
+    p_data: InitVar[pd.DataFrame]
+    participant: int | str = field(init=False)
+    start: pd.Timestamp = field(init=False)
+    end: pd.Timestamp = field(init=False)
+
+    def __post_init__(self, p_data: pd.DataFrame):
+        self.participant = p_data.Participant.iloc[0]
+        self.start = p_data.Timestamp.min()
+        self.end = p_data.Timestamp.max()
 
     def to_dict(self) -> dict:
         """
@@ -86,7 +94,7 @@ class AnalysisInfo(AnalysisResult):
 
 
 @dataclass
-class AmplitudeResult(AnalysisResult):
+class AmplitudeResult(AnalysisRecord):
     """
     Result of peak-to-baseline amplitude computation.
 
@@ -111,7 +119,7 @@ class AmplitudeResult(AnalysisResult):
 
 
 @dataclass
-class MidpointResult(AnalysisResult):
+class MidpointResult(AnalysisRecord):
     """
     Result of midpoint, DLMOn and DLMOff computation.
 
@@ -155,7 +163,7 @@ class MidpointResult(AnalysisResult):
 
 
 @dataclass
-class AreaCogResult(AnalysisResult):
+class AreaCogResult(AnalysisRecord):
     """
     Result of area under curve and center of gravity computation.
 
@@ -186,12 +194,12 @@ class AreaCogResult(AnalysisResult):
         }
 
 
-class FitResult(AnalysisResult, Mapping):
+class FitResult(AnalysisRecord, Mapping):
     """
-    Wrapper of optimization result implementing the :class:`AnalysisResult`
+    Wrapper of optimization result implementing the :class:`AnalysisRecord`
     and :class:`collections.abc.Mapping` interfaces. Mapping support allows
     ``FitResult`` to be passed directly wherever a parameter dict is accepted
-    (waveform functions, :func:`melafit.utils.compute_wave`, etc.). All
+    (waveform functions, etc.). All
     standard scipy attributes (``x``, ``fun``, ``success``, ``nit``, etc.)
     are preserved in the field ``result`` of type
     :class:`scipy.optimize.OptimizeResult`.
@@ -204,13 +212,17 @@ class FitResult(AnalysisResult, Mapping):
         result : scipy.optimize.OptimizeResult
             Result of the optimization procedure including fitted parameters
             in the field ``x``
+        r2 : float
+            R² goodness of fit of the optimized parameters against the data
+            passed to :func:`melafit.fitting.fit`
     """
 
     def __init__(self, result: opt.OptimizeResult, wave_func: callable,
-                 param_names: list | None):
+                 param_names: list | None, r2: np.float64 = float("nan")):
         self.wave_func = wave_func
         self.result = result
         self._param_names = param_names
+        self.r2 = r2
 
     # ------------------------------------------------------------------
     # Mapping protocol — enables direct use as a parameter dict
@@ -234,16 +246,20 @@ class FitResult(AnalysisResult, Mapping):
 
     def to_dict(self) -> dict:
         """
-        Return fitted parameters as a named dictionary.
+        Return fitted parameters, function name, and R² as a named dictionary.
 
         Returns
         -------
             d : dict
-                ``{name: value, ...}`` for each fitted parameter, or an
-                empty dict if no parameter names are available (e.g. a
-                custom function with array-only bounds).
+                ``{"func": name, name: value, ..., "r2": value}`` — function
+                name first, then one entry per fitted parameter, then R².
+                Parameter entries are empty if no parameter names are available
+                (e.g. a custom function with array-only bounds).
         """
-        return dict(self)
+        d = {"func": self.wave_func.__name__}
+        d.update(dict(self))
+        d["r2"] = self.r2
+        return d
 
 
 class ResultsCollector:
@@ -252,7 +268,7 @@ class ResultsCollector:
     an Excel spreadsheet.
 
     The :meth:`add` method accepts any combination of
-    :class:`AnalysisResult` subclass instances in any order. It calls
+    :class:`AnalysisRecord` subclass instances in any order. It calls
     :meth:`to_dict` on each and merges the resulting fields into a single
     row per participant. Missing fields appear as NaN in the output.
     Timing fields are stored as HH:MM strings in the Excel output.
@@ -269,8 +285,8 @@ class ResultsCollector:
 
     See also
     --------
-        :class:`AnalysisResult` : Abstract base class for all result types
-        :class:`FitResult` : Optimization result with AnalysisResult interface
+        :class:`AnalysisRecord` : Abstract base class for all result types
+        :class:`FitResult` : Optimization result with AnalysisRecord interface
     """
 
     def __init__(self):
@@ -280,38 +296,38 @@ class ResultsCollector:
         """
         Add one analysis run to the collector.
 
-        Accepts any combination of :class:`AnalysisResult` subclass
-        instances in any order. Exactly one :class:`AnalysisInfo` is
+        Accepts any combination of :class:`AnalysisRecord` subclass
+        instances in any order. Exactly one :class:`SessionInfo` is
         required.
 
         Parameters
         ----------
-            *args : AnalysisResult
-                Any combination of AnalysisResult subclass instances from
+            *args : AnalysisRecord
+                Any combination of AnalysisRecord subclass instances from
                 one analysis run
 
         Raises
         ------
             TypeError
-                If any argument is not a AnalysisResult subclass instance
+                If any argument is not a AnalysisRecord subclass instance
             ValueError
-                If no AnalysisInfo is provided among the arguments
+                If no SessionInfo is provided among the arguments
         """
 
         record = {}
         meta_found = False
 
         for obj in args:
-            if not isinstance(obj, AnalysisResult):
+            if not isinstance(obj, AnalysisRecord):
                 raise TypeError(
                     f"ResultsCollector.add() received unsupported type "
                     f"{type(obj).__name__}")
-            if isinstance(obj, AnalysisInfo):
+            if isinstance(obj, SessionInfo):
                 meta_found = True
             record.update(obj.to_dict())
 
         if not meta_found:
-            raise ValueError("ResultsCollector.add() requires an AnalysisInfo "
+            raise ValueError("ResultsCollector.add() requires a SessionInfo "
                              "instance among its arguments")
 
         self._records.append(record)
