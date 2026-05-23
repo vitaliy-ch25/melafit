@@ -104,8 +104,7 @@ def midpoint(times: pd.DatetimeIndex,
 
     See also
     --------
-        :func:`melafit.utils.compute_wave` : Compute waveform resampled to
-        given time resolution
+        :func:`melafit.utils.gen_time_range` : Generate resampled time axis
     """
 
     d_profile = day_profile(times, values, binsize=1)[0]
@@ -160,8 +159,7 @@ def area_cog(times: pd.DatetimeIndex,
 
     See also
     --------
-        :func:`melafit.utils.compute_wave` : Compute waveform resampled to
-        given time resolution
+        :func:`melafit.utils.gen_time_range` : Generate resampled time axis
     """
 
     if baseline is None:

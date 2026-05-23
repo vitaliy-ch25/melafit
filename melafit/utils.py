@@ -12,7 +12,7 @@ Data I/O Functions:
 
 Waveform Functions:
 -------------------
-- compute_wave : Generate a full 24h waveform curve at specified time resolution
+- gen_time_range : Generate a resampled time axis as matplotlib date2num floats
 
 Time Series Analysis:
 ---------------------
@@ -51,6 +51,7 @@ import pandas as pd
 import datetime as dt
 import scipy.optimize as opt
 from collections.abc import Mapping
+from matplotlib import dates
 
 
 def read_data(data_pathname: str) -> pd.DataFrame:
@@ -108,14 +109,7 @@ def prepare_part_data(data: pd.DataFrame,
 
     p_data = data.loc[data.Participant == participant]
 
-    base = p_data.Timestamp.min()
-    diff = p_data.Timestamp - base
-    p_data["Timedays"] = (diff.dt.total_seconds() / (24 * 60 * 60) +
-                          base.hour / 24 +
-                          base.minute / (24 * 60) +
-                          base.second / (24 * 60 * 60))
-
-    idiff = np.diff(p_data.Timedays) < 0
+    idiff = np.diff(dates.date2num(p_data.Timestamp.values)) < 0
 
     if any(idiff):
         ix = np.where(idiff)
@@ -123,51 +117,50 @@ def prepare_part_data(data: pd.DataFrame,
         for i in ix:
             idx = p_data.index[i[0] + 1]
             p_data.loc[idx, 'Timestamp'] += pd.Timedelta(days=1)
-            p_data.loc[idx, 'Timedays'] += 1.0
             print(f"Corrected one timestamp for participant {participant}")
 
     return p_data
 
 
-def compute_wave(tmin: np.float64,
-                 tmax: np.float64,
-                 dt_minutes: np.float64,
-                 f: callable,
-                 p: Mapping | np.ndarray,
-                 full_wave: bool = True) -> np.ndarray:
+def gen_time_range(tmin: pd.Timestamp,
+                   tmax: pd.Timestamp,
+                   dt_minutes: float,
+                   full_day: bool = True) -> np.ndarray:
     """
-    Compute waveform resampled to given time resolution.
+    Generate a resampled time axis as matplotlib date2num floats.
+
+    The integer part of each value is the day number (days since 0001-01-01)
+    and the fractional part is the fraction of the day, matching MATLAB's
+    datenum convention. The returned array is directly plottable with
+    matplotlib date axes and compatible with the waveform functions.
 
     Parameters
     ----------
-        tmin : float
-            Start time (1.0 = 24 hours)
-        tmax : float
-            Stop time (inclusive, 1.0 = 24 hours)
+        tmin : pd.Timestamp
+            Start of the time range
+        tmax : pd.Timestamp
+            End of the time range (inclusive)
         dt_minutes : float
-            Time increment in minutes
-        f : callable
-            Waveform function
-        p : Mapping, FitResult, or Numpy array of floats
-            Waveform parameter vector
-        full_wave : bool
-            If True and (tmax-tmin) < 1.0, tmax = tmin + 1.0 (defaults to
-            True)
+            Time step in minutes
+        full_day : bool
+            If True and (tmax - tmin) < 24 h, extend tmax to tmin + 24 h
+            (defaults to True)
 
     Returns
     -------
-        curve_val : Numpy array of floats
-            Values of the waveform function for the respective time points
+        time_range : Numpy array of floats
+            Time axis as matplotlib date2num floats
     """
 
-    if full_wave and ((tmax - tmin) < 1.0):
-        tmax = tmin + 1.0
+    tmin_num = dates.date2num(tmin)
+    tmax_num = dates.date2num(tmax)
 
-    step = 1.0 / (dt_minutes * 24 * 60)
-    time_curve = np.arange(tmin, tmax + 1.1 * step, step)
-    curve_val = f(t=time_curve, p=p)
+    if full_day and (tmax_num - tmin_num) < 1.0:
+        tmax_num = tmin_num + 1.0
 
-    return curve_val
+    step = dt_minutes / (24 * 60)
+    return np.arange(tmin_num, tmax_num + 1.1 * step, step)
+
 
 
 def day_profile(times: pd.DatetimeIndex,

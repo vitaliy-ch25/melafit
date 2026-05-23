@@ -205,6 +205,24 @@ on <Date>.
 
 ## Revision History
 
+### [v0.3.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.3.0) - Cleaner API
+- `AnalysisResult` renamed to `AnalysisRecord`
+- `AnalysisInfo` renamed to `SessionInfo`; describes the data acquisition
+  session only (`participant`, `start`, `end`); `func` and `r2` removed
+- `FitResult.to_dict()` now includes `func` (waveform function name) and `r2`
+  (R² goodness of fit), both computed automatically at the end of `fit()`
+- `r2` is no longer a field of `SessionInfo`; `fit()` computes and stores it
+  in `FitResult` directly
+- `compute_wave()` eliminated; replaced by the `gen_time_range()` +
+  waveform-function pattern: `gen_time_range()` accepts `pd.Timestamp` objects
+  and returns a time axis as matplotlib `date2num` floats, which is then
+  passed directly to the waveform function (e.g.
+  `bsbcf(t=gen_time_range(...), p=fit_result)`)
+- `fit()` now accepts a `datetime64` array or pandas `Timestamp` Series for
+  `time_fit`; conversion via `matplotlib.dates.date2num` is automatic
+- `prepare_part_data()` no longer adds a `Timedays` column to the returned
+  DataFrame; time handling is done internally via `matplotlib.dates.date2num`
+
 ### [v0.2.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.2.0) - Simplified API
 - New module `results.py` with classes: `AnalysisResult` (abstract
   base), `AnalysisInfo`, `AmplitudeResult`, `MidpointResult`, `AreaCogResult`,
