@@ -193,10 +193,12 @@ research, please cite the following foundational publications:
 If there is no associated publication on `melafit` yet, please cite the
 package directly using the following reference:
 
-Kolodyazhniy, V., & Cajochen, C. (2026). melafit: High-precision circadian 
-melatonin profile analysis, version <x.y.z>. Retrieved from 
-[https://github.com/vitaliy-ch25/melafit](https://github.com/vitaliy-ch25/melafit) 
-on <Date>.
+```text
+Kolodyazhniy, V., Cajochen, C. (2026). melafit: High-precision circadian 
+melatonin profile analysis (Version x.y.z). [Computer software]. 
+Available at [https://github.com/vitaliy-ch25/melafit](https://github.com/vitaliy-ch25/melafit) 
+(Accessed: dd mm yyyy).
+```
 
 ## Authors
 
