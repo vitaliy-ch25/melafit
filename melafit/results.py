@@ -102,9 +102,12 @@ class AmplitudeResult(AnalysisRecord):
     ----------
         amplitude : float
             Peak-to-baseline amplitude of the waveform
+        baseline : float
+            Baseline (minimum) of the waveform
     """
 
     amplitude: np.float64
+    baseline: np.float64
 
     def to_dict(self) -> dict:
         """

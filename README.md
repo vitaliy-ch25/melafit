@@ -196,8 +196,7 @@ package directly using the following reference:
 ```text
 Kolodyazhniy, V., Cajochen, C. (2026). melafit: High-precision circadian 
 melatonin profile analysis (Version x.y.z). [Computer software]. 
-Available at [https://github.com/vitaliy-ch25/melafit](https://github.com/vitaliy-ch25/melafit) 
-(Accessed: dd mm yyyy).
+Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 ```
 
 ## Authors
@@ -206,6 +205,13 @@ Available at [https://github.com/vitaliy-ch25/melafit](https://github.com/vitali
 * Christian Cajochen – Scientific Lead
 
 ## Revision History
+
+### [v0.4.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.0)
+- `AmplitudeResult` now includes a `baseline` field (waveform minimum)
+- `amplitude()` computes and returns `baseline` alongside `amplitude`
+- `AmplitudeResult.to_dict()` now includes `baseline`
+- `ResultsCollector` records and Excel output now include the `baseline` column
+- Unit tests extended to cover the new `baseline` field
 
 ### [v0.3.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.3.0) - Cleaner API
 - `AnalysisResult` renamed to `AnalysisRecord`
