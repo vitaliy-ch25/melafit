@@ -30,7 +30,7 @@ import pandas as pd
 import scipy.optimize as opt
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, field, asdict, InitVar
 from melafit.utils import phase_to_string
 
 
@@ -54,6 +54,13 @@ class SessionInfo(AnalysisRecord):
     """
     Identifying information about a data acquisition session.
 
+    Parameters
+    ----------
+        p_data : pd.DataFrame
+            Single-participant DataFrame as returned by
+            :func:`melafit.utils.prepare_part_data`. ``participant``,
+            ``start``, and ``end`` are derived from it automatically.
+
     Attributes
     ----------
         participant : int or str
@@ -64,9 +71,15 @@ class SessionInfo(AnalysisRecord):
             End timestamp of the acquisition session
     """
 
-    participant: int | str
-    start: pd.Timestamp
-    end: pd.Timestamp
+    p_data: InitVar[pd.DataFrame]
+    participant: int | str = field(init=False)
+    start: pd.Timestamp = field(init=False)
+    end: pd.Timestamp = field(init=False)
+
+    def __post_init__(self, p_data: pd.DataFrame):
+        self.participant = p_data.Participant.iloc[0]
+        self.start = p_data.Timestamp.min()
+        self.end = p_data.Timestamp.max()
 
     def to_dict(self) -> dict:
         """

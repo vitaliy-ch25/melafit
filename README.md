@@ -209,19 +209,33 @@ on <Date>.
 - `AnalysisResult` renamed to `AnalysisRecord`
 - `AnalysisInfo` renamed to `SessionInfo`; describes the data acquisition
   session only (`participant`, `start`, `end`); `func` and `r2` removed
+- `SessionInfo` constructor simplified: accepts a single `p_data` DataFrame
+  (as returned by `prepare_part_data()`); `participant`, `start` and `end`
+  are derived automatically
 - `FitResult.to_dict()` now includes `func` (waveform function name) and `r2`
   (R² goodness of fit), both computed automatically at the end of `fit()`
 - `r2` is no longer a field of `SessionInfo`; `fit()` computes and stores it
   in `FitResult` directly
-- `compute_wave()` eliminated; replaced by the `gen_time_range()` +
-  waveform-function pattern: `gen_time_range()` accepts `pd.Timestamp` objects
-  and returns a time axis as matplotlib `date2num` floats, which is then
-  passed directly to the waveform function (e.g.
-  `bsbcf(t=gen_time_range(...), p=fit_result)`)
+- `compute_wave()` eliminated; replaced by the `resample_time()` +
+  waveform-function pattern: `resample_time()` accepts a Timestamp series or
+  explicit `tmin`/`tmax` bounds and a pandas offset string for `step`, and
+  returns a time axis as float days since the Unix UTC epoch, which is
+  then passed directly to the waveform function (e.g.
+  `bsbcf(t=resample_time(series, step="1min"), p=fit_result)`)
+- New helper `to_days()` converts timestamps to float days since the Unix UTC
+  epoch; timezone-naive input is treated as UTC, timezone-aware input is
+  converted to UTC first
+- New helper `from_days()` is the inverse of `to_days()`; returns a
+  UTC-aware `pd.DatetimeIndex`
+- `day_profile()`, `midpoint()` and `area_cog()` now accept a float days
+  array (as returned by `resample_time()`) in addition to `pd.DatetimeIndex`
 - `fit()` now accepts a `datetime64` array or pandas `Timestamp` Series for
-  `time_fit`; conversion via `matplotlib.dates.date2num` is automatic
+  `time_fit`; conversion via `to_days()` is automatic
 - `prepare_part_data()` no longer adds a `Timedays` column to the returned
-  DataFrame; time handling is done internally via `matplotlib.dates.date2num`
+  DataFrame; time handling is done internally via `to_days()`
+- `prepare_part_data()` returns an independent copy of the participant's data;
+  mutations to the returned DataFrame do not affect the original; redundant
+  `Date` and `Time` columns are dropped (both are combined in `Timestamp`)
 
 ### [v0.2.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.2.0) - Simplified API
 - New module `results.py` with classes: `AnalysisResult` (abstract

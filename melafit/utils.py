@@ -12,7 +12,12 @@ Data I/O Functions:
 
 Waveform Functions:
 -------------------
-- gen_time_range : Generate a resampled time axis as matplotlib date2num floats
+- resample_time : Generate a resampled time axis as float days since UTC epoch
+
+Time Conversion:
+----------------
+- to_days   : Convert timestamps to float days since the Unix UTC epoch
+- from_days : Convert float days since the Unix UTC epoch to DatetimeIndex
 
 Time Series Analysis:
 ---------------------
@@ -51,7 +56,53 @@ import pandas as pd
 import datetime as dt
 import scipy.optimize as opt
 from collections.abc import Mapping
-from matplotlib import dates
+
+_EPOCH = pd.Timestamp("1970-01-01", tz="UTC")
+
+
+def to_days(timestamps: np.ndarray | pd.Series | pd.DatetimeIndex) -> np.ndarray:
+    """
+    Convert timestamps to float days since the Unix UTC epoch (1970-01-01).
+
+    The integer part is the day count and the fractional part is the fraction
+    of the day. Timezone-naive input is assumed to be UTC; timezone-aware
+    input is converted to UTC before the calculation.
+
+    Parameters
+    ----------
+        timestamps : np.ndarray, pd.Series, or pd.DatetimeIndex
+            Timestamps to convert (datetime64, Timestamp, or compatible)
+
+    Returns
+    -------
+        days : np.ndarray of float
+            Float days since 1970-01-01 UTC
+    """
+    ts = pd.DatetimeIndex(timestamps)
+    if ts.tz is None:
+        ts = ts.tz_localize("UTC")
+    else:
+        ts = ts.tz_convert("UTC")
+    return ((ts - _EPOCH) / pd.Timedelta(days=1)).to_numpy()
+
+
+def from_days(days: np.ndarray) -> pd.DatetimeIndex:
+    """
+    Convert float days since the Unix UTC epoch to a DatetimeIndex.
+
+    Inverse of :func:`to_days`. Returns a timezone-aware DatetimeIndex (UTC).
+
+    Parameters
+    ----------
+        days : np.ndarray of float
+            Float days since 1970-01-01 UTC
+
+    Returns
+    -------
+        timestamps : pd.DatetimeIndex
+            UTC-aware timestamps corresponding to the input day values
+    """
+    return pd.DatetimeIndex(_EPOCH + pd.to_timedelta(days, unit='D'))
 
 
 def read_data(data_pathname: str) -> pd.DataFrame:
@@ -107,9 +158,10 @@ def prepare_part_data(data: pd.DataFrame,
             Prepared data for one participant
     """
 
-    p_data = data.loc[data.Participant == participant]
+    p_data = data.loc[data.Participant == participant].copy()
+    p_data = p_data.drop(columns=['Date', 'Time'])
 
-    idiff = np.diff(dates.date2num(p_data.Timestamp.values)) < 0
+    idiff = np.diff(to_days(p_data.Timestamp.values)) < 0
 
     if any(idiff):
         ix = np.where(idiff)
@@ -122,26 +174,33 @@ def prepare_part_data(data: pd.DataFrame,
     return p_data
 
 
-def gen_time_range(tmin: pd.Timestamp,
-                   tmax: pd.Timestamp,
-                   dt_minutes: float,
-                   full_day: bool = True) -> np.ndarray:
+def resample_time(
+    series: pd.Series | None = None,
+    *,
+    tmin: pd.Timestamp | None = None,
+    tmax: pd.Timestamp | None = None,
+    step: str | pd.Timedelta,
+    full_day: bool = True,
+) -> np.ndarray:
     """
-    Generate a resampled time axis as matplotlib date2num floats.
+    Generate a resampled time axis as float days since the Unix UTC epoch.
 
-    The integer part of each value is the day number (days since 0001-01-01)
-    and the fractional part is the fraction of the day, matching MATLAB's
-    datenum convention. The returned array is directly plottable with
-    matplotlib date axes and compatible with the waveform functions.
+    The integer part of each value is the day count and the fractional part
+    is the fraction of the day. The returned array is compatible with the
+    waveform functions and plottable on matplotlib date axes.
 
     Parameters
     ----------
-        tmin : pd.Timestamp
-            Start of the time range
-        tmax : pd.Timestamp
-            End of the time range (inclusive)
-        dt_minutes : float
-            Time step in minutes
+        series : pd.Series, optional
+            Timestamp series used to infer tmin and/or tmax when not given
+            explicitly
+        tmin : pd.Timestamp, optional
+            Start of the time range; overrides series.min() when given
+        tmax : pd.Timestamp, optional
+            End of the time range (inclusive); overrides series.max() when given
+        step : str or pd.Timedelta
+            Time step as a pandas offset string (e.g. ``"1min"``, ``"5min"``,
+            ``"1h"``) or a :class:`pd.Timedelta`
         full_day : bool
             If True and (tmax - tmin) < 24 h, extend tmax to tmin + 24 h
             (defaults to True)
@@ -149,21 +208,28 @@ def gen_time_range(tmin: pd.Timestamp,
     Returns
     -------
         time_range : Numpy array of floats
-            Time axis as matplotlib date2num floats
+            Time axis as float days since 1970-01-01 UTC
     """
+    if series is not None:
+        if tmin is None:
+            tmin = series.min()
+        if tmax is None:
+            tmax = series.max()
+    if tmin is None or tmax is None:
+        raise ValueError("Provide series or both tmin and tmax")
 
-    tmin_num = dates.date2num(tmin)
-    tmax_num = dates.date2num(tmax)
+    tmin_num = to_days([tmin])[0]
+    tmax_num = to_days([tmax])[0]
 
     if full_day and (tmax_num - tmin_num) < 1.0:
         tmax_num = tmin_num + 1.0
 
-    step = dt_minutes / (24 * 60)
-    return np.arange(tmin_num, tmax_num + 1.1 * step, step)
+    step_days = pd.Timedelta(step).total_seconds() / 86400
+    return np.arange(tmin_num, tmax_num + 1.1 * step_days, step_days)
 
 
 
-def day_profile(times: pd.DatetimeIndex,
+def day_profile(times: np.ndarray | pd.DatetimeIndex,
                 values: np.ndarray,
                 binsize: int = 60,
                 double: bool = False,
@@ -174,8 +240,9 @@ def day_profile(times: pd.DatetimeIndex,
 
     Parameters
     ----------
-        times : pandas DatetimeIndex
-            Time stamps
+        times : np.ndarray or pandas DatetimeIndex
+            Time stamps as a DatetimeIndex or as float days since the UTC
+            epoch (as returned by :func:`gen_time_range`)
         values : numpy array
             Data values
         binsize : int
@@ -192,6 +259,9 @@ def day_profile(times: pd.DatetimeIndex,
         profile : tuple[pd.Series, pd.Series]
             Bin averages and standard errors with index in hours (0..24)
     """
+
+    if isinstance(times, np.ndarray):
+        times = from_days(times)
 
     data = pd.Series(index=times, data=values)
 

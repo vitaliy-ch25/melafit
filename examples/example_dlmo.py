@@ -1,11 +1,10 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import dates
 from melafit.fitting import bcf, sbcf, bbcf, bsbcf, fit, func_defaults
 from melafit.markers import midpoint
 from melafit.results import SessionInfo, ResultsCollector
-from melafit.utils import (read_data, prepare_part_data, gen_time_range,
+from melafit.utils import (read_data, prepare_part_data, resample_time,
                             phase_to_string, params_to_string)
 
 # EXPERIMENTAL: Determine DLMO using the curve fitting approach for partial data
@@ -19,7 +18,7 @@ data = read_data(data_path + "dummy_data_dlmo.xlsx")
 mel_funcs = [bcf, sbcf, bbcf, bsbcf]
 
 popup_figures = True
-dt_minutes = 1.0
+delta_t = "1min"
 thresh_dlmo = 10
 
 participants = np.unique(data.Participant)
@@ -42,17 +41,13 @@ for mel_func in mel_funcs:
             # Fit curve and compute resampled waveform
             res = fit(p_data.Timestamp, p_data.Mel, mel_func,
                       p0=p0, lb=lb, ub=ub)
-            resampled_time = gen_time_range(p_data.Timestamp.min(),
-                                            p_data.Timestamp.max(),
-                                            dt_minutes)
+            resampled_time = resample_time(p_data.Timestamp, step=delta_t)
             resampled_curve = mel_func(t=resampled_time, p=res)
 
             # Compute DLMO only (midpoint/offset unreliable for partial data)
-            resampled_time_dt = pd.DatetimeIndex(dates.num2date(resampled_time))
-            mid = midpoint(resampled_time_dt, resampled_curve, thresh_dlmo,
+            mid = midpoint(resampled_time, resampled_curve, thresh_dlmo,
                            thresh_abs=True)
-            meta = SessionInfo(participant, p_data.Timestamp.min(),
-                           p_data.Timestamp.max())
+            meta = SessionInfo(p_data)
 
             # Collect results for this participant
             collector.add(meta, res, mid)

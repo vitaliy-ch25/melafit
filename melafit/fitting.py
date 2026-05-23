@@ -49,6 +49,7 @@ import numpy as np
 import pandas as pd
 from collections.abc import Mapping
 from melafit.results import FitResult
+from melafit.utils import to_days
 
 # Parameter names for melatonin wave approximation functions
 BCF_PARAM_NAMES   = ["phi", "b", "H", "c"]
@@ -508,9 +509,9 @@ def fit(time_fit: np.ndarray | pd.Series,
     ----------
         time_fit : np.ndarray or pd.Series
             X-values for curve fitting (time). Accepts a float array of
-            matplotlib date numbers (e.g. from :func:`gen_time_range`) or
-            a datetime64 array / pandas Timestamp Series, which is converted
-            automatically via matplotlib.dates.date2num
+            days since UTC epoch (e.g. from :func:`melafit.utils.resample_time`)
+            or a datetime64 array / pandas Timestamp Series, which is converted
+            automatically via :func:`melafit.utils.to_days`
         data_fit : Numpy array of floats
             Y-values for curve fitting (melatonin levels)
         f : callable
@@ -542,8 +543,7 @@ def fit(time_fit: np.ndarray | pd.Series,
     """
 
     if hasattr(time_fit, 'dtype') and np.issubdtype(time_fit.dtype, np.datetime64):
-        from matplotlib import dates as mdates
-        time_fit = mdates.date2num(time_fit)
+        time_fit = to_days(time_fit)
 
     # Only try to fetch defaults if we recognize the function
     if f in BUILTIN_PARAM_NAMES.keys():
