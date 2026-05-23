@@ -4,8 +4,7 @@ from matplotlib import dates
 from melafit.fitting import bcf, sbcf, bbcf, bsbcf, fit, func_defaults
 from melafit.markers import midpoint
 from melafit.results import SessionInfo, ResultsCollector
-from melafit.utils import (read_data, prepare_part_data, gen_time_range,
-                            phase_to_string, params_to_string)
+from melafit.utils import read_data, prepare_part_data, gen_time_range, phase_to_string
 
 # EXPERIMENTAL: Determine DLMO using the curve fitting approach for partial data
 
@@ -25,6 +24,7 @@ participants = np.unique(data.Participant)
 
 for mel_func in mel_funcs:
 
+    func_name = mel_func.__name__.upper()
     collector = ResultsCollector()
 
     for participant in participants:
@@ -39,42 +39,37 @@ for mel_func in mel_funcs:
             ub["H"] *= 4
 
             # Fit curve and compute resampled waveform
-            res = fit(p_data.Timestamp, p_data.Mel, mel_func,
-                      p0=p0, lb=lb, ub=ub)
-            resampled_time = gen_time_range(p_data.Timestamp, step=delta_t)
-            resampled_curve = mel_func(t=resampled_time, p=res)
+            res = fit(p_data.Timestamp, p_data.Mel, mel_func, p0=p0, lb=lb, ub=ub)
+            resampled_t = gen_time_range(p_data.Timestamp, step=delta_t)
+            resampled_f = mel_func(t=resampled_t, p=res)
 
             # Compute DLMO only (midpoint/offset unreliable for partial data)
-            mid = midpoint(resampled_time, resampled_curve, thresh_dlmo,
-                           thresh_abs=True)
+            mid = midpoint(resampled_t, resampled_f, thresh_dlmo, thresh_abs=True)
             meta = SessionInfo(p_data)
 
             # Collect results for this participant
             collector.add(meta, res, mid)
 
             # Print summary
-            print(f"Fitted function: {mel_func.__name__.upper()}, "
-                  f"parameters: {params_to_string(res)}")
-            res_str = (f"Date: {meta.start.date()}, "
-                       f"DLMOn={phase_to_string(mid.dlmon)}")
-            print(res_str)
+            print(meta)
+            print(res)
+            dlmo_str=f"DLMO={phase_to_string(mid.dlmon)}"
+            print(dlmo_str)
 
             # Visualize results
+            title_str = f"Date: {meta.start.date()}, {dlmo_str}"
+
             plt.close("all")
             plt.figure(figsize=(12, 5))
             plt.scatter(p_data.Timestamp, p_data.Mel, c='b')
-            plt.plot(resampled_time, resampled_curve, 'g')
-            plt.plot(resampled_time,
-                     mid.threshold * np.ones(resampled_time.shape), 'r')
+            plt.plot(resampled_t, resampled_f, 'g')
+            plt.plot(resampled_t, mid.threshold * np.ones(resampled_t.shape), 'r')
             plt.xlabel("Time, hh:mm")
             plt.gca().xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
             plt.ylabel("Concentration, pg/ml")
-            plt.title(res_str)
-            plt.legend(["Melatonin data",
-                        f"{mel_func.__name__.upper()} curve",
-                        "Threshold"])
-            plt.savefig(result_path +
-                        f"mel_data_{participant}_{mel_func.__name__.upper()}.png")
+            plt.title(title_str)
+            plt.legend(["Melatonin data", f"{func_name} curve", "Threshold"])
+            plt.savefig(result_path + f"mel_data_{participant}_{func_name}.png")
 
             if popup_figures:
                 plt.pause(0.01)
@@ -82,5 +77,4 @@ for mel_func in mel_funcs:
         except Exception as err:
             print(f"Error processing data for participant {participant}: {err}")
 
-    collector.save(result_path,
-                   result_filename + f"_{mel_func.__name__.upper()}")
+    collector.save(result_path, result_filename + "_" + func_name)

@@ -5,7 +5,7 @@ from melafit.fitting import bcf, sbcf, bbcf, bsbcf, fit
 from melafit.markers import amplitude, midpoint, area_cog
 from melafit.results import SessionInfo, ResultsCollector
 from melafit.utils import (read_data, prepare_part_data, gen_time_range,
-                            phase_to_string, phase_diff, params_to_string)
+                           phase_to_string, phase_diff)
 
 data_path = "./data/"
 result_path = "./results/full/"
@@ -23,6 +23,7 @@ participants = np.unique(data.Participant)
 
 for mel_func in mel_funcs:
 
+    func_name = mel_func.__name__.upper()
     collector = ResultsCollector()
 
     for participant in participants:
@@ -33,48 +34,38 @@ for mel_func in mel_funcs:
 
             # Fit curve and compute resampled waveform
             res = fit(p_data.Timestamp, p_data.Mel, mel_func)
-            resampled_time = gen_time_range(p_data.Timestamp, step=delta_t)
-            resampled_curve = mel_func(t=resampled_time, p=res)
+            resampled_t = gen_time_range(p_data.Timestamp, step=delta_t)
+            resampled_f = mel_func(t=resampled_t, p=res)
 
             # Compute all markers
-            ampl = amplitude(resampled_curve)
-            mid = midpoint(resampled_time, resampled_curve, thresh_dlmo)
-            ac = area_cog(resampled_time, resampled_curve)
+            ampl = amplitude(resampled_f)
+            mid = midpoint(resampled_t, resampled_f, thresh_dlmo)
+            ac = area_cog(resampled_t, resampled_f)
             meta = SessionInfo(p_data)
 
             # Collect all results for this participant
             collector.add(meta, res, ampl, mid, ac)
 
             # Print summary
-            print(f"Fitted function: {mel_func.__name__.upper()}, "
-                  f"parameters: {params_to_string(res)}")
-            res_str = (f"Date: {meta.start.date()}, "
-                       f"DLMOn={phase_to_string(mid.dlmon)}, "
-                       f"DLMOff={phase_to_string(mid.dlmoff)}, "
-                       f"Midpoint={phase_to_string(mid.midpoint)}, "
-                       f"Area={ac.area:.3f}, "
-                       f"COG={phase_to_string(ac.cog)}, "
-                       f"R2={res.r2:.3f}")
-            print(res_str)
-            print(f"Phase difference COG-Midpoint: "
-                  f"{phase_to_string(phase_diff(ac.cog, mid.midpoint))}")
+            print(meta)
+            print(res)
+            print(mid, ac)
+            print(f"COG-Midpoint={phase_to_string(phase_diff(ac.cog, mid.midpoint))}")
 
             # Visualize results
+            title_str = f"Date: {meta.start.date()}, {mid}, {ac}, R²={res.r2:.3f}"
+
             plt.close("all")
             plt.figure(figsize=(12, 5))
             plt.scatter(p_data.Timestamp, p_data.Mel, c='b')
-            plt.plot(resampled_time, resampled_curve, 'g')
-            plt.plot(resampled_time,
-                     mid.threshold * np.ones(resampled_time.shape), 'r')
+            plt.plot(resampled_t, resampled_f, 'g')
+            plt.plot(resampled_t, mid.threshold * np.ones(resampled_t.shape), 'r')
             plt.xlabel("Time, hh:mm")
             plt.gca().xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
             plt.ylabel("Concentration, pg/ml")
-            plt.title(res_str)
-            plt.legend(["Melatonin data",
-                        f"{mel_func.__name__.upper()} curve",
-                        "Threshold"])
-            plt.savefig(result_path +
-                        f"mel_data_{participant}_{mel_func.__name__.upper()}.png")
+            plt.title(title_str)
+            plt.legend(["Melatonin data", f"{func_name} curve", "Threshold"])
+            plt.savefig(result_path + f"mel_data_{participant}_{func_name}.png")
 
             if popup_figures:
                 plt.pause(0.01)
@@ -82,5 +73,4 @@ for mel_func in mel_funcs:
         except Exception as err:
             print(f"Error processing data for participant {participant}: {err}")
 
-    collector.save(result_path,
-                   result_filename + f"_{mel_func.__name__.upper()}")
+    collector.save(result_path, result_filename + "_" + func_name)

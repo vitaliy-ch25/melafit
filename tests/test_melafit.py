@@ -478,11 +478,14 @@ class TestAmplitude(unittest.TestCase):
         self.assertIsInstance(result, AmplitudeResult)
 
     def test_known_amplitude(self):
-        self.assertAlmostEqual(
-            amplitude(np.array([2.0, 5.0, 10.0, 3.0])).amplitude, 8.0)
+        result = amplitude(np.array([2.0, 5.0, 10.0, 3.0]))
+        self.assertAlmostEqual(result.amplitude, 8.0)
+        self.assertAlmostEqual(result.baseline, 2.0)
 
     def test_flat_signal_is_zero(self):
-        self.assertAlmostEqual(amplitude(np.full(100, 5.0)).amplitude, 0.0)
+        result = amplitude(np.full(100, 5.0))
+        self.assertAlmostEqual(result.amplitude, 0.0)
+        self.assertAlmostEqual(result.baseline, 5.0)
 
     def test_amplitude_on_waveform(self):
         result = amplitude(bsbcf(t=T, p=BSBCF_PARAMS_ARRAY))
@@ -495,6 +498,8 @@ class TestAmplitude(unittest.TestCase):
         self.assertIsInstance(d, dict)
         self.assertIn("amplitude", d)
         self.assertAlmostEqual(d["amplitude"], 8.0)
+        self.assertIn("baseline", d)
+        self.assertAlmostEqual(d["baseline"], 2.0)
 
 
 # ---------------------------------------------------------------------------
@@ -1188,7 +1193,7 @@ class TestResultsCollector(unittest.TestCase):
         collector = ResultsCollector()
         collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
         record = collector._records[0]
-        for key in ["amplitude", "dlmon", "dlmoff", "midpoint",
+        for key in ["amplitude", "baseline", "dlmon", "dlmoff", "midpoint",
                     "threshold", "area", "cog"] + BUILTIN_PARAM_NAMES[self.func]:
             self.assertIn(key, record)
 
@@ -1226,8 +1231,8 @@ class TestResultsCollector(unittest.TestCase):
         filepath = os.path.join(self.tmpdir, self.filename + ".xlsx")
         df = pd.read_excel(filepath, index_col="participant")
         self.assertGreater(len(df), 0)
-        for col in ["end", "func", "r2", "amplitude", "dlmon", "dlmoff",
-                    "midpoint", "area", "cog"] + BUILTIN_PARAM_NAMES[self.func]:
+        for col in ["end", "func", "r2", "amplitude", "baseline", "dlmon",
+                    "dlmoff", "midpoint", "area", "cog"] + BUILTIN_PARAM_NAMES[self.func]:
             self.assertIn(col, df.columns)
 
     def test_multiple_participants_sorted_in_excel(self):

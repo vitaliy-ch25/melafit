@@ -211,7 +211,20 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 - `amplitude()` computes and returns `baseline` alongside `amplitude`
 - `AmplitudeResult.to_dict()` now includes `baseline`
 - `ResultsCollector` records and Excel output now include the `baseline` column
-- Unit tests extended to cover the new `baseline` field
+- `__str__()` added to all `AnalysisRecord` subclasses for human-readable
+  `print()` output:
+  - `SessionInfo`: participant name and session date/time range
+  - `AmplitudeResult`: amplitude and baseline values
+  - `MidpointResult`: DLMOn, DLMOff and Midpoint times
+  - `AreaCogResult`: area and COG time
+  - `FitResult`: function name, parameters and R²
+  - `AnalysisRecord` base: generic fallback derived from `to_dict()`
+- Example scripts updated to use `print(meta)`, `print(res)`,
+  `print(mid, ac)` directly via the new `__str__` representations;
+  `params_to_string` removed from example imports
+- Unit tests extended with additional `baseline` assertions (`amplitude`,
+  `baseline` and `to_dict()` checks; `ResultsCollector` record and Excel
+  column coverage)
 
 ### [v0.3.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.3.0) - Cleaner API
 - `AnalysisResult` renamed to `AnalysisRecord`
