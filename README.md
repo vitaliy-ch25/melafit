@@ -270,12 +270,6 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 ## Revision History
 
 ### [v0.4.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.0) - Improved API and examples
-- New minimal getting-started example `example_one_fit.py`: single-participant
-  fit with `bsbcf`, `area_cog`, result collection, plot and Excel export
-- `os.makedirs(result_path, exist_ok=True)` added to `example_dlmo.py` and
-  `example_full_profile.py` so result directories are created automatically
-- README: collapsible getting-started example with output figure added to the
-  Getting Started section
 - `AmplitudeResult` now includes a `baseline` field (waveform minimum)
 - `amplitude()` computes and returns `baseline` alongside `amplitude`
 - `AmplitudeResult.to_dict()` now includes `baseline`
@@ -289,11 +283,18 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
   - `FitResult`: function name, parameters and R²
   - `AnalysisRecord` base: generic fallback derived from `to_dict()`
 - Example scripts updated to use `print(meta)`, `print(res)`,
-  `print(mid, ac)` directly via the new `__str__` representations;
-  `params_to_string` removed from example imports
+  `print(mid, ac)` directly via the new `__str__` representations
 - Unit tests extended with additional `baseline` assertions (`amplitude`,
   `baseline` and `to_dict()` checks; `ResultsCollector` record and Excel
   column coverage)
+- All example scripts simplified to `import melafit as mf` (single top-level
+  import replaces multiple `from melafit.xxx import ...` lines)
+- New minimal getting-started example `example_one_fit.py`: single-participant
+  fit with `bsbcf`, `area_cog`, result collection, plot and Excel export
+- `os.makedirs(result_path, exist_ok=True)` added to `example_dlmo.py` and
+  `example_full_profile.py` so result directories are created automatically
+- README: collapsible getting-started example with output figure added to the
+  Getting Started section
 
 ### [v0.3.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.3.0) - Cleaner API
 - `AnalysisResult` renamed to `AnalysisRecord`
