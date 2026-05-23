@@ -4,7 +4,7 @@ from matplotlib import dates
 from melafit.fitting import bcf, sbcf, bbcf, bsbcf, fit
 from melafit.markers import amplitude, midpoint, area_cog
 from melafit.results import SessionInfo, ResultsCollector
-from melafit.utils import (read_data, prepare_part_data, resample_time,
+from melafit.utils import (read_data, prepare_part_data, gen_time_range,
                             phase_to_string, phase_diff, params_to_string)
 
 data_path = "./data/"
@@ -33,7 +33,7 @@ for mel_func in mel_funcs:
 
             # Fit curve and compute resampled waveform
             res = fit(p_data.Timestamp, p_data.Mel, mel_func)
-            resampled_time = resample_time(p_data.Timestamp, step=delta_t)
+            resampled_time = gen_time_range(p_data.Timestamp, step=delta_t)
             resampled_curve = mel_func(t=resampled_time, p=res)
 
             # Compute all markers

@@ -86,7 +86,7 @@ def midpoint(times: np.ndarray | pd.DatetimeIndex,
     ----------
         times : np.ndarray or pandas DatetimeIndex
             Datetime values as a DatetimeIndex or as float days since the
-            UTC epoch (as returned by :func:`melafit.utils.resample_time`)
+            UTC epoch (as returned by :func:`melafit.utils.gen_time_range`)
         values : Numpy array of floats
             Melatonin waveform values
         threshold : float
@@ -105,7 +105,7 @@ def midpoint(times: np.ndarray | pd.DatetimeIndex,
 
     See also
     --------
-        :func:`melafit.utils.resample_time` : Generate resampled time axis
+        :func:`melafit.utils.gen_time_range` : Generate resampled time axis
     """
 
     d_profile = day_profile(times, values, binsize=1)[0]
@@ -146,7 +146,7 @@ def area_cog(times: np.ndarray | pd.DatetimeIndex,
     ----------
         times : np.ndarray or pandas DatetimeIndex
             Datetime values as a DatetimeIndex or as float days since the
-            UTC epoch (as returned by :func:`melafit.utils.resample_time`)
+            UTC epoch (as returned by :func:`melafit.utils.gen_time_range`)
         values : Numpy array of floats
             Waveform values
         baseline : float or None
@@ -161,7 +161,7 @@ def area_cog(times: np.ndarray | pd.DatetimeIndex,
 
     See also
     --------
-        :func:`melafit.utils.resample_time` : Generate resampled time axis
+        :func:`melafit.utils.gen_time_range` : Generate resampled time axis
     """
 
     if baseline is None:

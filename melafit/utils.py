@@ -10,14 +10,11 @@ Data I/O Functions:
 - read_data : Load melatonin data from Excel spreadsheet
 - prepare_part_data : Extract and preprocess single participant's data
 
-Waveform Functions:
--------------------
-- resample_time : Generate a resampled time axis as float days since UTC epoch
-
 Time Conversion:
 ----------------
-- to_days   : Convert timestamps to float days since the Unix UTC epoch
-- from_days : Convert float days since the Unix UTC epoch to DatetimeIndex
+- to_days        : Convert timestamps to float days since the Unix UTC epoch
+- from_days      : Convert float days since the Unix UTC epoch to DatetimeIndex
+- gen_time_range : Generate a time axis as float days since UTC epoch
 
 Time Series Analysis:
 ---------------------
@@ -174,7 +171,7 @@ def prepare_part_data(data: pd.DataFrame,
     return p_data
 
 
-def resample_time(
+def gen_time_range(
     series: pd.Series | None = None,
     *,
     tmin: pd.Timestamp | None = None,

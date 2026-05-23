@@ -216,19 +216,19 @@ on <Date>.
   (R² goodness of fit), both computed automatically at the end of `fit()`
 - `r2` is no longer a field of `SessionInfo`; `fit()` computes and stores it
   in `FitResult` directly
-- `compute_wave()` eliminated; replaced by the `resample_time()` +
-  waveform-function pattern: `resample_time()` accepts a Timestamp series or
+- `compute_wave()` eliminated; replaced by the `gen_time_range()` +
+  waveform-function pattern: `gen_time_range()` accepts a Timestamp series or
   explicit `tmin`/`tmax` bounds and a pandas offset string for `step`, and
   returns a time axis as float days since the Unix UTC epoch, which is
   then passed directly to the waveform function (e.g.
-  `bsbcf(t=resample_time(series, step="1min"), p=fit_result)`)
+  `bsbcf(t=gen_time_range(series, step="1min"), p=fit_result)`)
 - New helper `to_days()` converts timestamps to float days since the Unix UTC
   epoch; timezone-naive input is treated as UTC, timezone-aware input is
   converted to UTC first
 - New helper `from_days()` is the inverse of `to_days()`; returns a
   UTC-aware `pd.DatetimeIndex`
 - `day_profile()`, `midpoint()` and `area_cog()` now accept a float days
-  array (as returned by `resample_time()`) in addition to `pd.DatetimeIndex`
+  array (as returned by `gen_time_range()`) in addition to `pd.DatetimeIndex`
 - `fit()` now accepts a `datetime64` array or pandas `Timestamp` Series for
   `time_fit`; conversion via `to_days()` is automatic
 - `prepare_part_data()` no longer adds a `Timedays` column to the returned

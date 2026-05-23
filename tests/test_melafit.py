@@ -25,7 +25,7 @@ from melafit.results import (FitResult, AnalysisRecord, SessionInfo,
                               AmplitudeResult, MidpointResult, AreaCogResult,
                               ResultsCollector)
 from melafit.utils import (read_data, prepare_part_data, to_days, from_days,
-                            resample_time, day_profile, time_to_phase,
+                            gen_time_range, day_profile, time_to_phase,
                             phase_to_string, string_to_phase, abs_threshold,
                             phase_diff, params_to_string)
 
@@ -415,7 +415,7 @@ class TestFit(unittest.TestCase):
         curve_direct = bsbcf(t=self.t, p=res)
         curve_dict   = bsbcf(t=self.t, p=dict(res))
         np.testing.assert_array_almost_equal(curve_direct, curve_dict)
-        t = resample_time(tmin=pd.Timestamp("2024-01-01"), tmax=pd.Timestamp("2024-01-02"), step="1min")
+        t = gen_time_range(tmin=pd.Timestamp("2024-01-01"), tmax=pd.Timestamp("2024-01-02"), step="1min")
         wave_direct = bsbcf(t=t, p=res)
         wave_dict   = bsbcf(t=t, p=dict(res))
         np.testing.assert_array_almost_equal(wave_direct, wave_dict)
@@ -552,7 +552,7 @@ class TestMidpoint(unittest.TestCase):
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
         res = fit(p_data.Timestamp.values, p_data.Mel.values, f=bsbcf)
         tmin, tmax = p_data.Timestamp.min(), p_data.Timestamp.max()
-        t = resample_time(tmin=tmin, tmax=tmax, step="1min")
+        t = gen_time_range(tmin=tmin, tmax=tmax, step="1min")
         curve = bsbcf(t=t, p=res)
         result = midpoint(t, curve, 0.25)
         for val in [result.midpoint, result.dlmon, result.dlmoff]:
@@ -612,7 +612,7 @@ class TestAreaCog(unittest.TestCase):
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
         res = fit(p_data.Timestamp.values, p_data.Mel.values, f=bsbcf)
         tmin, tmax = p_data.Timestamp.min(), p_data.Timestamp.max()
-        t = resample_time(tmin=tmin, tmax=tmax, step="1min")
+        t = gen_time_range(tmin=tmin, tmax=tmax, step="1min")
         curve = bsbcf(t=t, p=res)
         result = area_cog(t, curve)
         self.assertGreater(result.area, 0.0)
@@ -784,29 +784,29 @@ class TestFromDays(unittest.TestCase):
             self.assertAlmostEqual(a.value, b.value, delta=1000)
 
 
-# utils.py — resample_time tests
+# utils.py — gen_time_range tests
 # ---------------------------------------------------------------------------
 
 class TestResampleTime(unittest.TestCase):
-    """Tests for resample_time()."""
+    """Tests for gen_time_range()."""
 
     def test_output_is_array(self):
-        result = resample_time(tmin=pd.Timestamp("2024-01-01"),
+        result = gen_time_range(tmin=pd.Timestamp("2024-01-01"),
                                tmax=pd.Timestamp("2024-01-02"), step="1min")
         self.assertIsInstance(result, np.ndarray)
 
     def test_full_day_extends_short_range(self):
         tmin = pd.Timestamp("2024-01-01 12:00")
         tmax = pd.Timestamp("2024-01-01 19:12")
-        result_full  = resample_time(tmin=tmin, tmax=tmax, step="1min", full_day=True)
-        result_short = resample_time(tmin=tmin, tmax=tmax, step="1min", full_day=False)
+        result_full  = gen_time_range(tmin=tmin, tmax=tmax, step="1min", full_day=True)
+        result_short = gen_time_range(tmin=tmin, tmax=tmax, step="1min", full_day=False)
         self.assertGreater(len(result_full), len(result_short))
 
     def test_step_size_is_correct(self):
         tmin = pd.Timestamp("2024-01-01")
         tmax = pd.Timestamp("2024-01-02")
         for step_str, dt_min in [("1min", 1.0), ("5min", 5.0), ("15min", 15.0)]:
-            result = resample_time(tmin=tmin, tmax=tmax, step=step_str, full_day=False)
+            result = gen_time_range(tmin=tmin, tmax=tmax, step=step_str, full_day=False)
             step = result[1] - result[0]
             self.assertAlmostEqual(step, dt_min / (24 * 60), places=10)
 

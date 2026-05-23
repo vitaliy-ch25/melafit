@@ -509,7 +509,7 @@ def fit(time_fit: np.ndarray | pd.Series,
     ----------
         time_fit : np.ndarray or pd.Series
             X-values for curve fitting (time). Accepts a float array of
-            days since UTC epoch (e.g. from :func:`melafit.utils.resample_time`)
+            days since UTC epoch (e.g. from :func:`melafit.utils.gen_time_range`)
             or a datetime64 array / pandas Timestamp Series, which is converted
             automatically via :func:`melafit.utils.to_days`
         data_fit : Numpy array of floats
