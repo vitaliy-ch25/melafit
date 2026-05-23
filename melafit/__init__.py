@@ -26,8 +26,8 @@ utils : Data I/O, preprocessing, and utility functions
 
 References:
 -----------
-- Ruf et al. (1992). "The baseline cosinus function: a periodic regression 
-  model for biological rhythms" https://doi.org/10.1076/brhm.27.2.153.12942
+- Ruf (1992). "The baseline cosinus function: a periodic regression model for 
+  biological rhythms" https://doi.org/10.1076/brhm.27.2.153.12942
 - Van Someren & Nagtegaal (2007). "Improving melatonin circadian phase 
   estimates" https://doi.org/10.1016/j.sleep.2007.03.012
 - Gabel et al. (2017). "Differential impact in young and older individuals of 
@@ -35,6 +35,7 @@ References:
   sustained wakefulness" https://doi.org/10.1038/s41598-017-07060-8
 """
 
+from ._version import __version__
 from .results import *
 from .fitting import *
 from .markers import *

@@ -192,7 +192,7 @@ plt.xlabel("Time, hh:mm")
 plt.gca().xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
 plt.ylabel("Concentration, pg/ml")
 plt.title(title_str)
-plt.legend(["Melatonin data", "BSBCF curve", "Threshold"])
+plt.legend(["Melatonin data", "BSBCF curve"])
 plt.savefig(result_path + f"mel_data_{participant}_BSBCF.png")
 
 # Keep the figure open until a button is pressed
@@ -295,6 +295,11 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
   `example_full_profile.py` so result directories are created automatically
 - README: collapsible getting-started example with output figure added to the
   Getting Started section
+- Version is now managed in a single source of truth: `melafit/_version.py`
+  contains `__version__`; `pyproject.toml` uses `dynamic = ["version"]` with
+  `[tool.setuptools.dynamic]` pointing to `melafit._version.__version__`;
+  `melafit/__init__.py` imports and re-exports `__version__` from `._version`
+- Fixed citation author in module docstring: "Ruf et al. (1992)" → "Ruf (1992)"
 
 ### [v0.3.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.3.0) - Cleaner API
 - `AnalysisResult` renamed to `AnalysisRecord`
