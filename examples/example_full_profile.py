@@ -2,19 +2,15 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import dates
-from melafit.fitting import bcf, sbcf, bbcf, bsbcf, fit
-from melafit.markers import amplitude, midpoint, area_cog
-from melafit.results import SessionInfo, ResultsCollector
-from melafit.utils import (read_data, prepare_part_data, gen_time_range,
-                           phase_to_string, phase_diff)
+import melafit as mf
 
 data_path = "./data/"
 result_path = "./results/full/"
 result_filename = "results_full"
 
-data = read_data(data_path + "dummy_data_full.xlsx")
+data = mf.read_data(data_path + "dummy_data_full.xlsx")
 
-mel_funcs = [bcf, sbcf, bbcf, bsbcf]
+mel_funcs = [mf.bcf, mf.sbcf, mf.bbcf, mf.bsbcf]
 
 popup_figures = True
 delta_t = "1min"
@@ -26,33 +22,33 @@ for mel_func in mel_funcs:
     os.makedirs(result_path, exist_ok=True)
 
     func_name = mel_func.__name__.upper()
-    collector = ResultsCollector()
+    collector = mf.ResultsCollector()
 
     for participant in participants:
 
         try:
-            p_data = prepare_part_data(data, participant)
+            p_data = mf.prepare_part_data(data, participant)
             print(p_data)
 
             # Fit curve and compute resampled waveform
-            res = fit(p_data.Timestamp, p_data.Mel, mel_func)
-            resampled_t = gen_time_range(p_data.Timestamp, step=delta_t)
+            res = mf.fit(p_data.Timestamp, p_data.Mel, mel_func)
+            resampled_t = mf.gen_time_range(p_data.Timestamp, step=delta_t)
             resampled_f = mel_func(t=resampled_t, p=res)
 
             # Compute all markers
-            ampl = amplitude(resampled_f)
-            mid = midpoint(resampled_t, resampled_f, thresh_dlmo)
-            ac = area_cog(resampled_t, resampled_f)
+            ampl = mf.amplitude(resampled_f)
+            mid = mf.midpoint(resampled_t, resampled_f, thresh_dlmo)
+            ac = mf.area_cog(resampled_t, resampled_f)
 
             # Collect all results for this participant
-            meta = SessionInfo(p_data)
+            meta = mf.SessionInfo(p_data)
             collector.add(meta, res, ampl, mid, ac)
 
             # Print summary
             print(meta)
             print(res)
             print(mid, ac)
-            print(f"COG-Midpoint={phase_to_string(phase_diff(ac.cog, mid.midpoint))}")
+            print(f"COG-Midpoint={mf.phase_to_string(mf.phase_diff(ac.cog, mid.midpoint))}")
 
             # Visualize results
             title_str = f"Date: {meta.start.date()}, {mid}, {ac}, R²={res.r2:.3f}"

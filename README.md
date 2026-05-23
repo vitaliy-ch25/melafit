@@ -150,34 +150,31 @@ environment `melafit` you created.
 import os
 import matplotlib.pyplot as plt
 from matplotlib import dates
-from melafit.fitting import bsbcf, fit
-from melafit.markers import area_cog
-from melafit.results import SessionInfo, ResultsCollector
-from melafit.utils import read_data, prepare_part_data, gen_time_range
+import melafit as mf
 
 # Read full profile data from Excel spreadsheet
-data = read_data("./data/dummy_data_full.xlsx")
+data = mf.read_data("./data/dummy_data_full.xlsx")
 
 # Prepare results directory and collector
 result_path = "./results/one_fit/"
 os.makedirs(result_path, exist_ok=True)
-collector = ResultsCollector()
+collector = mf.ResultsCollector()
 
 participant = 1
 
 # Prepare data for the participant
-p_data = prepare_part_data(data, participant)
+p_data = mf.prepare_part_data(data, participant)
 
 # Fit curve and compute resampled waveform
-res = fit(p_data.Timestamp, p_data.Mel, bsbcf)
-resampled_t = gen_time_range(p_data.Timestamp, step="1min")
-resampled_f = bsbcf(t=resampled_t, p=res)
+res = mf.fit(p_data.Timestamp, p_data.Mel, mf.bsbcf)
+resampled_t = mf.gen_time_range(p_data.Timestamp, step="1min")
+resampled_f = mf.bsbcf(t=resampled_t, p=res)
 
 # Compute area and COG
-ac = area_cog(resampled_t, resampled_f)
+ac = mf.area_cog(resampled_t, resampled_f)
 
 # Collect all results for this participant
-meta = SessionInfo(p_data)
+meta = mf.SessionInfo(p_data)
 collector.add(meta, ac)
 
 # Print summary
@@ -185,7 +182,7 @@ print(meta)
 print(res)
 
 # Visualize results
-title_str = f"{meta}, {ac}, R²={res.r2:.3f}"
+title_str = (f"{meta}, {ac}, R²={res.r2:.3f}")
 
 plt.close("all")
 plt.figure(figsize=(12, 5))
@@ -195,8 +192,10 @@ plt.xlabel("Time, hh:mm")
 plt.gca().xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
 plt.ylabel("Concentration, pg/ml")
 plt.title(title_str)
-plt.legend(["Melatonin data", "BSBCF curve"])
+plt.legend(["Melatonin data", "BSBCF curve", "Threshold"])
 plt.savefig(result_path + f"mel_data_{participant}_BSBCF.png")
+
+# Keep the figure open until a button is pressed
 plt.waitforbuttonpress()
 
 # Save results to Excel file
@@ -271,12 +270,6 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 ## Revision History
 
 ### [v0.4.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.0) - Improved API and examples
-- New minimal getting-started example `example_one_fit.py`: single-participant
-  fit with `bsbcf`, `area_cog`, result collection, plot and Excel export
-- `os.makedirs(result_path, exist_ok=True)` added to `example_dlmo.py` and
-  `example_full_profile.py` so result directories are created automatically
-- README: collapsible getting-started example with output figure added to the
-  Getting Started section
 - `AmplitudeResult` now includes a `baseline` field (waveform minimum)
 - `amplitude()` computes and returns `baseline` alongside `amplitude`
 - `AmplitudeResult.to_dict()` now includes `baseline`
@@ -290,11 +283,18 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
   - `FitResult`: function name, parameters and R²
   - `AnalysisRecord` base: generic fallback derived from `to_dict()`
 - Example scripts updated to use `print(meta)`, `print(res)`,
-  `print(mid, ac)` directly via the new `__str__` representations;
-  `params_to_string` removed from example imports
+  `print(mid, ac)` directly via the new `__str__` representations
 - Unit tests extended with additional `baseline` assertions (`amplitude`,
   `baseline` and `to_dict()` checks; `ResultsCollector` record and Excel
   column coverage)
+- All example scripts simplified to `import melafit as mf` (single top-level
+  import replaces multiple `from melafit.xxx import ...` lines)
+- New minimal getting-started example `example_one_fit.py`: single-participant
+  fit with `bsbcf`, `area_cog`, result collection, plot and Excel export
+- `os.makedirs(result_path, exist_ok=True)` added to `example_dlmo.py` and
+  `example_full_profile.py` so result directories are created automatically
+- README: collapsible getting-started example with output figure added to the
+  Getting Started section
 
 ### [v0.3.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.3.0) - Cleaner API
 - `AnalysisResult` renamed to `AnalysisRecord`
