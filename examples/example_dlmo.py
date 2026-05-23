@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import dates
@@ -23,6 +24,7 @@ thresh_dlmo = 10
 participants = np.unique(data.Participant)
 
 for mel_func in mel_funcs:
+    os.makedirs(result_path, exist_ok=True)
 
     func_name = mel_func.__name__.upper()
     collector = ResultsCollector()
@@ -43,11 +45,11 @@ for mel_func in mel_funcs:
             resampled_t = gen_time_range(p_data.Timestamp, step=delta_t)
             resampled_f = mel_func(t=resampled_t, p=res)
 
-            # Compute DLMO only (midpoint/offset unreliable for partial data)
+            # Compute midpoint, DLMOn and DLMOff (midpoint/DLMOff unreliable for partial data)
             mid = midpoint(resampled_t, resampled_f, thresh_dlmo, thresh_abs=True)
-            meta = SessionInfo(p_data)
 
             # Collect results for this participant
+            meta = SessionInfo(p_data)
             collector.add(meta, res, mid)
 
             # Print summary

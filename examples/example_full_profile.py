@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import dates
@@ -22,6 +23,7 @@ thresh_dlmo = 0.25
 participants = np.unique(data.Participant)
 
 for mel_func in mel_funcs:
+    os.makedirs(result_path, exist_ok=True)
 
     func_name = mel_func.__name__.upper()
     collector = ResultsCollector()
@@ -41,9 +43,9 @@ for mel_func in mel_funcs:
             ampl = amplitude(resampled_f)
             mid = midpoint(resampled_t, resampled_f, thresh_dlmo)
             ac = area_cog(resampled_t, resampled_f)
-            meta = SessionInfo(p_data)
 
             # Collect all results for this participant
+            meta = SessionInfo(p_data)
             collector.add(meta, res, ampl, mid, ac)
 
             # Print summary
