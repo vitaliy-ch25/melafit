@@ -43,7 +43,7 @@ plt.xlabel("Time, hh:mm")
 plt.gca().xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
 plt.ylabel("Concentration, pg/ml")
 plt.title(title_str)
-plt.legend(["Melatonin data", "BSBCF curve", "Threshold"])
+plt.legend(["Melatonin data", "BSBCF curve"])
 plt.savefig(result_path + f"mel_data_{participant}_BSBCF.png")
 
 # Keep the figure open until a button is pressed
