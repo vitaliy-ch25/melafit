@@ -64,10 +64,12 @@ def amplitude(values: np.ndarray) -> AmplitudeResult:
     Returns
     -------
         result : AmplitudeResult
-            Wrapped amplitude value
+            Wrapped amplitude and baseline values
     """
 
-    return AmplitudeResult(amplitude=np.max(values) - np.min(values))
+    baseline = np.min(values)
+    return AmplitudeResult(amplitude=np.max(values) - baseline,
+                           baseline=baseline)
 
 
 def midpoint(times: np.ndarray | pd.DatetimeIndex,

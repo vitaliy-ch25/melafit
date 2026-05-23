@@ -31,7 +31,7 @@ import scipy.optimize as opt
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from dataclasses import dataclass, field, asdict, InitVar
-from melafit.utils import phase_to_string
+from melafit.utils import phase_to_string, params_to_string
 
 
 class AnalysisRecord(ABC):
@@ -47,6 +47,10 @@ class AnalysisRecord(ABC):
     def to_dict(self) -> dict:
         """Return result fields as a dictionary for tabular output."""
         ...
+
+    def __str__(self) -> str:
+        pairs = ", ".join(f"{k}={v}" for k, v in self.to_dict().items())
+        return f"{type(self).__name__}({pairs})"
 
 
 @dataclass
@@ -81,6 +85,11 @@ class SessionInfo(AnalysisRecord):
         self.start = p_data.Timestamp.min()
         self.end = p_data.Timestamp.max()
 
+    def __str__(self) -> str:
+        fmt = "%Y-%m-%d %H:%M"
+        return (f"Participant={self.participant}, "
+                f"{self.start.strftime(fmt)} – {self.end.strftime(fmt)}")
+
     def to_dict(self) -> dict:
         """
         Return all fields as a flat dictionary.
@@ -102,9 +111,15 @@ class AmplitudeResult(AnalysisRecord):
     ----------
         amplitude : float
             Peak-to-baseline amplitude of the waveform
+        baseline : float
+            Baseline (minimum) of the waveform
     """
 
     amplitude: np.float64
+    baseline: np.float64
+
+    def __str__(self) -> str:
+        return f"Amplitude={self.amplitude:.3f}, Baseline={self.baseline:.3f}"
 
     def to_dict(self) -> dict:
         """
@@ -143,6 +158,11 @@ class MidpointResult(AnalysisRecord):
     midpoint: np.float64
     threshold: np.float64
 
+    def __str__(self) -> str:
+        return (f"DLMOn={phase_to_string(self.dlmon)}, "
+                f"DLMOff={phase_to_string(self.dlmoff)}, "
+                f"Midpoint={phase_to_string(self.midpoint)}")
+
     def to_dict(self) -> dict:
         """
         Return timing fields as HH:MM string representations.
@@ -177,6 +197,9 @@ class AreaCogResult(AnalysisRecord):
 
     area: np.float64
     cog: np.float64
+
+    def __str__(self) -> str:
+        return f"Area={self.area:.3f}, COG={phase_to_string(self.cog)}"
 
     def to_dict(self) -> dict:
         """
@@ -243,6 +266,11 @@ class FitResult(AnalysisRecord, Mapping):
         return len(self._param_names or [])
 
     # ------------------------------------------------------------------
+
+    def __str__(self) -> str:
+        return (f"Fitted function: {self.wave_func.__name__.upper()}, "
+                f"parameters: {params_to_string(self)}, "
+                f"R²={self.r2:.4f}")
 
     def to_dict(self) -> dict:
         """
