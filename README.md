@@ -202,6 +202,15 @@ plt.waitforbuttonpress()
 collector.save(result_path, "results_one_fit_BSBCF.xlsx")
 ```
 
+Running this code contained in [example_one_fit.py](https://github.com/vitaliy-ch25/melafit/blob/main/examples/example_one_fit.py) produces the following text output in the terminal
+
+```bash
+Participant=1, 2026-03-19 12:00 – 2026-03-20 12:00
+Fitted function: BSBCF, parameters: phi=0.108, b=1.650, H=65.766, c=0.235, v=0.185, m=0.198, R²=0.9978
+```
+
+and the following figure is displayed with a fitted BSBCF waveform and the data it was fitted to. Besides that, the results are stored to an Excel table `results_one_fit_BSBCF.xlsx` under `./results/one_fit/`.
+
 ![Example output](https://raw.githubusercontent.com/vitaliy-ch25/melafit/main/assets/example_one_fit.png)
 
 </details>
@@ -271,8 +280,6 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 
 ### [v0.4.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.0) - Improved API and examples
 - `AmplitudeResult` now includes a `baseline` field (waveform minimum)
-- `amplitude()` computes and returns `baseline` alongside `amplitude`
-- `AmplitudeResult.to_dict()` now includes `baseline`
 - `ResultsCollector` records and Excel output now include the `baseline` column
 - `__str__()` added to all `AnalysisRecord` subclasses for human-readable
   `print()` output:
@@ -284,9 +291,8 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
   - `AnalysisRecord` base: generic fallback derived from `to_dict()`
 - Example scripts updated to use `print(meta)`, `print(res)`,
   `print(mid, ac)` directly via the new `__str__` representations
-- Unit tests extended with additional `baseline` assertions (`amplitude`,
-  `baseline` and `to_dict()` checks; `ResultsCollector` record and Excel
-  column coverage)
+- Unit tests extended to cover the new `baseline` field and `ResultsCollector`
+  column
 - All example scripts simplified to `import melafit as mf` (single top-level
   import replaces multiple `from melafit.xxx import ...` lines)
 - New minimal getting-started example `example_one_fit.py`: single-participant
