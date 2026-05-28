@@ -378,9 +378,12 @@ class ResultsCollector:
         if not self._records:
             return
 
+        if not filename.endswith(".xlsx"):
+            filename += ".xlsx"
+
         df = pd.DataFrame(self._records)
         df.set_index("participant", inplace=True)
         df.sort_index(inplace=True)
 
         os.makedirs(result_path, exist_ok=True)
-        df.to_excel(os.path.join(result_path, filename + ".xlsx"))
+        df.to_excel(os.path.join(result_path, filename))
