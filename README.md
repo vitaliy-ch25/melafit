@@ -144,7 +144,7 @@ the required packages from any location. Simply make sure to use the virtual
 environment `melafit` you created.
 
 <details>
-<summary><strong>Minimal example — fit a single participant and compute area/COG</strong> <em>(click to expand)</em></summary>
+<summary><big><u>Minimal example — fit a single participant and compute area/COG</u></big> <em>(click to expand)</em></summary>
 
 ```python
 import os
@@ -234,7 +234,7 @@ research, please cite the following foundational publications:
 2. [Gabel, V., et al. (2017). Differential impact in young and older individuals of blue-enriched white light on circadian physiology and alertness during sustained wakefulness. Scientific Reports, 7, 7620.](https://doi.org/10.1038/s41598-017-07060-8)
 
 <details>
-<summary><strong>BibTeX</strong> <em>(click to expand)</em></summary>
+<summary><big><u>BibTeX</u></big> <em>(click to expand)</em></summary>
 
 ```bibtex
 @article{vansomeren2007,
@@ -280,7 +280,7 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 * Christian Cajochen – Scientific Lead
 
 <details>
-<summary><strong>Revision History</strong> <em>(click to expand)</em></summary>
+<summary><big><u>Revision History</u></big> <em>(click to expand)</em></summary>
 
 ### [v0.4.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.0) - Improved API and examples
 - `AmplitudeResult` now includes a `baseline` field (waveform minimum)
