@@ -144,7 +144,7 @@ the required packages from any location. Simply make sure to use the virtual
 environment `melafit` you created.
 
 <details>
-<summary>Minimal example — fit a single participant and compute area/COG</summary>
+<summary><strong>Minimal example — fit a single participant and compute area/COG</strong> <em>(click to expand)</em></summary>
 
 ```python
 import os
@@ -233,7 +233,9 @@ research, please cite the following foundational publications:
 1. [Van Someren, E. J., & Nagtegaal, E. (2007). Improving melatonin circadian phase estimates. Sleep Medicine, 8(6), 590-601.](https://doi.org/10.1016/j.sleep.2007.03.012)
 2. [Gabel, V., et al. (2017). Differential impact in young and older individuals of blue-enriched white light on circadian physiology and alertness during sustained wakefulness. Scientific Reports, 7, 7620.](https://doi.org/10.1038/s41598-017-07060-8)
 
-### BibTeX
+<details>
+<summary><strong>BibTeX</strong> <em>(click to expand)</em></summary>
+
 ```bibtex
 @article{vansomeren2007,
   title={Improving melatonin circadian phase estimates},
@@ -261,6 +263,7 @@ research, please cite the following foundational publications:
   publisher={Nature Publishing Group}
 }
 ```
+</details>
 
 If there is no associated publication on `melafit` yet, please cite the
 package directly using the following reference:
@@ -276,7 +279,8 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 * Vitaliy Kolodyazhniy – Lead Developer
 * Christian Cajochen – Scientific Lead
 
-## Revision History
+<details>
+<summary><strong>Revision History</strong> <em>(click to expand)</em></summary>
 
 ### [v0.4.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.0) - Improved API and examples
 - `AmplitudeResult` now includes a `baseline` field (waveform minimum)
@@ -402,6 +406,7 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 - Example scripts: `example_dlmo.py` (DLMO from partial data) and
   `example_full_profile.py` (full profile analysis)
 - MIT license, packaging metadata and README
+</details>
 
 ## License
 
