@@ -143,8 +143,10 @@ you have performed the steps above as described, your script will 'see' all
 the required packages from any location. Simply make sure to use the virtual 
 environment `melafit` you created.
 
+### Minimal example — fit a single participant and compute area/COG
+
 <details>
-<summary><big><u>Minimal example — fit a single participant and compute area/COG</u></big> <em>(click to expand)</em></summary>
+<summary><strong>Click to expand</strong></summary>
 
 ```python
 import os
@@ -215,7 +217,7 @@ and the following figure is displayed with a fitted BSBCF waveform and the data 
 
 </details>
 
-## Data preparation
+### Data preparation
 
 Follow the Excel table format and column naming conventions as in 
 [./data/](https://github.com/vitaliy-ch25/melafit/blob/main/data/):
@@ -233,8 +235,10 @@ research, please cite the following foundational publications:
 1. [Van Someren, E. J., & Nagtegaal, E. (2007). Improving melatonin circadian phase estimates. Sleep Medicine, 8(6), 590-601.](https://doi.org/10.1016/j.sleep.2007.03.012)
 2. [Gabel, V., et al. (2017). Differential impact in young and older individuals of blue-enriched white light on circadian physiology and alertness during sustained wakefulness. Scientific Reports, 7, 7620.](https://doi.org/10.1038/s41598-017-07060-8)
 
+### BibTeX
+
 <details>
-<summary><big><u>BibTeX</u></big> <em>(click to expand)</em></summary>
+<summary><strong>Click to expand</strong></summary>
 
 ```bibtex
 @article{vansomeren2007,
@@ -279,8 +283,10 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 * Vitaliy Kolodyazhniy – Lead Developer
 * Christian Cajochen – Scientific Lead
 
+## Revision History
+
 <details>
-<summary><big><u>Revision History</u></big> <em>(click to expand)</em></summary>
+<summary><strong>Click to expand</strong></summary>
 
 ### [v0.4.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.0) - Improved API and examples
 - `AmplitudeResult` now includes a `baseline` field (waveform minimum)
