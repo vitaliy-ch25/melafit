@@ -1214,6 +1214,17 @@ class TestResultsCollector(unittest.TestCase):
         filepath = os.path.join(self.tmpdir, self.filename + ".xlsx")
         self.assertTrue(os.path.exists(filepath))
 
+    def test_save_filename_with_xlsx_extension(self):
+        """save() should not double the .xlsx extension if already present."""
+        import os
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, self.ampl, self.mid, self.ac)
+        collector.save(self.tmpdir, self.filename + ".xlsx")
+        filepath = os.path.join(self.tmpdir, self.filename + ".xlsx")
+        self.assertTrue(os.path.exists(filepath))
+        bad_path = os.path.join(self.tmpdir, self.filename + ".xlsx.xlsx")
+        self.assertFalse(os.path.exists(bad_path))
+
     def test_save_creates_directory(self):
         """save() should create the result directory if missing."""
         import os
