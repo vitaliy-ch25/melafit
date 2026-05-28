@@ -144,6 +144,15 @@ def area_cog(times: np.ndarray | pd.DatetimeIndex,
     """
     Area under the curve and center of gravity of melatonin waveform.
 
+    The center of gravity (COG) is conceptually related to the melatonin
+    midpoint — both describe the "center" of the nocturnal melatonin
+    episode. However, the midpoint is defined as the average of two
+    discrete threshold crossings (DLMOn and DLMOff), which makes it
+    sensitive to the choice of threshold and to asymmetric profiles. COG
+    is computed as the weighted centroid of the full waveform area above
+    baseline, without any threshold, making it more robust to noise and
+    profile asymmetry. For symmetric profiles the two measures coincide.
+
     Parameters
     ----------
         times : np.ndarray or pandas DatetimeIndex
@@ -163,6 +172,7 @@ def area_cog(times: np.ndarray | pd.DatetimeIndex,
 
     See also
     --------
+        :func:`midpoint` : Threshold-based melatonin midpoint and DLMOn/DLMOff
         :func:`melafit.utils.gen_time_range` : Generate resampled time axis
     """
 
