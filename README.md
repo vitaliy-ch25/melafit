@@ -288,10 +288,15 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 <summary><strong>Click to expand</strong></summary>
 
 ### [v0.4.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.1) - Bugfix and documentation polish
-- `ResultsCollector.save()` now appends `.xlsx` only when the supplied filename does not already end with `.xlsx`, preventing double-extension filenames such as `results.xlsx.xlsx`
-- Unit test `test_save_filename_with_xlsx_extension` added to verify that a filename passed with `.xlsx` already present is written without modification
+- `ResultsCollector.save()` now appends `.xlsx` only when the supplied 
+  filename does not already end with `.xlsx`, preventing double-extension 
+  filenames such as `results.xlsx.xlsx`
+- Unit test `test_save_filename_with_xlsx_extension` added to verify that a 
+  filename passed with `.xlsx` already present is written without modification
 - Docstrings improved in `markers.py` and `results.py`
-- README: collapsible sections added for BibTeX citation block and Revision History; section captions and markup refined; recommended package/environment manager updated to [Miniforge](https://github.com/conda-forge/miniforge)
+- README: collapsible sections added for BibTeX citation block and Revision 
+  History; section captions and markup refined; recommended package/environment 
+  manager updated to [Miniforge](https://github.com/conda-forge/miniforge)
 
 ### [v0.4.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.0) - Improved API and examples
 - `AmplitudeResult` now includes a `baseline` field (waveform minimum)
