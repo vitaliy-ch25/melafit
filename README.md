@@ -44,9 +44,8 @@ time series.
 installed with `pip`. However, installing directly into your system Python 
 environment without a virtual environment is strongly discouraged, as it may 
 cause conflicts with other packages. The recommended approach is to use 
-[Miniconda](https://docs.conda.io/projects/miniconda/en/latest/) as the 
-package and environment manager to create a dedicated virtual environment, as 
-described below.
+[miniforge](https://conda-forge.org/download/) as the package and environment 
+manager to create a dedicated virtual environment, as described below.
 
 ### Standard installation
 
