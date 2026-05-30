@@ -552,6 +552,10 @@ class TestMidpoint(unittest.TestCase):
         self.assertEqual(d["dlmoff"], phase_to_string(result.dlmoff))
         self.assertEqual(d["midpoint"], phase_to_string(result.midpoint))
 
+    def test_threshold_never_crossed_raises(self):
+        with self.assertRaises(ValueError):
+            midpoint(self.times, self.values, 1e9, thresh_abs=True)
+
     def test_with_real_data(self):
         data = read_data(DUMMY_DATA_FULL)
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
@@ -611,6 +615,17 @@ class TestAreaCog(unittest.TestCase):
         result = area_cog(self.times, self.values)
         d = result.to_dict()
         self.assertEqual(d["cog"], phase_to_string(result.cog))
+
+    def test_baseline_never_crossed_raises(self):
+        with self.assertRaises(ValueError):
+            area_cog(self.times, self.values, baseline=1e9)
+
+    def test_zero_area_raises(self):
+        # Alternating +1/-1 over 1440 points: has an upward crossing at
+        # baseline=0 but the positive and negative contributions cancel exactly.
+        vals = np.where(np.arange(len(self.times)) % 2 == 0, 1.0, -1.0)
+        with self.assertRaises(ValueError):
+            area_cog(self.times, vals, baseline=0.0)
 
     def test_with_real_data(self):
         data = read_data(DUMMY_DATA_FULL)
@@ -686,46 +701,6 @@ class TestPreparePartData(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# utils.py — to_days tests
-# ---------------------------------------------------------------------------
-
-class TestToDays(unittest.TestCase):
-    """Tests for to_days()."""
-
-    def test_unix_epoch_is_zero(self):
-        result = to_days(pd.DatetimeIndex(["1970-01-01T00:00:00"]))
-        self.assertAlmostEqual(result[0], 0.0, places=10)
-
-    def test_one_day_later_is_one(self):
-        result = to_days(pd.DatetimeIndex(["1970-01-02T00:00:00"]))
-        self.assertAlmostEqual(result[0], 1.0, places=10)
-
-    def test_fractional_part_matches_time_of_day(self):
-        result = to_days(pd.DatetimeIndex(["1970-01-01T06:00:00"]))
-        self.assertAlmostEqual(result[0], 0.25, places=10)
-
-    def test_naive_and_utc_aware_agree(self):
-        naive = to_days(pd.DatetimeIndex(["2024-03-15T12:00:00"]))
-        aware = to_days(pd.DatetimeIndex(["2024-03-15T12:00:00+00:00"]))
-        self.assertAlmostEqual(naive[0], aware[0], places=10)
-
-    def test_non_utc_aware_is_converted(self):
-        utc   = to_days(pd.DatetimeIndex(["2024-01-01T12:00:00+00:00"]))
-        plus2 = to_days(pd.DatetimeIndex(["2024-01-01T14:00:00+02:00"]))
-        self.assertAlmostEqual(utc[0], plus2[0], places=10)
-
-    def test_returns_numpy_array(self):
-        result = to_days(pd.DatetimeIndex(["2024-01-01"]))
-        self.assertIsInstance(result, np.ndarray)
-
-    def test_accepts_datetime64_array(self):
-        arr = np.array(["2024-01-01T00:00:00", "2024-01-02T00:00:00"],
-                       dtype="datetime64[ns]")
-        result = to_days(arr)
-        self.assertEqual(len(result), 2)
-        self.assertAlmostEqual(result[1] - result[0], 1.0, places=10)
-
-
 # utils.py — to_days / from_days tests
 # ---------------------------------------------------------------------------
 

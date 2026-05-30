@@ -48,8 +48,7 @@ References:
 import numpy as np
 import pandas as pd
 from melafit.results import AmplitudeResult, MidpointResult, AreaCogResult
-from melafit.utils import (day_profile, abs_threshold, time_to_phase,
-                            phase_to_string)
+from melafit.utils import (day_profile, abs_threshold, time_to_phase)
 
 
 def amplitude(values: np.ndarray) -> AmplitudeResult:
@@ -115,10 +114,20 @@ def midpoint(times: np.ndarray | pd.DatetimeIndex,
     if not thresh_abs:
         threshold = abs_threshold(values, threshold)
 
-    idx_on = np.argwhere((d_profile.values[:-1] < threshold) &
-                         (d_profile.values[1:] >= threshold))[0]
-    idx_off = np.argwhere((d_profile.values[:-1] >= threshold) &
-                          (d_profile.values[1:] < threshold))[0]
+    on = np.argwhere((d_profile.values[:-1] < threshold) &
+                         (d_profile.values[1:] >= threshold))
+    off = np.argwhere((d_profile.values[:-1] >= threshold) &
+                          (d_profile.values[1:] < threshold))
+    
+    if len(on) == 0 or len(off) == 0:
+        raise ValueError(
+            f"Threshold {threshold:.3f} is never crossed in the waveform. "
+            f"Data range: [{d_profile.values.min():.3f}, "
+            f"{d_profile.values.max():.3f}]. "
+            f"Consider adjusting the threshold or checking the input data.")
+    
+    idx_on  = on[0]
+    idx_off = off[0]
 
     time_on = d_profile.index.values[idx_on][0] / 24.0
     time_off = d_profile.index.values[idx_off][0] / 24.0
@@ -186,13 +195,29 @@ def area_cog(times: np.ndarray | pd.DatetimeIndex,
     times = d_profile.index.values / 24.0
     values = d_profile.values
 
-    idx_on = np.argwhere((values[:-1] <= baseline) &
-                         (values[1:] > baseline))[0][0]
+    on = np.argwhere((values[:-1] <= baseline) &
+                     (values[1:] > baseline))
+
+    if len(on) == 0:
+        raise ValueError(
+            f"Baseline {baseline:.3f} is never crossed from below in the "
+            f"waveform. Data range: [{values.min():.3f}, "
+            f"{values.max():.3f}]. "
+            f"Consider adjusting the baseline or checking the input data.")
+
+    idx_on = on[0][0]
 
     times = np.concatenate([times[idx_on:], 1.0 + times[:idx_on]])
     values = np.concatenate([values[idx_on:], values[:idx_on]]) - baseline
 
     area = np.sum(values)
+
+    if area == 0:
+        raise ValueError(
+            "Area under the curve is zero — the waveform has no values " +
+            f"above the baseline of {baseline}. Check the input data " +
+            "or the baseline value.")
+
     cog = np.dot(values, times) / area
 
     # Convert COG to phase (from 0.0 to 1.0, 1.0 = 24h)

@@ -71,6 +71,9 @@ functional analysis environment, including all supporting packages (`numpy`,
 
 ### Developer installation
 
+<details>
+<summary><strong>Click to expand</strong></summary>
+
 If you intend to follow the development closely or contribute to the
 package, clone the repository first to a dedicated directory
 `<YOUR-DIRECTORY>`. Navigate to it and clone the repository as follows:
@@ -94,6 +97,8 @@ conda activate melafit
 With an editable install, any changes to the source code in the cloned
 directory take effect immediately without reinstalling the package.
 
+</details>
+
 ## Updating
 
 ### Standard update
@@ -111,6 +116,9 @@ This updates both the dependencies and `melafit` itself to the latest
 released version.
 
 ### Developer update
+
+<details>
+<summary><strong>Click to expand</strong></summary>
 
 Navigate to the cloned repository directory and pull the latest version
 from the main branch:
@@ -130,6 +138,8 @@ conda env update -f melafit-dev.yml --prune
 
 This updates both the dependencies and the `melafit` package itself to
 the latest version.
+
+</details>
 
 ## Getting Started
 
@@ -294,9 +304,25 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 - Unit test `test_save_filename_with_xlsx_extension` added to verify that a 
   filename passed with `.xlsx` already present is written without modification
 - Docstrings improved in `markers.py` and `results.py`
-- README: collapsible sections added for BibTeX citation block and Revision 
-  History; section captions and markup refined; recommended package/environment 
-  manager updated to [Miniforge](https://github.com/conda-forge/miniforge)
+- README: collapsible sections added for BibTeX citation block, Revision 
+  History, Developer installation, and Developer update; section captions and 
+  markup refined; recommended package/environment manager updated to 
+  [Miniforge](https://github.com/conda-forge/miniforge)
+- `midpoint()` now raises `ValueError` with a descriptive message (data range 
+  and threshold value included) when the threshold is never crossed, replacing 
+  a silent `IndexError`
+- `area_cog()` now raises `ValueError` with a descriptive message when the 
+  baseline is never crossed from below, or when the area under the curve is 
+  zero
+- `prepare_part_data()` issues `warnings.warn()` instead of `print()` when 
+  correcting a duplicate timestamp, so the message integrates with standard 
+  Python warning filters
+- Unused imports removed from `markers.py` (`phase_to_string`) and 
+  `utils.py` (`os`, `scipy.optimize`)
+- Unit tests added: `test_threshold_never_crossed_raises` (`TestMidpoint`), 
+  `test_baseline_never_crossed_raises` and `test_zero_area_raises` 
+  (`TestAreaCog`)
+- `pyproject.toml`: `keywords`, `classifiers`, and `Documentation` URL added
 
 ### [v0.4.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.0) - Improved API and examples
 - `AmplitudeResult` now includes a `baseline` field (waveform minimum)

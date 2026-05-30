@@ -13,6 +13,33 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
 license-files = ["LICENSE"]
+keywords = [
+    "melatonin",
+    "circadian",
+    "circadian rhythm",
+    "DLMO",
+    "dim light melatonin onset",
+    "center of gravity",
+    "area under the curve",
+    "chronobiology",
+    "curve fitting",
+    "baseline cosine function",
+    "waveform analysis",
+    "circadian phase",
+    "sleep research",
+    "phase marker",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Healthcare Industry",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
 dependencies = [
     "numpy",
     "scipy",
@@ -26,3 +53,4 @@ version = {attr = "melafit._version.__version__"}
 
 [project.urls]
 Homepage = "https://github.com/vitaliy-ch25/melafit"
+Documentation = "https://github.com/vitaliy-ch25/melafit#readme"
