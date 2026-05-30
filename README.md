@@ -191,6 +191,7 @@ collector.add(meta, ac)
 # Print summary
 print(meta)
 print(res)
+print(ac)
 
 # Visualize results
 title_str = (f"{meta}, {ac}, R²={res.r2:.3f}")
