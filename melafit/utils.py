@@ -47,12 +47,11 @@ Notes:
 - Day profiles are computed by averaging across multiple circadian cycles
 """
 
-import os
 import numpy as np
 import pandas as pd
 import datetime as dt
-import scipy.optimize as opt
 from collections.abc import Mapping
+import warnings
 
 _EPOCH = pd.Timestamp("1970-01-01", tz="UTC")
 
@@ -166,7 +165,8 @@ def prepare_part_data(data: pd.DataFrame,
         for i in ix:
             idx = p_data.index[i[0] + 1]
             p_data.loc[idx, 'Timestamp'] += pd.Timedelta(days=1)
-            print(f"Corrected one timestamp for participant {participant}")
+            warnings.warn(
+                f"Corrected one timestamp for participant {participant}")
 
     return p_data
 

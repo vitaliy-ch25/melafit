@@ -187,12 +187,25 @@ class AreaCogResult(AnalysisRecord):
     """
     Result of area under curve and center of gravity computation.
 
+    The center of gravity (COG) is conceptually related to the melatonin
+    midpoint — both describe the "center" of the nocturnal melatonin
+    episode. The midpoint is defined as the average of two threshold
+    crossings (DLMOn and DLMOff) and is therefore sensitive to the choice
+    of threshold and to profile asymmetry. COG is computed as the weighted
+    centroid of the full waveform area above baseline without any threshold,
+    making it more robust to noise and profile shape. For symmetric profiles
+    the two measures coincide.
+
     Attributes
     ----------
         area : float
             Area under the curve
         cog : float
             Center of gravity as phase (0.0 to 1.0, 1.0 = 24h)
+
+    See also
+    --------
+        :class:`MidpointResult` : Threshold-based midpoint and DLMOn/DLMOff
     """
 
     area: np.float64
@@ -378,9 +391,12 @@ class ResultsCollector:
         if not self._records:
             return
 
+        if not filename.endswith(".xlsx"):
+            filename += ".xlsx"
+
         df = pd.DataFrame(self._records)
         df.set_index("participant", inplace=True)
         df.sort_index(inplace=True)
 
         os.makedirs(result_path, exist_ok=True)
-        df.to_excel(os.path.join(result_path, filename + ".xlsx"))
+        df.to_excel(os.path.join(result_path, filename))
