@@ -26,7 +26,7 @@ ac = mf.area_cog(resampled_t, resampled_f)
 
 # Collect all results for this participant
 meta = mf.SessionInfo(p_data)
-collector.add(meta, ac)
+collector.add(meta, res, ac)
 
 # Print summary
 print(meta)
