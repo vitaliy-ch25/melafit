@@ -327,6 +327,8 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 - `amplitude()` and `area_cog()` switch to `np.nanmin`/`np.nanmax` so input
   NaNs (e.g. empty Excel cells) are ignored rather than propagated
 - Unit tests added for interior NaN handling (`TestInteriorNaNHandling`)
+- Fixed a bug in `day_profile()` that caused an error when the input data had
+  a sampling period other than 1 minute
 
 ### [v0.4.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.1) - Bugfix and documentation polish
 - `ResultsCollector.save()` now appends `.xlsx` only when the supplied 
