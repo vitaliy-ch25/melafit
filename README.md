@@ -303,7 +303,7 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 <details>
 <summary><strong>Click to expand</strong></summary>
 
-### [v0.5.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.0) - Dedicated DLMO function and improved data gap handling
+### [v0.5.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.0) - DLMO function and improved data handling
 - New `dlmo()` function in `markers.py` computes DLMO from the rising slope
   only, returning a `DLMOResult` with `dlmo` phase and threshold; raises
   `ValueError` with a descriptive message (threshold value and data range) if
@@ -329,6 +329,17 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 - Unit tests added for interior NaN handling (`TestInteriorNaNHandling`)
 - Fixed a bug in `day_profile()` that caused an error when the input data had
   a sampling period other than 1 minute
+- Fitting and marker functions (`fit()`, `amplitude()`, `dlmo()`, `midpoint()`,
+  `area_cog()`, `day_profile()`) now accept `pd.Series` for value arguments
+  and `pd.Series`/`pd.DatetimeIndex` for time arguments
+- `gen_time_range()` switched from `np.arange` to integer step counting to
+  avoid off-by-one errors from floating-point rounding
+- `area_cog()`: baseline fallback to `nanmin` is now computed from the
+  resampled waveform (after `day_profile()`) rather than the raw input
+- `area_cog()` and `midpoint()` docstrings note the 24 h coverage assumption
+- Unit tests added: `TestSeriesInput` (all new input combinations) and
+  `TestMarkersFromRawData` (all four markers applied to sparse participant
+  data without curve fitting)
 
 ### [v0.4.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.1) - Bugfix and documentation polish
 - `ResultsCollector.save()` now appends `.xlsx` only when the supplied 
