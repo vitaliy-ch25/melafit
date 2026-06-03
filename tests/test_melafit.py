@@ -20,10 +20,10 @@ from melafit.fitting import (bcf, sbcf, bbcf, bsbcf, cost, rsquared,
                               _resolve_params, BCF_PARAM_NAMES,
                               SBCF_PARAM_NAMES, BBCF_PARAM_NAMES,
                               BSBCF_PARAM_NAMES, BUILTIN_PARAM_NAMES)
-from melafit.markers import amplitude, midpoint, area_cog
+from melafit.markers import amplitude, dlmo, midpoint, area_cog
 from melafit.results import (FitResult, AnalysisRecord, SessionInfo,
-                              AmplitudeResult, MidpointResult, AreaCogResult,
-                              ResultsCollector)
+                              AmplitudeResult, DLMOResult, MidpointResult,
+                              AreaCogResult, ResultsCollector)
 from melafit.utils import (read_data, prepare_part_data, to_days, from_days,
                             gen_time_range, day_profile, time_to_phase,
                             phase_to_string, string_to_phase, abs_threshold,
@@ -500,6 +500,120 @@ class TestAmplitude(unittest.TestCase):
         self.assertAlmostEqual(d["amplitude"], 8.0)
         self.assertIn("baseline", d)
         self.assertAlmostEqual(d["baseline"], 2.0)
+
+
+# ---------------------------------------------------------------------------
+# results.py — DLMOResult tests
+# ---------------------------------------------------------------------------
+
+class TestDLMOResult(unittest.TestCase):
+    """Tests for DLMOResult dataclass."""
+
+    def test_construction(self):
+        result = DLMOResult(dlmo=0.875, threshold=10.0)
+        self.assertAlmostEqual(result.dlmo, 0.875)
+        self.assertAlmostEqual(result.threshold, 10.0)
+
+    def test_is_analysis_record(self):
+        result = DLMOResult(dlmo=0.875, threshold=10.0)
+        self.assertIsInstance(result, AnalysisRecord)
+
+    def test_str_contains_dlmo(self):
+        result = DLMOResult(dlmo=0.875, threshold=10.0)
+        s = str(result)
+        self.assertIn("DLMO", s)
+        self.assertIn(phase_to_string(0.875), s)
+
+    def test_to_dict_returns_dict(self):
+        result = DLMOResult(dlmo=0.875, threshold=10.0)
+        d = result.to_dict()
+        self.assertIsInstance(d, dict)
+        self.assertIn("dlmo", d)
+        self.assertIn("threshold", d)
+
+    def test_to_dict_dlmo_is_string(self):
+        result = DLMOResult(dlmo=0.875, threshold=10.0)
+        d = result.to_dict()
+        self.assertIsInstance(d["dlmo"], str)
+
+    def test_to_dict_threshold_is_float(self):
+        result = DLMOResult(dlmo=0.875, threshold=10.0)
+        d = result.to_dict()
+        self.assertIsInstance(d["threshold"], float)
+        self.assertAlmostEqual(d["threshold"], 10.0)
+
+    def test_to_dict_match_phase_to_string(self):
+        result = DLMOResult(dlmo=0.875, threshold=10.0)
+        d = result.to_dict()
+        self.assertEqual(d["dlmo"], phase_to_string(result.dlmo))
+
+
+# ---------------------------------------------------------------------------
+# markers.py — dlmo tests
+# ---------------------------------------------------------------------------
+
+class TestDLMO(unittest.TestCase):
+    """Tests for dlmo()."""
+
+    def setUp(self):
+        self.values = bsbcf(t=T, p=BSBCF_PARAMS_ARRAY)
+        self.times = pd.date_range(
+            start="2024-01-01 00:00",
+            periods=len(T),
+            freq=pd.Timedelta(minutes=1))
+
+    def test_returns_dlmo_result(self):
+        result = dlmo(self.times, self.values, 0.25)
+        self.assertIsInstance(result, DLMOResult)
+
+    def test_dlmo_in_range(self):
+        result = dlmo(self.times, self.values, 0.25)
+        self.assertGreaterEqual(result.dlmo, 0.0)
+        self.assertLess(result.dlmo, 1.0)
+
+    def test_relative_threshold_converted_correctly(self):
+        result = dlmo(self.times, self.values, 0.25)
+        self.assertAlmostEqual(result.threshold,
+                               abs_threshold(self.values, 0.25))
+
+    def test_absolute_threshold_mode(self):
+        result = dlmo(self.times, self.values, 10.0, thresh_abs=True)
+        self.assertAlmostEqual(result.threshold, 10.0)
+
+    def test_to_dict_returns_dict(self):
+        result = dlmo(self.times, self.values, 0.25)
+        d = result.to_dict()
+        self.assertIsInstance(d, dict)
+        for key in ["dlmo", "threshold"]:
+            self.assertIn(key, d)
+        self.assertIsInstance(d["dlmo"], str)
+        self.assertIsInstance(d["threshold"], float)
+
+    def test_to_dict_match_phase_to_string(self):
+        result = dlmo(self.times, self.values, 0.25)
+        d = result.to_dict()
+        self.assertEqual(d["dlmo"], phase_to_string(result.dlmo))
+
+    def test_threshold_never_crossed_raises(self):
+        with self.assertRaises(ValueError):
+            dlmo(self.times, self.values, 1e9, thresh_abs=True)
+
+    def test_agrees_with_midpoint_dlmon(self):
+        """dlmo() onset should equal midpoint() dlmon for the same waveform."""
+        r_dlmo = dlmo(self.times, self.values, 0.25)
+        r_mid  = midpoint(self.times, self.values, 0.25)
+        self.assertAlmostEqual(r_dlmo.dlmo, r_mid.dlmon, places=4)
+
+    def test_with_real_data(self):
+        data = read_data(DUMMY_DATA_FULL)
+        p_data = prepare_part_data(data, np.unique(data.Participant)[0])
+        res = fit(p_data.Timestamp.values, p_data.Mel.values, f=sbcf)
+        tmin, tmax = p_data.Timestamp.min(), p_data.Timestamp.max()
+        t = gen_time_range(tmin=tmin, tmax=tmax, step="1min")
+        curve = sbcf(t=t, p=res)
+        result = dlmo(t, curve, 0.25)
+        self.assertGreaterEqual(result.dlmo, 0.0)
+        self.assertLess(result.dlmo, 1.0)
 
 
 # ---------------------------------------------------------------------------
@@ -1248,6 +1362,44 @@ class TestResultsCollector(unittest.TestCase):
         self.assertTrue(np.isfinite(df["r2"].iloc[0]))
         # area and cog should be missing as columns (no AreaCogResult added)
         self.assertNotIn("area", df.columns)
+
+    def test_add_dlmo_result(self):
+        """add() should accept a DLMOResult alongside meta and fit result."""
+        dl = dlmo(self.times, self.values, 0.25)
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, dl)
+        self.assertEqual(len(collector._records), 1)
+
+    def test_dlmo_result_record_contains_dlmo_field(self):
+        """Record with DLMOResult should have 'dlmo' key."""
+        dl = dlmo(self.times, self.values, 0.25)
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, dl)
+        record = collector._records[0]
+        self.assertIn("dlmo", record)
+        self.assertIsInstance(record["dlmo"], str)
+
+    def test_dlmo_result_workflow_excel(self):
+        """DLMO-only workflow: 'dlmo' column present, 'dlmoff'/'midpoint' absent."""
+        import os
+        dl = dlmo(self.times, self.values, 0.25)
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, dl)
+        collector.save(self.tmpdir, self.filename)
+        filepath = os.path.join(self.tmpdir, self.filename + ".xlsx")
+        df = pd.read_excel(filepath, index_col="participant")
+        self.assertIn("dlmo", df.columns)
+        self.assertNotIn("dlmoff", df.columns)
+        self.assertNotIn("midpoint", df.columns)
+
+    def test_dlmo_result_argument_order_irrelevant(self):
+        """add() with DLMOResult should be order-independent."""
+        dl = dlmo(self.times, self.values, 0.25)
+        c1 = ResultsCollector()
+        c2 = ResultsCollector()
+        c1.add(self.meta, self.res, dl)
+        c2.add(dl, self.res, self.meta)
+        self.assertEqual(c1._records, c2._records)
 
 
 if __name__ == "__main__":

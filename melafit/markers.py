@@ -47,7 +47,8 @@ References:
 
 import numpy as np
 import pandas as pd
-from melafit.results import AmplitudeResult, MidpointResult, AreaCogResult
+from melafit.results import (AmplitudeResult, DLMOResult, MidpointResult, 
+                             AreaCogResult)
 from melafit.utils import (day_profile, abs_threshold, time_to_phase)
 
 
@@ -69,6 +70,65 @@ def amplitude(values: np.ndarray) -> AmplitudeResult:
     baseline = np.min(values)
     return AmplitudeResult(amplitude=np.max(values) - baseline,
                            baseline=baseline)
+
+
+def dlmo(times: np.ndarray | pd.DatetimeIndex,
+         values: np.ndarray,
+         threshold: np.float64,
+         thresh_abs: bool = False) -> DLMOResult:
+    """
+    Compute Dim Light Melatonin Offset (DLMO) time.
+
+    Parameters
+    ----------
+        times : np.ndarray or pandas DatetimeIndex
+            Datetime values as a DatetimeIndex or as float days since the
+            UTC epoch (as returned by :func:`melafit.utils.gen_time_range`)
+        values : Numpy array of floats
+            Melatonin waveform values
+        threshold : float
+            Relative threshold, fraction of range peak-to-baseline (0 to 1),
+            or absolute threshold value if thresh_abs=True
+        thresh_abs : bool
+            If True, the given threshold is absolute. Otherwise, the absolute
+            threshold is computed from the given relative threshold and the
+            range of values (defaults to False)
+
+    Returns
+    -------
+        result : DLMOResult
+            Dataclass containing dlmo as phase values and the absolute 
+            threshold used
+
+    See also
+    --------
+        :func:`melafit.utils.gen_time_range` : Generate resampled time axis
+    """
+
+    d_profile = day_profile(times, values, binsize=1)[0]
+
+    times = d_profile.index.values / 24.0
+    values = d_profile.values
+
+    if not thresh_abs:
+        threshold = abs_threshold(values, threshold)
+
+    on = np.argwhere((values[:-1] < threshold) & (values[1:] >= threshold))
+    
+    if len(on) == 0:
+        raise ValueError(
+            f"Threshold {threshold:.3f} is never crossed in the waveform. "
+            f"Data range: [{d_profile.values.min():.3f}, "
+            f"{d_profile.values.max():.3f}]. "
+            f"Consider adjusting the threshold or checking the input data.")
+    
+    idx_on  = on[0]
+
+    time_on = times[idx_on][0]
+    time_on = time_to_phase(time_on)
+
+    return DLMOResult(dlmo=time_on,
+                      threshold=threshold)
 
 
 def midpoint(times: np.ndarray | pd.DatetimeIndex,
@@ -111,13 +171,14 @@ def midpoint(times: np.ndarray | pd.DatetimeIndex,
 
     d_profile = day_profile(times, values, binsize=1)[0]
 
+    times = d_profile.index.values / 24.0
+    values = d_profile.values
+
     if not thresh_abs:
         threshold = abs_threshold(values, threshold)
 
-    on = np.argwhere((d_profile.values[:-1] < threshold) &
-                         (d_profile.values[1:] >= threshold))
-    off = np.argwhere((d_profile.values[:-1] >= threshold) &
-                          (d_profile.values[1:] < threshold))
+    on = np.argwhere((values[:-1] < threshold) & (values[1:] >= threshold))
+    off = np.argwhere((values[:-1] >= threshold) & (values[1:] < threshold))
     
     if len(on) == 0 or len(off) == 0:
         raise ValueError(
@@ -129,8 +190,8 @@ def midpoint(times: np.ndarray | pd.DatetimeIndex,
     idx_on  = on[0]
     idx_off = off[0]
 
-    time_on = d_profile.index.values[idx_on][0] / 24.0
-    time_off = d_profile.index.values[idx_off][0] / 24.0
+    time_on = times[idx_on][0]
+    time_off = times[idx_off][0]
 
     if time_on > time_off:
         time_off += 1.0

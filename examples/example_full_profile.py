@@ -1,3 +1,8 @@
+"""
+Determine phase markers from full melatonin profiles via fitting of all 
+available analytical functions.
+"""
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt

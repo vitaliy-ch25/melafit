@@ -1,3 +1,8 @@
+"""
+Determine phase markers from the full melatonin profile of one participant 
+via fitting the BSBCF function.
+"""
+
 import os
 import matplotlib.pyplot as plt
 from matplotlib import dates
