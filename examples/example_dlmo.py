@@ -60,11 +60,10 @@ for mel_func in mel_funcs:
             # Print summary
             print(meta)
             print(res)
-            dlmo_str=f"DLMO={mf.phase_to_string(dlmo.dlmo)}"
-            print(dlmo_str)
+            print(dlmo)
 
             # Visualize results
-            title_str = f"Date: {meta.start.date()}, {dlmo_str}"
+            title_str = f"Date: {meta.start.date()}, {dlmo}"
 
             plt.close("all")
             plt.figure(figsize=(12, 5))
