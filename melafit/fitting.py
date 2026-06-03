@@ -494,8 +494,8 @@ def func_defaults(data_fit: np.ndarray,
             array_to_params(lb, f),
             array_to_params(ub, f))
 
-def fit(time_fit: np.ndarray | pd.Series,
-        data_fit: np.ndarray,
+def fit(time_fit: np.ndarray | pd.Series | pd.DatetimeIndex,
+        data_fit: np.ndarray | pd.Series,
         f: callable=bsbcf,
         p0: dict | np.ndarray | None = None,
         lb: dict | np.ndarray | None = None,
@@ -507,12 +507,13 @@ def fit(time_fit: np.ndarray | pd.Series,
 
     Parameters
     ----------
-        time_fit : np.ndarray or pd.Series
+        time_fit : np.ndarray, pd.Series, or pd.DatetimeIndex
             X-values for curve fitting (time). Accepts a float array of
-            days since UTC epoch (e.g. from :func:`melafit.utils.gen_time_range`)
-            or a datetime64 array / pandas Timestamp Series, which is converted
-            automatically via :func:`melafit.utils.to_days`
-        data_fit : Numpy array of floats
+            days since UTC epoch (e.g. from :func:`melafit.utils.gen_time_range`),
+            a datetime64 array, a pandas Timestamp Series (e.g. a DataFrame
+            Timestamp column), or a DatetimeIndex. Datetime inputs are converted
+            automatically via :func:`melafit.utils.to_days`.
+        data_fit : np.ndarray or pd.Series
             Y-values for curve fitting (melatonin levels)
         f : callable
             Melatonin wave approximation function (defaults to `bsbcf`)
@@ -542,8 +543,10 @@ def fit(time_fit: np.ndarray | pd.Series,
         conditions and bounds for fitting
     """
 
-    if hasattr(time_fit, 'dtype') and np.issubdtype(time_fit.dtype, np.datetime64):
+    time_fit = np.asarray(time_fit)
+    if np.issubdtype(time_fit.dtype, np.datetime64):
         time_fit = to_days(time_fit)
+    data_fit = np.asarray(data_fit)
 
     # Only try to fetch defaults if we recognize the function
     if f in BUILTIN_PARAM_NAMES.keys():

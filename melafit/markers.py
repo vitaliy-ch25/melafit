@@ -52,13 +52,13 @@ from melafit.results import (AmplitudeResult, DLMOResult, MidpointResult,
 from melafit.utils import (day_profile, abs_threshold, time_to_phase)
 
 
-def amplitude(values: np.ndarray) -> AmplitudeResult:
+def amplitude(values: np.ndarray | pd.Series) -> AmplitudeResult:
     """
     Peak-to-baseline amplitude of fitted waveform.
 
     Parameters
     ----------
-        values : Numpy array of floats
+        values : np.ndarray or pd.Series
             Waveform values
 
     Returns
@@ -72,8 +72,8 @@ def amplitude(values: np.ndarray) -> AmplitudeResult:
                            baseline=baseline)
 
 
-def dlmo(times: np.ndarray | pd.DatetimeIndex,
-         values: np.ndarray,
+def dlmo(times: np.ndarray | pd.Series | pd.DatetimeIndex,
+         values: np.ndarray | pd.Series,
          threshold: np.float64,
          thresh_abs: bool = False,
          binsize: int = 1) -> DLMOResult:
@@ -82,10 +82,10 @@ def dlmo(times: np.ndarray | pd.DatetimeIndex,
 
     Parameters
     ----------
-        times : np.ndarray or pandas DatetimeIndex
-            Datetime values as a DatetimeIndex or as float days since the
-            UTC epoch (as returned by :func:`melafit.utils.gen_time_range`)
-        values : Numpy array of floats
+        times : np.ndarray, pd.Series, or pd.DatetimeIndex
+            Datetime values as a DatetimeIndex, a datetime Series, or as float
+            days since the UTC epoch (as returned by :func:`melafit.utils.gen_time_range`)
+        values : np.ndarray or pd.Series
             Melatonin waveform values
         threshold : float
             Relative threshold, fraction of range peak-to-baseline (0 to 1),
@@ -134,8 +134,8 @@ def dlmo(times: np.ndarray | pd.DatetimeIndex,
                       threshold=threshold)
 
 
-def midpoint(times: np.ndarray | pd.DatetimeIndex,
-             values: np.ndarray,
+def midpoint(times: np.ndarray | pd.Series | pd.DatetimeIndex,
+             values: np.ndarray | pd.Series,
              threshold: np.float64,
              thresh_abs: bool = False,
              binsize: int = 1) -> MidpointResult:
@@ -149,10 +149,10 @@ def midpoint(times: np.ndarray | pd.DatetimeIndex,
 
     Parameters
     ----------
-        times : np.ndarray or pandas DatetimeIndex
-            Datetime values as a DatetimeIndex or as float days since the
-            UTC epoch (as returned by :func:`melafit.utils.gen_time_range`)
-        values : Numpy array of floats
+        times : np.ndarray, pd.Series, or pd.DatetimeIndex
+            Datetime values as a DatetimeIndex, a datetime Series, or as float
+            days since the UTC epoch (as returned by :func:`melafit.utils.gen_time_range`)
+        values : np.ndarray or pd.Series
             Melatonin waveform values
         threshold : float
             Relative threshold, fraction of range peak-to-baseline (0 to 1),
@@ -214,8 +214,8 @@ def midpoint(times: np.ndarray | pd.DatetimeIndex,
                           threshold=threshold)
 
 
-def area_cog(times: np.ndarray | pd.DatetimeIndex,
-             values: np.ndarray,
+def area_cog(times: np.ndarray | pd.Series | pd.DatetimeIndex,
+             values: np.ndarray | pd.Series,
              baseline: np.float64 | None = None,
              binsize: int = 1) -> AreaCogResult:
     """
@@ -237,10 +237,10 @@ def area_cog(times: np.ndarray | pd.DatetimeIndex,
 
     Parameters
     ----------
-        times : np.ndarray or pandas DatetimeIndex
-            Datetime values as a DatetimeIndex or as float days since the
-            UTC epoch (as returned by :func:`melafit.utils.gen_time_range`)
-        values : Numpy array of floats
+        times : np.ndarray, pd.Series, or pd.DatetimeIndex
+            Datetime values as a DatetimeIndex, a datetime Series, or as float
+            days since the UTC epoch (as returned by :func:`melafit.utils.gen_time_range`)
+        values : np.ndarray or pd.Series
             Waveform values
         baseline : float or None
             Baseline for area computation. Equals to minimum of values if
@@ -260,13 +260,13 @@ def area_cog(times: np.ndarray | pd.DatetimeIndex,
         :func:`melafit.utils.gen_time_range` : Generate resampled time axis
     """
 
-    if baseline is None:
-        baseline = np.nanmin(values)
-
     d_profile = day_profile(times, values, binsize=binsize, interp='linear')[0]
 
     times = d_profile.index.values / 24.0
     values = d_profile.values
+
+    if baseline is None:
+        baseline = np.nanmin(values)
 
     on = np.argwhere((values[:-1] <= baseline) &
                      (values[1:] > baseline))

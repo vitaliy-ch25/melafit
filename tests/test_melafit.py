@@ -458,12 +458,94 @@ class TestFit(unittest.TestCase):
         """fit() should converge on real dummy data."""
         data = read_data(DUMMY_DATA_FULL)
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
-        res = fit(p_data.Timestamp.values, p_data.Mel.values, f=bsbcf)
+        res = fit(p_data.Timestamp, p_data.Mel, f=bsbcf)
         self.assertTrue(res.result.success or res.result.fun < 1.0)
         p = res.to_dict()
         self.assertIsInstance(p, dict)
         self.assertEqual(list(p.keys()), ["func"] + BSBCF_PARAM_NAMES + ["r2"])
         self.assertTrue(np.isfinite(res.r2))
+
+
+# ---------------------------------------------------------------------------
+# fitting.py + markers.py — Series input tests
+# ---------------------------------------------------------------------------
+
+class TestSeriesInput(unittest.TestCase):
+    """np.ndarray and pd.Series (and pd.DatetimeIndex for times) are interchangeable."""
+
+    def setUp(self):
+        n = 1440
+        self.t_arr = np.linspace(0, 1, n, endpoint=False)
+        self.y_arr = bsbcf(t=self.t_arr, p=BSBCF_PARAMS_ARRAY)
+        self.t_ser = pd.Series(self.t_arr)
+        self.y_ser = pd.Series(self.y_arr)
+        self.dt_idx = pd.date_range("2024-01-01", periods=n, freq="1min")
+        self.dt_ser = pd.Series(self.dt_idx)
+
+    def test_fit_float_series_times(self):
+        res = fit(self.t_ser, self.y_arr, f=bsbcf)
+        self.assertIsInstance(res, FitResult)
+
+    def test_fit_datetime_series_times(self):
+        res = fit(self.dt_ser, self.y_arr, f=bsbcf)
+        self.assertIsInstance(res, FitResult)
+
+    def test_fit_datetimeindex_times(self):
+        res = fit(self.dt_idx, self.y_arr, f=bsbcf)
+        self.assertIsInstance(res, FitResult)
+
+    def test_fit_series_values(self):
+        res = fit(self.t_arr, self.y_ser, f=bsbcf)
+        self.assertIsInstance(res, FitResult)
+
+    def test_fit_both_series(self):
+        res = fit(self.t_ser, self.y_ser, f=bsbcf)
+        self.assertIsInstance(res, FitResult)
+
+    def test_fit_series_matches_array(self):
+        res_arr = fit(self.t_arr, self.y_arr, f=bsbcf)
+        res_ser = fit(self.t_ser, self.y_ser, f=bsbcf)
+        np.testing.assert_array_almost_equal(res_arr.result.x, res_ser.result.x)
+
+    def test_amplitude_series_values(self):
+        result = amplitude(self.y_ser)
+        self.assertIsInstance(result, AmplitudeResult)
+        self.assertAlmostEqual(result.amplitude,
+                               amplitude(self.y_arr).amplitude)
+
+    def test_dlmo_series_values(self):
+        result = dlmo(self.dt_idx, self.y_ser, 0.25)
+        self.assertIsInstance(result, DLMOResult)
+        self.assertAlmostEqual(result.dlmo,
+                               dlmo(self.dt_idx, self.y_arr, 0.25).dlmo)
+
+    def test_dlmo_datetime_series_times(self):
+        result = dlmo(self.dt_ser, self.y_arr, 0.25)
+        self.assertIsInstance(result, DLMOResult)
+        self.assertAlmostEqual(result.dlmo,
+                               dlmo(self.dt_idx, self.y_arr, 0.25).dlmo)
+
+    def test_midpoint_series_values(self):
+        result = midpoint(self.dt_idx, self.y_ser, 0.25)
+        self.assertIsInstance(result, MidpointResult)
+
+    def test_area_cog_series_values(self):
+        result = area_cog(self.dt_idx, self.y_ser)
+        self.assertIsInstance(result, AreaCogResult)
+
+    def test_day_profile_series_values(self):
+        mean, std = day_profile(self.dt_idx, self.y_ser)
+        self.assertIsInstance(mean, pd.Series)
+
+    def test_day_profile_datetime_series_times(self):
+        mean, std = day_profile(self.dt_ser, self.y_arr)
+        self.assertIsInstance(mean, pd.Series)
+
+    def test_fit_with_dataframe_columns(self):
+        """The motivating use case: mf.fit(p_data.Timestamp, p_data.Mel, ...)"""
+        df = pd.DataFrame({"Timestamp": self.dt_idx, "Mel": self.y_arr})
+        res = fit(df.Timestamp, df.Mel, f=bsbcf)
+        self.assertIsInstance(res, FitResult)
 
 
 # ---------------------------------------------------------------------------
@@ -607,7 +689,7 @@ class TestDLMO(unittest.TestCase):
     def test_with_real_data(self):
         data = read_data(DUMMY_DATA_FULL)
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
-        res = fit(p_data.Timestamp.values, p_data.Mel.values, f=sbcf)
+        res = fit(p_data.Timestamp, p_data.Mel, f=sbcf)
         tmin, tmax = p_data.Timestamp.min(), p_data.Timestamp.max()
         t = gen_time_range(tmin=tmin, tmax=tmax, step="1min")
         curve = sbcf(t=t, p=res)
@@ -673,7 +755,7 @@ class TestMidpoint(unittest.TestCase):
     def test_with_real_data(self):
         data = read_data(DUMMY_DATA_FULL)
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
-        res = fit(p_data.Timestamp.values, p_data.Mel.values, f=bsbcf)
+        res = fit(p_data.Timestamp, p_data.Mel, f=bsbcf)
         tmin, tmax = p_data.Timestamp.min(), p_data.Timestamp.max()
         t = gen_time_range(tmin=tmin, tmax=tmax, step="1min")
         curve = bsbcf(t=t, p=res)
@@ -744,7 +826,7 @@ class TestAreaCog(unittest.TestCase):
     def test_with_real_data(self):
         data = read_data(DUMMY_DATA_FULL)
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
-        res = fit(p_data.Timestamp.values, p_data.Mel.values, f=bsbcf)
+        res = fit(p_data.Timestamp, p_data.Mel, f=bsbcf)
         tmin, tmax = p_data.Timestamp.min(), p_data.Timestamp.max()
         t = gen_time_range(tmin=tmin, tmax=tmax, step="1min")
         curve = bsbcf(t=t, p=res)
@@ -772,8 +854,8 @@ class TestMarkersFromRawData(unittest.TestCase):
         data = read_data(DUMMY_DATA_FULL)
         participant = np.unique(data.Participant)[0]
         p_data = prepare_part_data(data, participant)
-        self.times = p_data.Timestamp.values
-        self.values = p_data.Mel.values
+        self.times = p_data.Timestamp
+        self.values = p_data.Mel
 
     def test_amplitude_from_raw_data(self):
         result = amplitude(self.values)
@@ -820,8 +902,8 @@ class TestMarkersFromRawData(unittest.TestCase):
         data = read_data(DUMMY_DATA_FULL)
         for participant in np.unique(data.Participant):
             p_data = prepare_part_data(data, participant)
-            times  = p_data.Timestamp.values
-            values = p_data.Mel.values
+            times  = p_data.Timestamp
+            values = p_data.Mel
             with self.subTest(participant=participant):
                 r_amp = amplitude(values)
                 self.assertGreater(r_amp.amplitude, 0.0)
@@ -886,7 +968,7 @@ class TestPreparePartData(unittest.TestCase):
 
     def test_timestamp_monotonically_increasing(self):
         self.assertTrue(np.all(
-            np.diff(self.p_data.Timestamp.values) >= np.timedelta64(0)))
+            np.diff(self.p_data.Timestamp) >= np.timedelta64(0)))
 
     def test_only_selected_participant(self):
         self.assertTrue(
