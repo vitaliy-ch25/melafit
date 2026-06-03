@@ -230,6 +230,11 @@ def area_cog(times: np.ndarray | pd.DatetimeIndex,
     baseline, without any threshold, making it more robust to noise and
     profile asymmetry. For symmetric profiles the two measures coincide.
 
+    NOTE: This function assumes that there is at least 24h of data. If
+    this is not the case, the results may be inaccurate. When working
+    with waveforms, make sure to generate a full 24h curve which is
+    usually possible even with shorter raw data the curve was fitted to.
+
     Parameters
     ----------
         times : np.ndarray or pandas DatetimeIndex
