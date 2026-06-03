@@ -267,8 +267,8 @@ def day_profile(times: np.ndarray | pd.DatetimeIndex,
     if isinstance(times, np.ndarray):
         times = from_days(times)
 
-    data = pd.Series(index=times, data=np.asarray(values, dtype=float))
-
+    data = pd.Series(index=times, data=values)
+    
     smpstr = str(binsize) + 'min'
     profile = data.shift(0.5, freq=smpstr).resample(smpstr).mean()
     if interp is not None:

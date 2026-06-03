@@ -755,6 +755,85 @@ class TestAreaCog(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# markers.py — markers computed directly from raw data (no curve fitting)
+# ---------------------------------------------------------------------------
+
+class TestMarkersFromRawData(unittest.TestCase):
+    """
+    Confirm that all markers can be computed directly from sparse raw
+    participant data without fitting a curve first.
+
+    The dummy file contains 3-hourly samples (~18 points per participant),
+    which exercises the day_profile linear-interpolation path internally
+    used by dlmo(), midpoint(), and area_cog().
+    """
+
+    def setUp(self):
+        data = read_data(DUMMY_DATA_FULL)
+        participant = np.unique(data.Participant)[0]
+        p_data = prepare_part_data(data, participant)
+        self.times = p_data.Timestamp.values
+        self.values = p_data.Mel.values
+
+    def test_amplitude_from_raw_data(self):
+        result = amplitude(self.values)
+        self.assertIsInstance(result, AmplitudeResult)
+        self.assertGreater(result.amplitude, 0.0)
+        self.assertTrue(np.isfinite(result.amplitude))
+        self.assertTrue(np.isfinite(result.baseline))
+
+    def test_dlmo_from_raw_data(self):
+        result = dlmo(self.times, self.values, 0.25)
+        self.assertIsInstance(result, DLMOResult)
+        self.assertGreaterEqual(result.dlmo, 0.0)
+        self.assertLess(result.dlmo, 1.0)
+        self.assertTrue(np.isfinite(result.threshold))
+
+    def test_midpoint_from_raw_data(self):
+        result = midpoint(self.times, self.values, 0.25)
+        self.assertIsInstance(result, MidpointResult)
+        for val in [result.dlmon, result.dlmoff, result.midpoint]:
+            self.assertGreaterEqual(val, 0.0)
+            self.assertLess(val, 1.0)
+        self.assertTrue(np.isfinite(result.threshold))
+
+    def test_area_cog_from_raw_data(self):
+        result = area_cog(self.times, self.values)
+        self.assertIsInstance(result, AreaCogResult)
+        self.assertGreater(result.area, 0.0)
+        self.assertGreaterEqual(result.cog, 0.0)
+        self.assertLess(result.cog, 1.0)
+
+    def test_to_dict_works_for_all_markers_from_raw_data(self):
+        """to_dict() should work on results computed directly from raw data."""
+        r_amp  = amplitude(self.values)
+        r_dlmo = dlmo(self.times, self.values, 0.25)
+        r_mid  = midpoint(self.times, self.values, 0.25)
+        r_ac   = area_cog(self.times, self.values)
+        self.assertIsInstance(r_amp.to_dict(), dict)
+        self.assertIsInstance(r_dlmo.to_dict(), dict)
+        self.assertIsInstance(r_mid.to_dict(), dict)
+        self.assertIsInstance(r_ac.to_dict(), dict)
+
+    def test_all_markers_all_participants_from_raw_data(self):
+        """Every marker should succeed for every participant in the dummy file."""
+        data = read_data(DUMMY_DATA_FULL)
+        for participant in np.unique(data.Participant):
+            p_data = prepare_part_data(data, participant)
+            times  = p_data.Timestamp.values
+            values = p_data.Mel.values
+            with self.subTest(participant=participant):
+                r_amp = amplitude(values)
+                self.assertGreater(r_amp.amplitude, 0.0)
+                r_dlmo = dlmo(times, values, 0.25)
+                self.assertIsInstance(r_dlmo, DLMOResult)
+                r_mid = midpoint(times, values, 0.25)
+                self.assertIsInstance(r_mid, MidpointResult)
+                r_ac = area_cog(times, values)
+                self.assertIsInstance(r_ac, AreaCogResult)
+
+
+# ---------------------------------------------------------------------------
 # utils.py — read_data tests
 # ---------------------------------------------------------------------------
 
