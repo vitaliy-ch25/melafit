@@ -24,7 +24,7 @@ mel_funcs = [mf.bcf, mf.sbcf]
 
 popup_figures = True
 delta_t = "1min"
-thresh_dlmo = 10
+thresh_dlmo = 10 # pg/ml
 
 participants = np.unique(data.Participant)
 
@@ -50,7 +50,7 @@ for mel_func in mel_funcs:
             resampled_t = mf.gen_time_range(p_data.Timestamp, step=delta_t, full_day=False)
             resampled_f = mel_func(t=resampled_t, p=res)
 
-            # Compute Dim Light Melatonin Onset (DLMO)
+            # Compute Dim Light Melatonin Onset (DLMO) with absolute threshold
             dlmo = mf.dlmo(resampled_t, resampled_f, thresh_dlmo, thresh_abs=True)
 
             # Collect results for this participant
