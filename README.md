@@ -303,7 +303,7 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 <details>
 <summary><strong>Click to expand</strong></summary>
 
-### [v0.5.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.0) - Dedicated DLMO function
+### [v0.5.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.0) - Dedicated DLMO function and improved data gap handling
 - New `dlmo()` function in `markers.py` computes DLMO from the rising slope
   only, returning a `DLMOResult` with `dlmo` phase and threshold; raises
   `ValueError` with a descriptive message (threshold value and data range) if
@@ -319,6 +319,14 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 - `example_one_fit.py`: `collector.add()` now includes the fit result (`res`)
 - Unit tests added for `DLMOResult`, `dlmo()`, and `ResultsCollector`
   integration with `DLMOResult`
+- `day_profile()` gains an `interp` parameter (default `None`) for optional
+  interpolation of empty bins before averaging, useful for sparse raw data
+- All marker functions (`dlmo`, `midpoint`, `area_cog`) now accept a `binsize`
+  parameter and apply `interp='linear'` by default, so sparse inputs are
+  interpolated automatically before phase/marker extraction
+- `amplitude()` and `area_cog()` switch to `np.nanmin`/`np.nanmax` so input
+  NaNs (e.g. empty Excel cells) are ignored rather than propagated
+- Unit tests added for interior NaN handling (`TestInteriorNaNHandling`)
 
 ### [v0.4.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.1) - Bugfix and documentation polish
 - `ResultsCollector.save()` now appends `.xlsx` only when the supplied 
