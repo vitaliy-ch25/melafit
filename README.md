@@ -158,6 +158,11 @@ environment `melafit` you created.
 <summary><strong>Click to expand</strong></summary>
 
 ```python
+"""
+Determine phase markers from the full melatonin profile of one participant 
+via fitting the BSBCF function.
+"""
+
 import os
 import matplotlib.pyplot as plt
 from matplotlib import dates
@@ -186,7 +191,7 @@ ac = mf.area_cog(resampled_t, resampled_f)
 
 # Collect all results for this participant
 meta = mf.SessionInfo(p_data)
-collector.add(meta, ac)
+collector.add(meta, res, ac)
 
 # Print summary
 print(meta)
@@ -297,6 +302,23 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 
 <details>
 <summary><strong>Click to expand</strong></summary>
+
+### [v0.5.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.0) - Dedicated DLMO function
+- New `dlmo()` function in `markers.py` computes DLMO from the rising slope
+  only, returning a `DLMOResult` with `dlmo` phase and threshold; raises
+  `ValueError` with a descriptive message (threshold value and data range) if
+  the waveform never crosses the threshold
+- New `DLMOResult` dataclass with `__str__()` and `to_dict()` (timing as
+  HH:MM string); accepted by `ResultsCollector.add()` alongside `SessionInfo`
+  and `FitResult`
+- `example_dlmo.py` updated to use `dlmo()` and restricted to `bcf`/`sbcf`
+  (bimodal functions are not appropriate for onset-only partial data);
+  `gen_time_range()` call uses `full_day=False`
+- Module docstrings added to all three example scripts
+- `melafit/__init__.py`: corrected description of the midpoint marker
+- `example_one_fit.py`: `collector.add()` now includes the fit result (`res`)
+- Unit tests added for `DLMOResult`, `dlmo()`, and `ResultsCollector`
+  integration with `DLMOResult`
 
 ### [v0.4.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.1) - Bugfix and documentation polish
 - `ResultsCollector.save()` now appends `.xlsx` only when the supplied 
