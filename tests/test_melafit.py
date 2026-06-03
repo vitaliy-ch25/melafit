@@ -1402,5 +1402,119 @@ class TestResultsCollector(unittest.TestCase):
         self.assertEqual(c1._records, c2._records)
 
 
+# ---------------------------------------------------------------------------
+# markers.py + utils.py — interior NaN handling (sparse / Excel-like input)
+# ---------------------------------------------------------------------------
+
+class TestInteriorNaNHandling(unittest.TestCase):
+    """
+    Verify behaviour when input values contain interior NaNs, as can happen
+    when melatonin data are read from an Excel table with empty cells.
+
+    Input is modelled as hourly samples (one row per hour, 25 rows covering
+    one full day) so that the 1-min day_profile bins are sparse — matching
+    the typical Excel-read use case.  A block of consecutive interior samples
+    is replaced with NaN to simulate missing mid-night measurements.
+    """
+
+    def setUp(self):
+        # 25 hourly timestamps spanning 24 h (one full day + wrap point)
+        self.times = pd.date_range(
+            start="2024-01-01 00:00",
+            periods=25,
+            freq="1h")
+
+        # Ground-truth waveform evaluated at each hour
+        t_hours = np.arange(25) / 24.0
+        self.values_clean = bsbcf(t=t_hours, p=BSBCF_PARAMS_ARRAY)
+
+        # Introduce NaN at hours 10–14 (interior gap, away from the DLMO
+        # crossing which falls around 21:00 for phi=0.875)
+        self.values_nan = self.values_clean.copy()
+        self.values_nan[10:15] = np.nan
+
+    # --- day_profile ---
+
+    def test_day_profile_with_interior_nans_returns_finite_mean(self):
+        mean, _ = day_profile(self.times, self.values_nan, binsize=60,
+                              interp='linear')
+        self.assertTrue(np.all(np.isfinite(mean.values)),
+                        "day_profile mean should be finite with interior NaNs "
+                        "when interp='linear'")
+
+    def test_day_profile_interior_nan_close_to_clean(self):
+        """Interpolated profile should be close to the clean profile."""
+        mean_clean, _ = day_profile(self.times, self.values_clean, binsize=60,
+                                    interp='linear')
+        mean_nan,   _ = day_profile(self.times, self.values_nan,   binsize=60,
+                                    interp='linear')
+        np.testing.assert_allclose(mean_nan.values, mean_clean.values,
+                                   atol=5.0,
+                                   err_msg="Interior NaN gap should be "
+                                           "bridged by linear interpolation")
+
+    # --- dlmo ---
+
+    def test_dlmo_with_interior_nans_returns_result(self):
+        result = dlmo(self.times, self.values_nan, 0.25)
+        self.assertIsInstance(result, DLMOResult)
+
+    def test_dlmo_with_interior_nans_in_range(self):
+        result = dlmo(self.times, self.values_nan, 0.25)
+        self.assertGreaterEqual(result.dlmo, 0.0)
+        self.assertLess(result.dlmo, 1.0)
+
+    def test_dlmo_with_interior_nans_close_to_clean(self):
+        r_clean = dlmo(self.times, self.values_clean, 0.25)
+        r_nan   = dlmo(self.times, self.values_nan,   0.25)
+        diff = abs(phase_diff(r_nan.dlmo, r_clean.dlmo))
+        self.assertLess(diff, 1.0 / 24.0,
+                        "DLMO with interior NaNs should agree with clean "
+                        "result within 1 hour")
+
+    # --- midpoint ---
+
+    def test_midpoint_with_interior_nans_returns_result(self):
+        result = midpoint(self.times, self.values_nan, 0.25)
+        self.assertIsInstance(result, MidpointResult)
+
+    def test_midpoint_with_interior_nans_all_phases_in_range(self):
+        result = midpoint(self.times, self.values_nan, 0.25)
+        for val in [result.dlmon, result.dlmoff, result.midpoint]:
+            self.assertGreaterEqual(val, 0.0)
+            self.assertLess(val, 1.0)
+
+    def test_midpoint_with_interior_nans_close_to_clean(self):
+        r_clean = midpoint(self.times, self.values_clean, 0.25)
+        r_nan   = midpoint(self.times, self.values_nan,   0.25)
+        for attr in ("dlmon", "dlmoff", "midpoint"):
+            diff = abs(phase_diff(getattr(r_nan, attr),
+                                  getattr(r_clean, attr)))
+            self.assertLess(diff, 1.0 / 24.0,
+                            f"{attr} with interior NaNs should agree with "
+                            "clean result within 1 hour")
+
+    # --- area_cog ---
+
+    def test_area_cog_with_interior_nans_returns_result(self):
+        result = area_cog(self.times, self.values_nan)
+        self.assertIsInstance(result, AreaCogResult)
+
+    def test_area_cog_with_interior_nans_finite(self):
+        result = area_cog(self.times, self.values_nan)
+        self.assertTrue(np.isfinite(result.area))
+        self.assertTrue(np.isfinite(result.cog))
+
+    def test_area_cog_with_interior_nans_close_to_clean(self):
+        r_clean = area_cog(self.times, self.values_clean)
+        r_nan   = area_cog(self.times, self.values_nan)
+        self.assertAlmostEqual(r_nan.area, r_clean.area, delta=r_clean.area * 0.1,
+                               msg="Area should agree within 10 % with interior NaNs")
+        diff = abs(phase_diff(r_nan.cog, r_clean.cog))
+        self.assertLess(diff, 1.0 / 24.0,
+                        "COG with interior NaNs should agree with clean "
+                        "result within 1 hour")
+
+
 if __name__ == "__main__":
     unittest.main()

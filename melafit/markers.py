@@ -67,15 +67,16 @@ def amplitude(values: np.ndarray) -> AmplitudeResult:
             Wrapped amplitude and baseline values
     """
 
-    baseline = np.min(values)
-    return AmplitudeResult(amplitude=np.max(values) - baseline,
+    baseline = np.nanmin(values)
+    return AmplitudeResult(amplitude=np.nanmax(values) - baseline,
                            baseline=baseline)
 
 
 def dlmo(times: np.ndarray | pd.DatetimeIndex,
          values: np.ndarray,
          threshold: np.float64,
-         thresh_abs: bool = False) -> DLMOResult:
+         thresh_abs: bool = False,
+         binsize: int = 1) -> DLMOResult:
     """
     Compute Dim Light Melatonin Offset (DLMO) time.
 
@@ -93,11 +94,13 @@ def dlmo(times: np.ndarray | pd.DatetimeIndex,
             If True, the given threshold is absolute. Otherwise, the absolute
             threshold is computed from the given relative threshold and the
             range of values (defaults to False)
+        binsize : int
+            Resolution of the day profile in minutes (defaults to 1)
 
     Returns
     -------
         result : DLMOResult
-            Dataclass containing dlmo as phase values and the absolute 
+            Dataclass containing dlmo as phase values and the absolute
             threshold used
 
     See also
@@ -105,7 +108,7 @@ def dlmo(times: np.ndarray | pd.DatetimeIndex,
         :func:`melafit.utils.gen_time_range` : Generate resampled time axis
     """
 
-    d_profile = day_profile(times, values, binsize=1)[0]
+    d_profile = day_profile(times, values, binsize=binsize, interp='linear')[0]
 
     times = d_profile.index.values / 24.0
     values = d_profile.values
@@ -114,14 +117,14 @@ def dlmo(times: np.ndarray | pd.DatetimeIndex,
         threshold = abs_threshold(values, threshold)
 
     on = np.argwhere((values[:-1] < threshold) & (values[1:] >= threshold))
-    
+
     if len(on) == 0:
         raise ValueError(
             f"Threshold {threshold:.3f} is never crossed in the waveform. "
             f"Data range: [{d_profile.values.min():.3f}, "
             f"{d_profile.values.max():.3f}]. "
             f"Consider adjusting the threshold or checking the input data.")
-    
+
     idx_on  = on[0]
 
     time_on = times[idx_on][0]
@@ -134,7 +137,8 @@ def dlmo(times: np.ndarray | pd.DatetimeIndex,
 def midpoint(times: np.ndarray | pd.DatetimeIndex,
              values: np.ndarray,
              threshold: np.float64,
-             thresh_abs: bool = False) -> MidpointResult:
+             thresh_abs: bool = False,
+             binsize: int = 1) -> MidpointResult:
     """
     Compute melatonin midpoint, DLMOn and DLMOff times.
 
@@ -157,6 +161,8 @@ def midpoint(times: np.ndarray | pd.DatetimeIndex,
             If True, the given threshold is absolute. Otherwise, the absolute
             threshold is computed from the given relative threshold and the
             range of values (defaults to False)
+        binsize : int
+            Resolution of the day profile in minutes (defaults to 1)
 
     Returns
     -------
@@ -169,7 +175,7 @@ def midpoint(times: np.ndarray | pd.DatetimeIndex,
         :func:`melafit.utils.gen_time_range` : Generate resampled time axis
     """
 
-    d_profile = day_profile(times, values, binsize=1)[0]
+    d_profile = day_profile(times, values, binsize=binsize, interp='linear')[0]
 
     times = d_profile.index.values / 24.0
     values = d_profile.values
@@ -210,7 +216,8 @@ def midpoint(times: np.ndarray | pd.DatetimeIndex,
 
 def area_cog(times: np.ndarray | pd.DatetimeIndex,
              values: np.ndarray,
-             baseline: np.float64 | None = None) -> AreaCogResult:
+             baseline: np.float64 | None = None,
+             binsize: int = 1) -> AreaCogResult:
     """
     Area under the curve and center of gravity of melatonin waveform.
 
@@ -233,6 +240,8 @@ def area_cog(times: np.ndarray | pd.DatetimeIndex,
         baseline : float or None
             Baseline for area computation. Equals to minimum of values if
             None is given (defaults to None)
+        binsize : int
+            Resolution of the day profile in minutes (defaults to 1)
 
     Returns
     -------
@@ -247,11 +256,9 @@ def area_cog(times: np.ndarray | pd.DatetimeIndex,
     """
 
     if baseline is None:
-        baseline = np.min(values)
+        baseline = np.nanmin(values)
 
-    bin_minutes = 1
-
-    d_profile = day_profile(times, values, binsize=bin_minutes)[0]
+    d_profile = day_profile(times, values, binsize=binsize, interp='linear')[0]
 
     times = d_profile.index.values / 24.0
     values = d_profile.values
@@ -285,6 +292,6 @@ def area_cog(times: np.ndarray | pd.DatetimeIndex,
     cog = time_to_phase(cog)
 
     # Normalize area by bin size in minutes
-    area /= (24.0 * 60.0 / bin_minutes)
+    area /= (24.0 * 60.0 / binsize)
 
     return AreaCogResult(area=area, cog=cog)

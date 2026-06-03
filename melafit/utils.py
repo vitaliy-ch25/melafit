@@ -231,7 +231,8 @@ def day_profile(times: np.ndarray | pd.DatetimeIndex,
                 binsize: int = 60,
                 double: bool = False,
                 stderr: bool = False,
-                repfirst: bool = False) -> tuple[pd.Series, pd.Series]:
+                repfirst: bool = False,
+                interp: str | None = None) -> tuple[pd.Series, pd.Series]:
     """
     Compute averaged day profile of a (quasi-)periodic time series.
 
@@ -250,6 +251,12 @@ def day_profile(times: np.ndarray | pd.DatetimeIndex,
             Compute standard errors per bin (defaults to False)
         repfirst : bool
             Add first bin at 00:00 to the end (defaults to False)
+        interp : str or None
+            Interpolation method applied to the resampled time series before
+            computing the averaged profile. ``'linear'`` fills gaps between
+            samples by linear interpolation, which is useful when input data
+            are sparser than ``binsize``. ``None`` leaves empty bins as NaN
+            (defaults to None).
 
     Returns
     -------
@@ -264,6 +271,8 @@ def day_profile(times: np.ndarray | pd.DatetimeIndex,
 
     smpstr = str(binsize) + 'min'
     profile = data.shift(0.5, freq=smpstr).resample(smpstr).mean()
+    if interp is not None:
+        profile = profile.interpolate(method=interp)
     profile = profile.groupby(profile.index.hour + profile.index.minute / 60)
 
     profile_mean = profile.mean()
