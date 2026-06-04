@@ -20,10 +20,10 @@ from melafit.fitting import (bcf, sbcf, bbcf, bsbcf, cost, rsquared,
                               _resolve_params, BCF_PARAM_NAMES,
                               SBCF_PARAM_NAMES, BBCF_PARAM_NAMES,
                               BSBCF_PARAM_NAMES, BUILTIN_PARAM_NAMES)
-from melafit.markers import amplitude, midpoint, area_cog
+from melafit.markers import amplitude, dlmo, midpoint, area_cog
 from melafit.results import (FitResult, AnalysisRecord, SessionInfo,
-                              AmplitudeResult, MidpointResult, AreaCogResult,
-                              ResultsCollector)
+                              AmplitudeResult, DLMOResult, MidpointResult,
+                              AreaCogResult, ResultsCollector)
 from melafit.utils import (read_data, prepare_part_data, to_days, from_days,
                             gen_time_range, day_profile, time_to_phase,
                             phase_to_string, string_to_phase, abs_threshold,
@@ -458,12 +458,94 @@ class TestFit(unittest.TestCase):
         """fit() should converge on real dummy data."""
         data = read_data(DUMMY_DATA_FULL)
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
-        res = fit(p_data.Timestamp.values, p_data.Mel.values, f=bsbcf)
+        res = fit(p_data.Timestamp, p_data.Mel, f=bsbcf)
         self.assertTrue(res.result.success or res.result.fun < 1.0)
         p = res.to_dict()
         self.assertIsInstance(p, dict)
         self.assertEqual(list(p.keys()), ["func"] + BSBCF_PARAM_NAMES + ["r2"])
         self.assertTrue(np.isfinite(res.r2))
+
+
+# ---------------------------------------------------------------------------
+# fitting.py + markers.py — Series input tests
+# ---------------------------------------------------------------------------
+
+class TestSeriesInput(unittest.TestCase):
+    """np.ndarray and pd.Series (and pd.DatetimeIndex for times) are interchangeable."""
+
+    def setUp(self):
+        n = 1440
+        self.t_arr = np.linspace(0, 1, n, endpoint=False)
+        self.y_arr = bsbcf(t=self.t_arr, p=BSBCF_PARAMS_ARRAY)
+        self.t_ser = pd.Series(self.t_arr)
+        self.y_ser = pd.Series(self.y_arr)
+        self.dt_idx = pd.date_range("2024-01-01", periods=n, freq="1min")
+        self.dt_ser = pd.Series(self.dt_idx)
+
+    def test_fit_float_series_times(self):
+        res = fit(self.t_ser, self.y_arr, f=bsbcf)
+        self.assertIsInstance(res, FitResult)
+
+    def test_fit_datetime_series_times(self):
+        res = fit(self.dt_ser, self.y_arr, f=bsbcf)
+        self.assertIsInstance(res, FitResult)
+
+    def test_fit_datetimeindex_times(self):
+        res = fit(self.dt_idx, self.y_arr, f=bsbcf)
+        self.assertIsInstance(res, FitResult)
+
+    def test_fit_series_values(self):
+        res = fit(self.t_arr, self.y_ser, f=bsbcf)
+        self.assertIsInstance(res, FitResult)
+
+    def test_fit_both_series(self):
+        res = fit(self.t_ser, self.y_ser, f=bsbcf)
+        self.assertIsInstance(res, FitResult)
+
+    def test_fit_series_matches_array(self):
+        res_arr = fit(self.t_arr, self.y_arr, f=bsbcf)
+        res_ser = fit(self.t_ser, self.y_ser, f=bsbcf)
+        np.testing.assert_array_almost_equal(res_arr.result.x, res_ser.result.x)
+
+    def test_amplitude_series_values(self):
+        result = amplitude(self.y_ser)
+        self.assertIsInstance(result, AmplitudeResult)
+        self.assertAlmostEqual(result.amplitude,
+                               amplitude(self.y_arr).amplitude)
+
+    def test_dlmo_series_values(self):
+        result = dlmo(self.dt_idx, self.y_ser, 0.25)
+        self.assertIsInstance(result, DLMOResult)
+        self.assertAlmostEqual(result.dlmo,
+                               dlmo(self.dt_idx, self.y_arr, 0.25).dlmo)
+
+    def test_dlmo_datetime_series_times(self):
+        result = dlmo(self.dt_ser, self.y_arr, 0.25)
+        self.assertIsInstance(result, DLMOResult)
+        self.assertAlmostEqual(result.dlmo,
+                               dlmo(self.dt_idx, self.y_arr, 0.25).dlmo)
+
+    def test_midpoint_series_values(self):
+        result = midpoint(self.dt_idx, self.y_ser, 0.25)
+        self.assertIsInstance(result, MidpointResult)
+
+    def test_area_cog_series_values(self):
+        result = area_cog(self.dt_idx, self.y_ser)
+        self.assertIsInstance(result, AreaCogResult)
+
+    def test_day_profile_series_values(self):
+        mean, std = day_profile(self.dt_idx, self.y_ser)
+        self.assertIsInstance(mean, pd.Series)
+
+    def test_day_profile_datetime_series_times(self):
+        mean, std = day_profile(self.dt_ser, self.y_arr)
+        self.assertIsInstance(mean, pd.Series)
+
+    def test_fit_with_dataframe_columns(self):
+        """The motivating use case: mf.fit(p_data.Timestamp, p_data.Mel, ...)"""
+        df = pd.DataFrame({"Timestamp": self.dt_idx, "Mel": self.y_arr})
+        res = fit(df.Timestamp, df.Mel, f=bsbcf)
+        self.assertIsInstance(res, FitResult)
 
 
 # ---------------------------------------------------------------------------
@@ -500,6 +582,120 @@ class TestAmplitude(unittest.TestCase):
         self.assertAlmostEqual(d["amplitude"], 8.0)
         self.assertIn("baseline", d)
         self.assertAlmostEqual(d["baseline"], 2.0)
+
+
+# ---------------------------------------------------------------------------
+# results.py — DLMOResult tests
+# ---------------------------------------------------------------------------
+
+class TestDLMOResult(unittest.TestCase):
+    """Tests for DLMOResult dataclass."""
+
+    def test_construction(self):
+        result = DLMOResult(dlmo=0.875, threshold=10.0)
+        self.assertAlmostEqual(result.dlmo, 0.875)
+        self.assertAlmostEqual(result.threshold, 10.0)
+
+    def test_is_analysis_record(self):
+        result = DLMOResult(dlmo=0.875, threshold=10.0)
+        self.assertIsInstance(result, AnalysisRecord)
+
+    def test_str_contains_dlmo(self):
+        result = DLMOResult(dlmo=0.875, threshold=10.0)
+        s = str(result)
+        self.assertIn("DLMO", s)
+        self.assertIn(phase_to_string(0.875), s)
+
+    def test_to_dict_returns_dict(self):
+        result = DLMOResult(dlmo=0.875, threshold=10.0)
+        d = result.to_dict()
+        self.assertIsInstance(d, dict)
+        self.assertIn("dlmo", d)
+        self.assertIn("threshold", d)
+
+    def test_to_dict_dlmo_is_string(self):
+        result = DLMOResult(dlmo=0.875, threshold=10.0)
+        d = result.to_dict()
+        self.assertIsInstance(d["dlmo"], str)
+
+    def test_to_dict_threshold_is_float(self):
+        result = DLMOResult(dlmo=0.875, threshold=10.0)
+        d = result.to_dict()
+        self.assertIsInstance(d["threshold"], float)
+        self.assertAlmostEqual(d["threshold"], 10.0)
+
+    def test_to_dict_match_phase_to_string(self):
+        result = DLMOResult(dlmo=0.875, threshold=10.0)
+        d = result.to_dict()
+        self.assertEqual(d["dlmo"], phase_to_string(result.dlmo))
+
+
+# ---------------------------------------------------------------------------
+# markers.py — dlmo tests
+# ---------------------------------------------------------------------------
+
+class TestDLMO(unittest.TestCase):
+    """Tests for dlmo()."""
+
+    def setUp(self):
+        self.values = bsbcf(t=T, p=BSBCF_PARAMS_ARRAY)
+        self.times = pd.date_range(
+            start="2024-01-01 00:00",
+            periods=len(T),
+            freq=pd.Timedelta(minutes=1))
+
+    def test_returns_dlmo_result(self):
+        result = dlmo(self.times, self.values, 0.25)
+        self.assertIsInstance(result, DLMOResult)
+
+    def test_dlmo_in_range(self):
+        result = dlmo(self.times, self.values, 0.25)
+        self.assertGreaterEqual(result.dlmo, 0.0)
+        self.assertLess(result.dlmo, 1.0)
+
+    def test_relative_threshold_converted_correctly(self):
+        result = dlmo(self.times, self.values, 0.25)
+        self.assertAlmostEqual(result.threshold,
+                               abs_threshold(self.values, 0.25))
+
+    def test_absolute_threshold_mode(self):
+        result = dlmo(self.times, self.values, 10.0, thresh_abs=True)
+        self.assertAlmostEqual(result.threshold, 10.0)
+
+    def test_to_dict_returns_dict(self):
+        result = dlmo(self.times, self.values, 0.25)
+        d = result.to_dict()
+        self.assertIsInstance(d, dict)
+        for key in ["dlmo", "threshold"]:
+            self.assertIn(key, d)
+        self.assertIsInstance(d["dlmo"], str)
+        self.assertIsInstance(d["threshold"], float)
+
+    def test_to_dict_match_phase_to_string(self):
+        result = dlmo(self.times, self.values, 0.25)
+        d = result.to_dict()
+        self.assertEqual(d["dlmo"], phase_to_string(result.dlmo))
+
+    def test_threshold_never_crossed_raises(self):
+        with self.assertRaises(ValueError):
+            dlmo(self.times, self.values, 1e9, thresh_abs=True)
+
+    def test_agrees_with_midpoint_dlmon(self):
+        """dlmo() onset should equal midpoint() dlmon for the same waveform."""
+        r_dlmo = dlmo(self.times, self.values, 0.25)
+        r_mid  = midpoint(self.times, self.values, 0.25)
+        self.assertAlmostEqual(r_dlmo.dlmo, r_mid.dlmon, places=4)
+
+    def test_with_real_data(self):
+        data = read_data(DUMMY_DATA_FULL)
+        p_data = prepare_part_data(data, np.unique(data.Participant)[0])
+        res = fit(p_data.Timestamp, p_data.Mel, f=sbcf)
+        tmin, tmax = p_data.Timestamp.min(), p_data.Timestamp.max()
+        t = gen_time_range(tmin=tmin, tmax=tmax, step="1min")
+        curve = sbcf(t=t, p=res)
+        result = dlmo(t, curve, 0.25)
+        self.assertGreaterEqual(result.dlmo, 0.0)
+        self.assertLess(result.dlmo, 1.0)
 
 
 # ---------------------------------------------------------------------------
@@ -559,7 +755,7 @@ class TestMidpoint(unittest.TestCase):
     def test_with_real_data(self):
         data = read_data(DUMMY_DATA_FULL)
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
-        res = fit(p_data.Timestamp.values, p_data.Mel.values, f=bsbcf)
+        res = fit(p_data.Timestamp, p_data.Mel, f=bsbcf)
         tmin, tmax = p_data.Timestamp.min(), p_data.Timestamp.max()
         t = gen_time_range(tmin=tmin, tmax=tmax, step="1min")
         curve = bsbcf(t=t, p=res)
@@ -630,7 +826,7 @@ class TestAreaCog(unittest.TestCase):
     def test_with_real_data(self):
         data = read_data(DUMMY_DATA_FULL)
         p_data = prepare_part_data(data, np.unique(data.Participant)[0])
-        res = fit(p_data.Timestamp.values, p_data.Mel.values, f=bsbcf)
+        res = fit(p_data.Timestamp, p_data.Mel, f=bsbcf)
         tmin, tmax = p_data.Timestamp.min(), p_data.Timestamp.max()
         t = gen_time_range(tmin=tmin, tmax=tmax, step="1min")
         curve = bsbcf(t=t, p=res)
@@ -638,6 +834,85 @@ class TestAreaCog(unittest.TestCase):
         self.assertGreater(result.area, 0.0)
         self.assertGreaterEqual(result.cog, 0.0)
         self.assertLess(result.cog, 1.0)
+
+
+# ---------------------------------------------------------------------------
+# markers.py — markers computed directly from raw data (no curve fitting)
+# ---------------------------------------------------------------------------
+
+class TestMarkersFromRawData(unittest.TestCase):
+    """
+    Confirm that all markers can be computed directly from sparse raw
+    participant data without fitting a curve first.
+
+    The dummy file contains 3-hourly samples (~18 points per participant),
+    which exercises the day_profile linear-interpolation path internally
+    used by dlmo(), midpoint(), and area_cog().
+    """
+
+    def setUp(self):
+        data = read_data(DUMMY_DATA_FULL)
+        participant = np.unique(data.Participant)[0]
+        p_data = prepare_part_data(data, participant)
+        self.times = p_data.Timestamp
+        self.values = p_data.Mel
+
+    def test_amplitude_from_raw_data(self):
+        result = amplitude(self.values)
+        self.assertIsInstance(result, AmplitudeResult)
+        self.assertGreater(result.amplitude, 0.0)
+        self.assertTrue(np.isfinite(result.amplitude))
+        self.assertTrue(np.isfinite(result.baseline))
+
+    def test_dlmo_from_raw_data(self):
+        result = dlmo(self.times, self.values, 0.25)
+        self.assertIsInstance(result, DLMOResult)
+        self.assertGreaterEqual(result.dlmo, 0.0)
+        self.assertLess(result.dlmo, 1.0)
+        self.assertTrue(np.isfinite(result.threshold))
+
+    def test_midpoint_from_raw_data(self):
+        result = midpoint(self.times, self.values, 0.25)
+        self.assertIsInstance(result, MidpointResult)
+        for val in [result.dlmon, result.dlmoff, result.midpoint]:
+            self.assertGreaterEqual(val, 0.0)
+            self.assertLess(val, 1.0)
+        self.assertTrue(np.isfinite(result.threshold))
+
+    def test_area_cog_from_raw_data(self):
+        result = area_cog(self.times, self.values)
+        self.assertIsInstance(result, AreaCogResult)
+        self.assertGreater(result.area, 0.0)
+        self.assertGreaterEqual(result.cog, 0.0)
+        self.assertLess(result.cog, 1.0)
+
+    def test_to_dict_works_for_all_markers_from_raw_data(self):
+        """to_dict() should work on results computed directly from raw data."""
+        r_amp  = amplitude(self.values)
+        r_dlmo = dlmo(self.times, self.values, 0.25)
+        r_mid  = midpoint(self.times, self.values, 0.25)
+        r_ac   = area_cog(self.times, self.values)
+        self.assertIsInstance(r_amp.to_dict(), dict)
+        self.assertIsInstance(r_dlmo.to_dict(), dict)
+        self.assertIsInstance(r_mid.to_dict(), dict)
+        self.assertIsInstance(r_ac.to_dict(), dict)
+
+    def test_all_markers_all_participants_from_raw_data(self):
+        """Every marker should succeed for every participant in the dummy file."""
+        data = read_data(DUMMY_DATA_FULL)
+        for participant in np.unique(data.Participant):
+            p_data = prepare_part_data(data, participant)
+            times  = p_data.Timestamp
+            values = p_data.Mel
+            with self.subTest(participant=participant):
+                r_amp = amplitude(values)
+                self.assertGreater(r_amp.amplitude, 0.0)
+                r_dlmo = dlmo(times, values, 0.25)
+                self.assertIsInstance(r_dlmo, DLMOResult)
+                r_mid = midpoint(times, values, 0.25)
+                self.assertIsInstance(r_mid, MidpointResult)
+                r_ac = area_cog(times, values)
+                self.assertIsInstance(r_ac, AreaCogResult)
 
 
 # ---------------------------------------------------------------------------
@@ -693,7 +968,7 @@ class TestPreparePartData(unittest.TestCase):
 
     def test_timestamp_monotonically_increasing(self):
         self.assertTrue(np.all(
-            np.diff(self.p_data.Timestamp.values) >= np.timedelta64(0)))
+            np.diff(self.p_data.Timestamp) >= np.timedelta64(0)))
 
     def test_only_selected_participant(self):
         self.assertTrue(
@@ -1248,6 +1523,158 @@ class TestResultsCollector(unittest.TestCase):
         self.assertTrue(np.isfinite(df["r2"].iloc[0]))
         # area and cog should be missing as columns (no AreaCogResult added)
         self.assertNotIn("area", df.columns)
+
+    def test_add_dlmo_result(self):
+        """add() should accept a DLMOResult alongside meta and fit result."""
+        dl = dlmo(self.times, self.values, 0.25)
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, dl)
+        self.assertEqual(len(collector._records), 1)
+
+    def test_dlmo_result_record_contains_dlmo_field(self):
+        """Record with DLMOResult should have 'dlmo' key."""
+        dl = dlmo(self.times, self.values, 0.25)
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, dl)
+        record = collector._records[0]
+        self.assertIn("dlmo", record)
+        self.assertIsInstance(record["dlmo"], str)
+
+    def test_dlmo_result_workflow_excel(self):
+        """DLMO-only workflow: 'dlmo' column present, 'dlmoff'/'midpoint' absent."""
+        import os
+        dl = dlmo(self.times, self.values, 0.25)
+        collector = ResultsCollector()
+        collector.add(self.meta, self.res, dl)
+        collector.save(self.tmpdir, self.filename)
+        filepath = os.path.join(self.tmpdir, self.filename + ".xlsx")
+        df = pd.read_excel(filepath, index_col="participant")
+        self.assertIn("dlmo", df.columns)
+        self.assertNotIn("dlmoff", df.columns)
+        self.assertNotIn("midpoint", df.columns)
+
+    def test_dlmo_result_argument_order_irrelevant(self):
+        """add() with DLMOResult should be order-independent."""
+        dl = dlmo(self.times, self.values, 0.25)
+        c1 = ResultsCollector()
+        c2 = ResultsCollector()
+        c1.add(self.meta, self.res, dl)
+        c2.add(dl, self.res, self.meta)
+        self.assertEqual(c1._records, c2._records)
+
+
+# ---------------------------------------------------------------------------
+# markers.py + utils.py — interior NaN handling (sparse / Excel-like input)
+# ---------------------------------------------------------------------------
+
+class TestInteriorNaNHandling(unittest.TestCase):
+    """
+    Verify behaviour when input values contain interior NaNs, as can happen
+    when melatonin data are read from an Excel table with empty cells.
+
+    Input is modelled as hourly samples (one row per hour, 25 rows covering
+    one full day) so that the 1-min day_profile bins are sparse — matching
+    the typical Excel-read use case.  A block of consecutive interior samples
+    is replaced with NaN to simulate missing mid-night measurements.
+    """
+
+    def setUp(self):
+        # 25 hourly timestamps spanning 24 h (one full day + wrap point)
+        self.times = pd.date_range(
+            start="2024-01-01 00:00",
+            periods=25,
+            freq="1h")
+
+        # Ground-truth waveform evaluated at each hour
+        t_hours = np.arange(25) / 24.0
+        self.values_clean = bsbcf(t=t_hours, p=BSBCF_PARAMS_ARRAY)
+
+        # Introduce NaN at hours 10–14 (interior gap, away from the DLMO
+        # crossing which falls around 21:00 for phi=0.875)
+        self.values_nan = self.values_clean.copy()
+        self.values_nan[10:15] = np.nan
+
+    # --- day_profile ---
+
+    def test_day_profile_with_interior_nans_returns_finite_mean(self):
+        mean, _ = day_profile(self.times, self.values_nan, binsize=60,
+                              interp='linear')
+        self.assertTrue(np.all(np.isfinite(mean.values)),
+                        "day_profile mean should be finite with interior NaNs "
+                        "when interp='linear'")
+
+    def test_day_profile_interior_nan_close_to_clean(self):
+        """Interpolated profile should be close to the clean profile."""
+        mean_clean, _ = day_profile(self.times, self.values_clean, binsize=60,
+                                    interp='linear')
+        mean_nan,   _ = day_profile(self.times, self.values_nan,   binsize=60,
+                                    interp='linear')
+        np.testing.assert_allclose(mean_nan.values, mean_clean.values,
+                                   atol=5.0,
+                                   err_msg="Interior NaN gap should be "
+                                           "bridged by linear interpolation")
+
+    # --- dlmo ---
+
+    def test_dlmo_with_interior_nans_returns_result(self):
+        result = dlmo(self.times, self.values_nan, 0.25)
+        self.assertIsInstance(result, DLMOResult)
+
+    def test_dlmo_with_interior_nans_in_range(self):
+        result = dlmo(self.times, self.values_nan, 0.25)
+        self.assertGreaterEqual(result.dlmo, 0.0)
+        self.assertLess(result.dlmo, 1.0)
+
+    def test_dlmo_with_interior_nans_close_to_clean(self):
+        r_clean = dlmo(self.times, self.values_clean, 0.25)
+        r_nan   = dlmo(self.times, self.values_nan,   0.25)
+        diff = abs(phase_diff(r_nan.dlmo, r_clean.dlmo))
+        self.assertLess(diff, 1.0 / 24.0,
+                        "DLMO with interior NaNs should agree with clean "
+                        "result within 1 hour")
+
+    # --- midpoint ---
+
+    def test_midpoint_with_interior_nans_returns_result(self):
+        result = midpoint(self.times, self.values_nan, 0.25)
+        self.assertIsInstance(result, MidpointResult)
+
+    def test_midpoint_with_interior_nans_all_phases_in_range(self):
+        result = midpoint(self.times, self.values_nan, 0.25)
+        for val in [result.dlmon, result.dlmoff, result.midpoint]:
+            self.assertGreaterEqual(val, 0.0)
+            self.assertLess(val, 1.0)
+
+    def test_midpoint_with_interior_nans_close_to_clean(self):
+        r_clean = midpoint(self.times, self.values_clean, 0.25)
+        r_nan   = midpoint(self.times, self.values_nan,   0.25)
+        for attr in ("dlmon", "dlmoff", "midpoint"):
+            diff = abs(phase_diff(getattr(r_nan, attr),
+                                  getattr(r_clean, attr)))
+            self.assertLess(diff, 1.0 / 24.0,
+                            f"{attr} with interior NaNs should agree with "
+                            "clean result within 1 hour")
+
+    # --- area_cog ---
+
+    def test_area_cog_with_interior_nans_returns_result(self):
+        result = area_cog(self.times, self.values_nan)
+        self.assertIsInstance(result, AreaCogResult)
+
+    def test_area_cog_with_interior_nans_finite(self):
+        result = area_cog(self.times, self.values_nan)
+        self.assertTrue(np.isfinite(result.area))
+        self.assertTrue(np.isfinite(result.cog))
+
+    def test_area_cog_with_interior_nans_close_to_clean(self):
+        r_clean = area_cog(self.times, self.values_clean)
+        r_nan   = area_cog(self.times, self.values_nan)
+        self.assertAlmostEqual(r_nan.area, r_clean.area, delta=r_clean.area * 0.1,
+                               msg="Area should agree within 10 % with interior NaNs")
+        diff = abs(phase_diff(r_nan.cog, r_clean.cog))
+        self.assertLess(diff, 1.0 / 24.0,
+                        "COG with interior NaNs should agree with clean "
+                        "result within 1 hour")
 
 
 if __name__ == "__main__":

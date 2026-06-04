@@ -44,8 +44,10 @@ time series.
 installed with `pip`. However, installing directly into your system Python 
 environment without a virtual environment is strongly discouraged, as it may 
 cause conflicts with other packages. The recommended approach is to use 
-[miniforge](https://conda-forge.org/download/) as the package and environment 
+[Miniforge](https://conda-forge.org/download/) as the package and environment 
 manager to create a dedicated virtual environment, as described below.
+As a community-maintained tool that defaults to the `conda-forge` channel,
+Miniforge carries no commercial licensing restrictions.
 
 ### Standard installation
 
@@ -62,12 +64,14 @@ conda activate melafit
 
 The environment configuration file 
 [`melafit.yml`](https://github.com/vitaliy-ch25/melafit/blob/main/melafit.yml) 
-uses `conda-forge` as the sole package channel, ensuring reproducibility and 
-avoiding potential conflicts between packages from different channels. 
-`melafit` itself is installed from [PyPI](https://pypi.org/project/melafit/) 
-via `pip` as part of the environment setup. This will create a fully 
-functional analysis environment, including all supporting packages (`numpy`, 
-`scipy`, `pandas`, `openpyxl` and `matplotlib`).
+explicitly uses `conda-forge` as the sole package channel and excludes all
+other channels, ensuring reproducibility, avoiding potential conflicts between
+packages from different channels, and eliminating any commercial licensing
+concerns. `melafit` itself is installed from 
+[PyPI](https://pypi.org/project/melafit/) via `pip` as part of the 
+environment setup. This will create a fully functional analysis environment, 
+including all supporting packages (`numpy`, `scipy`, `pandas`, `openpyxl` and 
+`matplotlib`).
 
 ### Developer installation
 
@@ -158,6 +162,11 @@ environment `melafit` you created.
 <summary><strong>Click to expand</strong></summary>
 
 ```python
+"""
+Determine phase markers from the full melatonin profile of one participant 
+via fitting the BSBCF function.
+"""
+
 import os
 import matplotlib.pyplot as plt
 from matplotlib import dates
@@ -186,7 +195,7 @@ ac = mf.area_cog(resampled_t, resampled_f)
 
 # Collect all results for this participant
 meta = mf.SessionInfo(p_data)
-collector.add(meta, ac)
+collector.add(meta, res, ac)
 
 # Print summary
 print(meta)
@@ -297,6 +306,48 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 
 <details>
 <summary><strong>Click to expand</strong></summary>
+
+### [v0.5.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.0) - API improvements and bugfixes
+- New `dlmo()` function in `markers.py` computes DLMO from the rising slope
+  only, returning a `DLMOResult` with `dlmo` phase and threshold; raises
+  `ValueError` with a descriptive message (threshold value and data range) if
+  the waveform never crosses the threshold
+- New `DLMOResult` dataclass with `__str__()` and `to_dict()` (timing as
+  HH:MM string); accepted by `ResultsCollector.add()` alongside `SessionInfo`
+  and `FitResult`
+- `example_dlmo.py` updated to use `dlmo()` and restricted to `bcf`/`sbcf`
+  (bimodal functions are not appropriate for onset-only partial data);
+  `gen_time_range()` call uses `full_day=False`
+- Module docstrings added to all three example scripts
+- `melafit/__init__.py`: corrected description of the midpoint marker
+- `example_one_fit.py`: `collector.add()` now includes the fit result (`res`)
+- Unit tests added for `DLMOResult`, `dlmo()`, and `ResultsCollector`
+  integration with `DLMOResult`
+- `day_profile()` gains an `interp` parameter (default `None`) for optional
+  interpolation of empty bins before averaging, useful for sparse raw data
+- All marker functions (`dlmo`, `midpoint`, `area_cog`) now accept a `binsize`
+  parameter and apply `interp='linear'` by default, so sparse inputs are
+  interpolated automatically before phase/marker extraction
+- `amplitude()` and `area_cog()` switch to `np.nanmin`/`np.nanmax` so input
+  NaNs (e.g. empty Excel cells) are ignored rather than propagated
+- Unit tests added for interior NaN handling (`TestInteriorNaNHandling`)
+- Fixed a bug in `day_profile()` that caused an error when the input data had
+  a sampling period other than 1 minute; the function now correctly handles
+  raw data and fitted curves at any temporal resolution. Combined with the
+  new `interp` parameter and `binsize` support in the marker functions, it is
+  now also possible to extract phase markers directly from raw data without 
+  any prior curve fitting or interpolation
+- Fitting and marker functions (`fit()`, `amplitude()`, `dlmo()`, `midpoint()`,
+  `area_cog()`, `day_profile()`) now accept `pd.Series` for value arguments
+  and `pd.Series`/`pd.DatetimeIndex` for time arguments
+- `gen_time_range()` switched from `np.arange` to integer step counting to
+  avoid off-by-one errors from floating-point rounding
+- `area_cog()`: baseline fallback to `nanmin` is now computed from the
+  resampled waveform (after `day_profile()`) rather than the raw input
+- `area_cog()` and `midpoint()` docstrings note the 24 h coverage assumption
+- Unit tests added: `TestSeriesInput` (all new input combinations) and
+  `TestMarkersFromRawData` (all four markers applied to sparse participant
+  data without curve fitting)
 
 ### [v0.4.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.4.1) - Bugfix and documentation polish
 - `ResultsCollector.save()` now appends `.xlsx` only when the supplied 

@@ -134,6 +134,48 @@ class AmplitudeResult(AnalysisRecord):
 
 
 @dataclass
+class DLMOResult(AnalysisRecord):
+    """
+    Result of DLMOn computation.
+
+    Timing fields are stored as phase values (0.0 to 1.0, 1.0 = 24h).
+    Use :meth:`to_dict` to obtain HH:MM string representations.
+
+    Attributes
+    ----------
+        dlmo : float
+            Dim light melatonin onset time as phase
+        threshold : float
+            Absolute threshold value used for the computation
+
+    See also
+    --------
+        :class:`MidpointResult` : Threshold-based midpoint and DLMOn/DLMOff
+    """
+
+    dlmo: np.float64
+    threshold: np.float64
+
+    def __str__(self) -> str:
+        return (f"DLMO={phase_to_string(self.dlmo)}")
+
+    def to_dict(self) -> dict:
+        """
+        Return timing fields as HH:MM string representations.
+
+        Returns
+        -------
+            d : dict
+                Dictionary with keys 'dlmo' mapped to its HH:MM string 
+                representations. 'threshold' is included unchanged as a float.
+        """
+        return {
+            "dlmo": phase_to_string(self.dlmo),
+            "threshold": self.threshold,
+        }
+
+
+@dataclass
 class MidpointResult(AnalysisRecord):
     """
     Result of midpoint, DLMOn and DLMOff computation.
@@ -151,6 +193,11 @@ class MidpointResult(AnalysisRecord):
             Melatonin midpoint time as phase
         threshold : float
             Absolute threshold value used for the computation
+
+    See also
+    --------
+        :class:`DLMOResult` : Threshold-based DLMOn-only result
+        :class:`AreaCogResult` : Area under curve and center of gravity result
     """
 
     dlmon: np.float64

@@ -222,25 +222,26 @@ def gen_time_range(
         tmax_num = tmin_num + 1.0
 
     step_days = pd.Timedelta(step).total_seconds() / 86400
-    return np.arange(tmin_num, tmax_num + 1.1 * step_days, step_days)
+    n_steps = round((tmax_num - tmin_num) / step_days)
+    return tmin_num + np.arange(n_steps + 1) * step_days
 
 
-
-def day_profile(times: np.ndarray | pd.DatetimeIndex,
-                values: np.ndarray,
+def day_profile(times: np.ndarray | pd.Series | pd.DatetimeIndex,
+                values: np.ndarray | pd.Series,
                 binsize: int = 60,
                 double: bool = False,
                 stderr: bool = False,
-                repfirst: bool = False) -> tuple[pd.Series, pd.Series]:
+                repfirst: bool = False,
+                interp: str | None = None) -> tuple[pd.Series, pd.Series]:
     """
     Compute averaged day profile of a (quasi-)periodic time series.
 
     Parameters
     ----------
-        times : np.ndarray or pandas DatetimeIndex
-            Time stamps as a DatetimeIndex or as float days since the UTC
-            epoch (as returned by :func:`gen_time_range`)
-        values : numpy array
+        times : np.ndarray, pd.Series, or pd.DatetimeIndex
+            Time stamps as a DatetimeIndex, a datetime Series, or as float
+            days since the UTC epoch (as returned by :func:`gen_time_range`)
+        values : np.ndarray or pd.Series
             Data values
         binsize : int
             Bin size in minutes (defaults to 60)
@@ -250,6 +251,12 @@ def day_profile(times: np.ndarray | pd.DatetimeIndex,
             Compute standard errors per bin (defaults to False)
         repfirst : bool
             Add first bin at 00:00 to the end (defaults to False)
+        interp : str or None
+            Interpolation method applied to the resampled time series before
+            computing the averaged profile. ``'linear'`` fills gaps between
+            samples by linear interpolation, which is useful when input data
+            are sparser than ``binsize``. ``None`` leaves empty bins as NaN
+            (defaults to None).
 
     Returns
     -------
@@ -257,13 +264,20 @@ def day_profile(times: np.ndarray | pd.DatetimeIndex,
             Bin averages and standard errors with index in hours (0..24)
     """
 
-    if isinstance(times, np.ndarray):
-        times = from_days(times)
+    if isinstance(values, pd.Series):
+        values = values.to_numpy()
+    if not isinstance(times, pd.DatetimeIndex):
+        if pd.api.types.is_datetime64_any_dtype(times):
+            times = pd.DatetimeIndex(times)
+        else:
+            times = from_days(times.to_numpy() if isinstance(times, pd.Series) else times)
 
     data = pd.Series(index=times, data=values)
-
+    
     smpstr = str(binsize) + 'min'
     profile = data.shift(0.5, freq=smpstr).resample(smpstr).mean()
+    if interp is not None:
+        profile = profile.interpolate(method=interp)
     profile = profile.groupby(profile.index.hour + profile.index.minute / 60)
 
     profile_mean = profile.mean()

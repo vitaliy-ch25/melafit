@@ -12,7 +12,7 @@ The package provides functionality for:
   * BSBCF (Bimodal Skewed BCF) - Bimodal model with skewness
 - Computing circadian phase markers including:
   * DLMOn and DLMOff (Dim Light Melatonin Onset/Offset) times
-  * DLMO (melatonin midpoint)
+  * Melatonin midpoint time (average of DLMOn and DLMOff)
   * Amplitude and area under the curve
   * Center of gravity of melatonin secretion
 - Data I/O, preprocessing, and utility functions for circadian analysis

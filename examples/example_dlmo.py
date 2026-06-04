@@ -1,10 +1,18 @@
+"""
+Determine DLMO using curve fitting for partial data.
+
+Bimodal functions make little sense as we have only the rising slope. 
+Besides that, we want to have fewer parameters to fit. For these two reasons, 
+we exclude BSBCF and BBCF and leave only BCF and SBCF for this analysis. 
+We also increase the default H since the maximum of the curve is not captured 
+in the data.
+"""
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import dates
 import melafit as mf
-
-# EXPERIMENTAL: Determine DLMO using the curve fitting approach for partial data
 
 data_path = "./data/"
 result_path = "./results/dlmo/"
@@ -12,11 +20,11 @@ result_filename = "results_dlmo"
 
 data = mf.read_data(data_path + "dummy_data_dlmo.xlsx")
 
-mel_funcs = [mf.bcf, mf.sbcf, mf.bbcf, mf.bsbcf]
+mel_funcs = [mf.bcf, mf.sbcf]
 
 popup_figures = True
 delta_t = "1min"
-thresh_dlmo = 10
+thresh_dlmo = 10 # pg/ml
 
 participants = np.unique(data.Participant)
 
@@ -39,30 +47,29 @@ for mel_func in mel_funcs:
 
             # Fit curve and compute resampled waveform
             res = mf.fit(p_data.Timestamp, p_data.Mel, mel_func, p0=p0, lb=lb, ub=ub)
-            resampled_t = mf.gen_time_range(p_data.Timestamp, step=delta_t)
+            resampled_t = mf.gen_time_range(p_data.Timestamp, step=delta_t, full_day=False)
             resampled_f = mel_func(t=resampled_t, p=res)
 
-            # Compute midpoint, DLMOn and DLMOff (midpoint/DLMOff unreliable for partial data)
-            mid = mf.midpoint(resampled_t, resampled_f, thresh_dlmo, thresh_abs=True)
+            # Compute Dim Light Melatonin Onset (DLMO) with absolute threshold
+            dlmo = mf.dlmo(resampled_t, resampled_f, thresh_dlmo, thresh_abs=True)
 
             # Collect results for this participant
             meta = mf.SessionInfo(p_data)
-            collector.add(meta, res, mid)
+            collector.add(meta, res, dlmo)
 
             # Print summary
             print(meta)
             print(res)
-            dlmo_str=f"DLMO={mf.phase_to_string(mid.dlmon)}"
-            print(dlmo_str)
+            print(dlmo)
 
             # Visualize results
-            title_str = f"Date: {meta.start.date()}, {dlmo_str}"
+            title_str = f"Date: {meta.start.date()}, {dlmo}"
 
             plt.close("all")
             plt.figure(figsize=(12, 5))
             plt.scatter(p_data.Timestamp, p_data.Mel, c='b')
             plt.plot(resampled_t, resampled_f, 'g')
-            plt.plot(resampled_t, mid.threshold * np.ones(resampled_t.shape), 'r')
+            plt.plot(resampled_t, dlmo.threshold * np.ones(resampled_t.shape), 'r')
             plt.xlabel("Time, hh:mm")
             plt.gca().xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
             plt.ylabel("Concentration, pg/ml")
