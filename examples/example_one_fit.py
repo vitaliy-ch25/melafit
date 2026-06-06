@@ -52,8 +52,8 @@ plt.title(title_str)
 plt.legend(["Melatonin data", "BSBCF curve"])
 plt.savefig(result_path + f"mel_data_{participant}_BSBCF.png")
 
-# Keep the figure open until a button is pressed
-plt.waitforbuttonpress()
+# Show plot for 1 second
+plt.pause(1.0)
 
 # Save results to Excel file
 collector.save(result_path, "results_one_fit_BSBCF.xlsx")
