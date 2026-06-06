@@ -1,5 +1,7 @@
 # melafit
 
+[![DOI](https://zenodo.org/badge/1214999173.svg)](https://doi.org/10.5281/zenodo.20573831)
+
 Python package for **high-precision circadian melatonin profile analysis.** 
 Features a variety of baseline cosine functions for curve fitting 
 ([Van Someren & Nagtegaal, 2007](https://doi.org/10.1016/j.sleep.2007.03.012)) 
@@ -294,7 +296,7 @@ package directly using the following reference:
 ```text
 Kolodyazhniy, V., Cajochen, C. (2026). melafit: High-precision circadian 
 melatonin profile analysis (Version x.y.z). [Computer software]. 
-Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
+https://doi.org/10.5281/zenodo.20573831
 ```
 
 ## Authors
@@ -306,6 +308,18 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 
 <details>
 <summary><strong>Click to expand</strong></summary>
+
+### [v0.5.2](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.2) - Zenodo DOI and citation metadata
+- Zenodo DOI registered; DOI badge added to README
+- `CITATION.cff` added with full author metadata, ORCID identifiers and
+  concept DOI for consistent citation across all releases
+- `.zenodo.json` added for automatic Zenodo metadata population on each
+  future release, including author names, affiliations, ORCID identifiers
+  and related publication DOIs
+- Package citation reference in README updated to use the permanent DOI
+- Corrects the PyPI publishing failure in v0.5.1 caused by a versioning
+  error in `_version.py`; v0.5.1 was released on GitHub and Zenodo only
+- No changes to package functionality
 
 ### [v0.5.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.1) - Documentation and example fix
 - Fixed a rendering issue in the README where content following collapsible
