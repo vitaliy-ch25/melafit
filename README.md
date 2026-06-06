@@ -53,11 +53,11 @@ Miniforge carries no commercial licensing restrictions.
 
 Download file 
 [`melafit.yml`](https://github.com/vitaliy-ch25/melafit/blob/main/melafit.yml) 
-to a directory of your choice (`<YOUR-DIRECTORY>`). Navigate to the directory, 
+to a directory of your choice (`YOUR-DIRECTORY`). Navigate to the directory, 
 create and activate the conda environment:
 
 ```bash
-cd <YOUR-DIRECTORY>
+cd YOUR-DIRECTORY
 conda env create -f melafit.yml
 conda activate melafit
 ```
@@ -80,10 +80,10 @@ including all supporting packages (`numpy`, `scipy`, `pandas`, `openpyxl` and
 
 If you intend to follow the development closely or contribute to the
 package, clone the repository first to a dedicated directory
-`<YOUR-DIRECTORY>`. Navigate to it and clone the repository as follows:
+`YOUR-DIRECTORY`. Navigate to it and clone the repository as follows:
 
 ```bash
-cd <YOUR-DIRECTORY>
+cd YOUR-DIRECTORY
 git clone https://github.com/vitaliy-ch25/melafit.git
 cd melafit
 ```
@@ -109,10 +109,10 @@ directory take effect immediately without reinstalling the package.
 
 Download the latest 
 [`melafit.yml`](https://github.com/vitaliy-ch25/melafit/blob/main/melafit.yml) 
-to `<YOUR-DIRECTORY>`. Navigate to it and run the update command as follows:
+to `YOUR-DIRECTORY`. Navigate to it and run the update command as follows:
 
 ```bash
-cd <YOUR-DIRECTORY>
+cd YOUR-DIRECTORY
 conda env update -f melafit.yml --prune
 ```
 
@@ -128,7 +128,7 @@ Navigate to the cloned repository directory and pull the latest version
 from the main branch:
 
 ```bash
-cd <YOUR-DIRECTORY>/melafit
+cd YOUR-DIRECTORY/melafit
 git pull
 ```
 
@@ -306,6 +306,13 @@ Available at https://github.com/vitaliy-ch25/melafit (Accessed: dd mmm yyyy).
 
 <details>
 <summary><strong>Click to expand</strong></summary>
+
+### [v0.5.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.1) - Documentation and example fix
+- Fixed a rendering issue in the README where content following collapsible
+  sections was truncated on GitHub Pages
+- In `example_one_fit.py`, plt.pause(1.0) instead of plt.waitforbuttonpress()
+  to avoid issues with the Spyder IDE when inline figures are configured
+- No changes to package functionality
 
 ### [v0.5.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.0) - API improvements and bugfixes
 - New `dlmo()` function in `markers.py` computes DLMO from the rising slope
