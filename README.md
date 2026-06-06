@@ -294,9 +294,9 @@ If there is no associated publication on `melafit` yet, please cite the
 package directly using the following reference:
 
 ```text
-Kolodyazhniy, V., Cajochen, C. (2026). melafit: High-precision circadian 
-melatonin profile analysis (Version x.y.z). [Computer software]. 
-https://doi.org/10.5281/zenodo.20573831
+Kolodyazhniy, V., & Cajochen, C. (2026). melafit: Python package for 
+high-precision circadian melatonin profile analysis (Version x.y.z). 
+[Computer software]. https://doi.org/10.5281/zenodo.20573831
 ```
 
 ## Authors
@@ -316,6 +316,9 @@ https://doi.org/10.5281/zenodo.20573831
 - `.zenodo.json` added for automatic Zenodo metadata population on each
   future release, including author names, affiliations, ORCID identifiers
   and related publication DOIs
+- Package title updated to "melafit: Python package for high-precision
+  circadian melatonin profile analysis" across `CITATION.cff`,
+  `.zenodo.json` and the suggested citation reference in README
 - Package citation reference in README updated to use the permanent DOI
 - Corrects the PyPI publishing failure in v0.5.1 caused by a versioning
   error in `_version.py`; v0.5.1 was released on GitHub and Zenodo only

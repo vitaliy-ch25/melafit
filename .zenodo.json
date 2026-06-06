@@ -1,5 +1,5 @@
 {
-  "title": "melafit: High-precision circadian melatonin profile analysis",
+  "title": "melafit: Python package for high-precision circadian melatonin profile analysis",
   "description": "Python package for high-precision modeling of 24-hour melatonin secretion profiles. Implements baseline cosine functions (BCF, SBCF, BBCF, BSBCF) for curve fitting and a robust cost function for superior convergence, even with sparse data. Provides circadian phase markers including DLMOn, DLMOff, midpoint, amplitude, area under the curve and center of gravity.",
   "license": "MIT",
   "upload_type": "software",
