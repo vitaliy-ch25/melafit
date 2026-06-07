@@ -300,7 +300,8 @@ package directly using the following reference:
 ```text
 Kolodyazhniy, V., & Cajochen, C. (2026). melafit: Python package for 
 high-precision circadian melatonin profile analysis (Version x.y.z). 
-[Computer software]. https://doi.org/10.5281/zenodo.20573831
+[Computer software]. https://github.com/vitaliy-ch25/melafit. 
+https://doi.org/10.5281/zenodo.20573831
 ```
 
 ## Authors
@@ -328,7 +329,8 @@ high-precision circadian melatonin profile analysis (Version x.y.z).
   error in `_version.py`; v0.5.1 was released on GitHub and Zenodo only
 - Fixed a rendering issue inside the collapsible sections of the README on 
   GitHub Pages
-- Improved the Overview section of the README
+- Improved the Overview section of the README and added a github link to the 
+  recommended reference
 - No changes to package functionality
 
 ### [v0.5.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.1) - Documentation and example fix
