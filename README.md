@@ -77,7 +77,7 @@ including all supporting packages (`numpy`, `scipy`, `pandas`, `openpyxl` and
 
 ### Developer installation
 
-<details>
+<details markdown="1">
 <summary><strong>Click to expand</strong></summary>
 
 If you intend to follow the development closely or contribute to the
@@ -123,7 +123,7 @@ released version.
 
 ### Developer update
 
-<details>
+<details markdown="1">
 <summary><strong>Click to expand</strong></summary>
 
 Navigate to the cloned repository directory and pull the latest version
@@ -160,7 +160,7 @@ environment `melafit` you created.
 
 ### Minimal example — fit a single participant and compute area/COG
 
-<details>
+<details markdown="1">
 <summary><strong>Click to expand</strong></summary>
 
 ```python
@@ -258,7 +258,7 @@ research, please cite the following foundational publications:
 
 ### BibTeX
 
-<details>
+<details markdown="1">
 <summary><strong>Click to expand</strong></summary>
 
 ```bibtex
@@ -306,7 +306,7 @@ high-precision circadian melatonin profile analysis (Version x.y.z).
 
 ## Revision History
 
-<details>
+<details markdown="1">
 <summary><strong>Click to expand</strong></summary>
 
 ### [v0.5.2](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.2) - Zenodo DOI and citation metadata
@@ -322,6 +322,8 @@ high-precision circadian melatonin profile analysis (Version x.y.z).
 - Package citation reference in README updated to use the permanent DOI
 - Corrects the PyPI publishing failure in v0.5.1 caused by a versioning
   error in `_version.py`; v0.5.1 was released on GitHub and Zenodo only
+- Fixed a rendering issue inside the collapsible sections of the README on 
+  GitHub Pages 
 - No changes to package functionality
 
 ### [v0.5.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.1) - Documentation and example fix
