@@ -11,7 +11,7 @@ and a robust cost function for superior convergence, even with sparse data
 ## Overview
 
 [melafit](https://github.com/vitaliy-ch25/melafit) is a Python package 
-designed for high-precision modeling of 24-hour melatonin secretion. While 
+designed for high-precision analysis of 24-hour melatonin secretion. While 
 standard cosinor or harmonic analyses fail to capture the physiological 
 nuances of the melatonin "wave," 
 [melafit](https://github.com/vitaliy-ch25/melafit) implements several 
@@ -218,8 +218,8 @@ plt.title(title_str)
 plt.legend(["Melatonin data", "BSBCF curve"])
 plt.savefig(result_path + f"mel_data_{participant}_BSBCF.png")
 
-# Keep the figure open until a button is pressed
-plt.waitforbuttonpress()
+# Show plot for 1 second
+plt.pause(1.0)
 
 # Save results to Excel file
 collector.save(result_path, "results_one_fit_BSBCF.xlsx")
