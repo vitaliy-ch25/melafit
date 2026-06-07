@@ -1,6 +1,6 @@
 # melafit
 
-[![DOI](https://zenodo.org/badge/1214999173.svg)](https://doi.org/10.5281/zenodo.20573831)
+[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.20573831.svg)](https://doi.org/10.5281/zenodo.20573831)
 
 Python package for **high-precision circadian melatonin profile analysis.** 
 Features a variety of baseline cosine functions for curve fitting 
@@ -24,6 +24,10 @@ Furthermore, the library utilizes a **specialized cost function** developed
 to overcome common optimization hurdles (trivial all-zero solutions),
 ensuring stable convergence even when working with sparse or incomplete
 time series.
+
+Its **extensible architecture** allows users to define custom waveform
+functions, cost functions, and result classes, enabling adaptation to
+diverse experimental paradigms beyond the built-in models.
 
 ## Key Features
 
@@ -323,7 +327,8 @@ high-precision circadian melatonin profile analysis (Version x.y.z).
 - Corrects the PyPI publishing failure in v0.5.1 caused by a versioning
   error in `_version.py`; v0.5.1 was released on GitHub and Zenodo only
 - Fixed a rendering issue inside the collapsible sections of the README on 
-  GitHub Pages 
+  GitHub Pages
+- Improved the Overview section of the README
 - No changes to package functionality
 
 ### [v0.5.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.1) - Documentation and example fix
