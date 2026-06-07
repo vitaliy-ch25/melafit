@@ -300,8 +300,8 @@ package directly using the following reference:
 ```text
 Kolodyazhniy, V., & Cajochen, C. (2026). melafit: Python package for 
 high-precision circadian melatonin profile analysis (Version x.y.z). 
-[Computer software]. https://github.com/vitaliy-ch25/melafit. 
-https://doi.org/10.5281/zenodo.20573831
+[Computer software]. GitHub: https://github.com/vitaliy-ch25/melafit. 
+DOI: https://doi.org/10.5281/zenodo.20573831
 ```
 
 ## Authors
