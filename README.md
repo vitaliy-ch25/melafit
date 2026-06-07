@@ -1,6 +1,6 @@
 # melafit
 
-[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.20573831.svg)](https://doi.org/10.5281/zenodo.20573831)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20573831-blue)](https://doi.org/10.5281/zenodo.20573831)
 
 Python package for **high-precision circadian melatonin profile analysis.** 
 Features a variety of baseline cosine functions for curve fitting 
