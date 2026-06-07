@@ -29,6 +29,7 @@ Markers Computed:
 Functions:
 ----------
 - amplitude : Compute peak-to-baseline amplitude
+- dlmo : Compute DLMOn time based on threshold crossing
 - midpoint : Compute DLMOn/DLMOff times and melatonin midpoint
 - area_cog : Compute area under curve and center of gravity
 

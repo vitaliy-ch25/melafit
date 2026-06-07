@@ -1,0 +1,80 @@
+cff-version: 1.2.0
+message: >
+  If you use this software in your research, please cite it using
+  the metadata below, or use the "Cite this repository" button on
+  the GitHub repository page.
+title: "melafit: Python package for high-precision circadian melatonin profile analysis"
+version: 0.5.2
+date-released: 2026-06-06
+license: MIT
+doi: 10.5281/zenodo.20573831
+repository-code: https://github.com/vitaliy-ch25/melafit
+url: https://github.com/vitaliy-ch25/melafit
+keywords:
+  - melatonin
+  - circadian
+  - circadian rhythm
+  - DLMO
+  - dim light melatonin onset
+  - center of gravity
+  - area under the curve
+  - chronobiology
+  - curve fitting
+  - baseline cosine function
+  - waveform analysis
+  - circadian phase
+  - sleep research
+  - phase marker
+authors:
+  - family-names: Kolodyazhniy
+    given-names: Vitaliy
+    affiliation: Ziemer Ophthalmic Systems AG, Port, Switzerland
+    orcid: https://orcid.org/0009-0002-1717-4958
+  - family-names: Cajochen
+    given-names: Christian
+    affiliation: Center for Chronobiology, Psychiatric Hospital of the University of Basel, Basel, Switzerland
+    orcid: https://orcid.org/0000-0003-2699-7171
+references:
+  - type: article
+    title: Improving melatonin circadian phase estimates
+    authors:
+      - family-names: Van Someren
+        given-names: Eus J. W.
+      - family-names: Nagtegaal
+        given-names: Elsbeth
+    journal: Sleep Medicine
+    volume: 8
+    issue: 6
+    start: 590
+    end: 601
+    year: 2007
+    doi: 10.1016/j.sleep.2007.03.012
+  - type: article
+    title: >
+      Differential impact in young and older individuals of blue-enriched
+      white light on circadian physiology and alertness during sustained
+      wakefulness
+    authors:
+      - family-names: Gabel
+        given-names: Virginie
+      - family-names: Reichert
+        given-names: Carolin F.
+      - family-names: Maire
+        given-names: Micheline
+      - family-names: Schmidt
+        given-names: Christina
+      - family-names: Schlangen
+        given-names: Luc J. M.
+      - family-names: Kolodyazhniy
+        given-names: Vitaliy
+      - family-names: Garbazza
+        given-names: Corrado
+      - family-names: Cajochen
+        given-names: Christian
+      - family-names: Viola
+        given-names: Antoine U.
+    journal: Scientific Reports
+    volume: 7
+    start: 7620
+    year: 2017
+    doi: 10.1038/s41598-017-07060-8
