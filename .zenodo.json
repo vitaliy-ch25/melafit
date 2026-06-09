@@ -39,12 +39,12 @@
     },
     {
       "identifier": "10.1016/j.sleep.2007.03.012",
-      "relation": "isSupplementTo",
+      "relation": "cites",
       "scheme": "doi"
     },
     {
       "identifier": "10.1038/s41598-017-07060-8",
-      "relation": "isSupplementTo",
+      "relation": "cites",
       "scheme": "doi"
     }
   ]

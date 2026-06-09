@@ -465,6 +465,25 @@ class TestFit(unittest.TestCase):
         self.assertEqual(list(p.keys()), ["func"] + BSBCF_PARAM_NAMES + ["r2"])
         self.assertTrue(np.isfinite(res.r2))
 
+    def test_nan_in_data_does_not_crash(self):
+        """Missing Mel values (NaN) must not break the fit."""
+        y = bsbcf(t=self.t, p=BSBCF_PARAMS_ARRAY)
+        y_nan = y.copy()
+        y_nan[5:8] = np.nan
+        res = fit(self.t, y_nan, f=bsbcf)
+        self.assertIsInstance(res, FitResult)
+        self.assertTrue(np.isfinite(res.r2))
+
+    def test_nan_result_close_to_clean(self):
+        """Fit with NaN values should produce parameters close to the clean fit."""
+        y = bsbcf(t=self.t, p=BSBCF_PARAMS_ARRAY)
+        y_nan = y.copy()
+        y_nan[5:8] = np.nan
+        res_clean = fit(self.t, y, f=bsbcf)
+        res_nan   = fit(self.t, y_nan, f=bsbcf)
+        np.testing.assert_allclose(res_nan.result.x, res_clean.result.x,
+                                   atol=0.1)
+
 
 # ---------------------------------------------------------------------------
 # fitting.py + markers.py — Series input tests
@@ -1188,6 +1207,12 @@ class TestAbsThreshold(unittest.TestCase):
         thresh = abs_threshold(values, 0.25)
         self.assertGreaterEqual(thresh, np.min(values))
         self.assertLessEqual(thresh, np.max(values))
+
+    def test_nan_in_values_does_not_crash(self):
+        values = bsbcf(t=T, p=BSBCF_PARAMS_ARRAY).copy()
+        values[100:103] = np.nan
+        thresh = abs_threshold(values, 0.25)
+        self.assertTrue(np.isfinite(thresh))
 
 
 # ---------------------------------------------------------------------------
