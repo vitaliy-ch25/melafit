@@ -437,8 +437,8 @@ def abs_threshold(values: np.ndarray,
             Absolute threshold
     """
 
-    baseline = np.min(values)
-    val_range = np.max(values) - baseline
+    baseline = np.nanmin(values)
+    val_range = np.nanmax(values) - baseline
     thresh_abs = baseline + thresh_rel * val_range
 
     return thresh_abs

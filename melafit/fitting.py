@@ -373,8 +373,8 @@ def func_defaults(data_fit: np.ndarray,
             Upper bounds for the function parameters
     """
 
-    minx = np.min(data_fit)
-    maxx = np.max(data_fit)
+    minx = np.nanmin(data_fit)
+    maxx = np.nanmax(data_fit)
 
     data_range = (maxx - minx)
 

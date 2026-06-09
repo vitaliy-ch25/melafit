@@ -314,6 +314,11 @@ DOI: https://doi.org/10.5281/zenodo.20573831
 <details markdown="1">
 <summary><strong>Click to expand</strong></summary>
 
+### [v0.5.3](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.3) - Bugfixes
+- Fixed nan handling in abs_threshold() and func_defaults()
+- Added respective unit tests
+- Fixed related identifiers in .zenodo.json
+
 ### [v0.5.2](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.2) - Zenodo DOI and citation metadata
 - Zenodo DOI registered; DOI badge added to README
 - `CITATION.cff` added with full author metadata, ORCID identifiers and
