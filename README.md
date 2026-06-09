@@ -315,7 +315,7 @@ DOI: https://doi.org/10.5281/zenodo.20573831
 <summary><strong>Click to expand</strong></summary>
 
 ### [v0.5.3](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.3) - Bugfixes
-- Fixed nan handling in abs_threshold() and fun_defaults()
+- Fixed nan handling in abs_threshold() and func_defaults()
 - Added respective unit tests
 - Fixed related identifiers in .zenodo.json
 
