@@ -234,6 +234,7 @@ Running this code contained in [example_one_fit.py](https://github.com/vitaliy-c
 ```bash
 Participant=1, 2026-03-19 12:00 – 2026-03-20 12:00
 Fitted function: BSBCF, parameters: phi=0.108, b=1.650, H=65.766, c=0.235, v=0.185, m=0.198, R²=0.9978
+Area=16.970, COG=02:08
 ```
 
 and the following figure is displayed with a fitted BSBCF waveform and the data it was fitted to. Besides that, the results are stored to an Excel table `results_one_fit_BSBCF.xlsx` under `./results/one_fit/`.
@@ -313,6 +314,9 @@ DOI: https://doi.org/10.5281/zenodo.20573831
 
 <details markdown="1">
 <summary><strong>Click to expand</strong></summary>
+
+### [v0.6.0](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.6.0) - Resampling function
+- New function resample_t for resampling input data to the given time axis
 
 ### [v0.5.3](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.5.3) - Bugfixes
 - Fixed nan handling in abs_threshold() and func_defaults()
