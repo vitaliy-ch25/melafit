@@ -27,7 +27,7 @@ from melafit.results import (FitResult, AnalysisRecord, SessionInfo,
 from melafit.utils import (read_data, prepare_part_data, to_days, from_days,
                             gen_time_range, day_profile, time_to_phase,
                             phase_to_string, string_to_phase, abs_threshold,
-                            phase_diff, params_to_string)
+                            phase_diff, params_to_string, resample_t)
 
 
 # ---------------------------------------------------------------------------
@@ -1700,6 +1700,222 @@ class TestInteriorNaNHandling(unittest.TestCase):
         self.assertLess(diff, 1.0 / 24.0,
                         "COG with interior NaNs should agree with clean "
                         "result within 1 hour")
+
+
+# ---------------------------------------------------------------------------
+# utils.py — resample_t tests
+# ---------------------------------------------------------------------------
+
+class TestResampleT(unittest.TestCase):
+    """Tests for resample_t()."""
+
+    def setUp(self):
+        # Sparse input: 5 points over one day (float days)
+        self.data_time = np.array([0.0, 0.25, 0.5, 0.75, 1.0])
+        self.values = np.array([0.0, 1.0, 2.0, 1.0, 0.0])
+        # Dense target grid at 100 points
+        self.gen_time = np.linspace(0.0, 1.0, 101)
+
+    # --- output type mirrors input type ---
+
+    def test_ndarray_in_ndarray_out(self):
+        out = resample_t(self.gen_time, self.values, self.data_time)
+        self.assertIsInstance(out, np.ndarray)
+        self.assertEqual(out.shape, (len(self.gen_time),))
+
+    def test_2d_ndarray_in_2d_ndarray_out(self):
+        data2d = np.column_stack([self.values, self.values * 2])
+        out = resample_t(self.gen_time, data2d, self.data_time)
+        self.assertIsInstance(out, np.ndarray)
+        self.assertEqual(out.shape, (len(self.gen_time), 2))
+
+    def test_series_in_series_out(self):
+        s = pd.Series(self.values, index=self.data_time, name="Mel")
+        out = resample_t(self.gen_time, s, self.data_time)
+        self.assertIsInstance(out, pd.Series)
+        self.assertEqual(out.name, "Mel")
+        np.testing.assert_array_equal(out.index.to_numpy(), self.gen_time)
+
+    def test_dataframe_in_dataframe_out(self):
+        df = pd.DataFrame({"A": self.values, "B": self.values * 2})
+        out = resample_t(self.gen_time, df, self.data_time)
+        self.assertIsInstance(out, pd.DataFrame)
+        self.assertListEqual(list(out.columns), ["A", "B"])
+        np.testing.assert_array_equal(out.index.to_numpy(), self.gen_time)
+
+    # --- linear interpolation correctness ---
+
+    def test_linear_exact_at_knots(self):
+        out = resample_t(self.data_time, self.values, self.data_time,
+                         interp_type='linear')
+        np.testing.assert_allclose(out, self.values, atol=1e-12)
+
+    def test_linear_midpoint(self):
+        # midpoint between 0.0 and 0.25 should be 0.5
+        gen = np.array([0.125])
+        out = resample_t(gen, self.values, self.data_time, interp_type='linear')
+        self.assertAlmostEqual(out[0], 0.5)
+
+    # --- interp_type variants ---
+
+    def test_interp_type_constant_previous_value(self):
+        # constant hold: value just after a knot equals that knot's value
+        gen = np.array([0.01])   # just after t=0.0 (value=0.0)
+        out = resample_t(gen, self.values, self.data_time, interp_type='previous',
+                         lead_trail=False)
+        self.assertAlmostEqual(out[0], 0.0)
+
+    def test_interp_type_cubic_finite(self):
+        out = resample_t(self.gen_time, self.values, self.data_time,
+                         interp_type='cubic')
+        # all interior points should be finite
+        self.assertTrue(np.all(np.isfinite(out)))
+
+    def test_interp_type_none_snaps(self):
+        # gen_time matches data_time exactly -- all values should snap
+        out = resample_t(self.data_time, self.values, self.data_time,
+                         interp_type=None)
+        np.testing.assert_allclose(out, self.values, atol=1e-12)
+
+    def test_interp_type_none_no_fill_between(self):
+        # gen_time between knots should remain NaN for interp_type=None
+        gen = np.array([0.125])
+        out = resample_t(gen, self.values, self.data_time, interp_type=None,
+                         lead_trail=False)
+        self.assertTrue(np.isnan(out[0]))
+
+    def test_invalid_interp_type_raises(self):
+        with self.assertRaises(ValueError):
+            resample_t(self.gen_time, self.values, self.data_time,
+                       interp_type='nearest')
+
+    # --- lead_trail ---
+
+    def test_lead_trail_fills_edges(self):
+        # gen_time extends beyond data_time on both sides
+        gen = np.linspace(-0.1, 1.1, 50)
+        out = resample_t(gen, self.values, self.data_time,
+                         interp_type='linear', lead_trail=True)
+        self.assertTrue(np.all(np.isfinite(out)))
+
+    def test_lead_trail_off_leaves_nans(self):
+        gen = np.linspace(-0.1, 1.1, 50)
+        out = resample_t(gen, self.values, self.data_time,
+                         interp_type='linear', lead_trail=False)
+        self.assertTrue(np.any(np.isnan(out)))
+
+    # --- max_gap ---
+
+    def test_max_gap_float_masks_large_gap(self):
+        # gap of 0.5 days between t=0.0 and t=0.5; max_gap=0.3 days
+        sparse_t = np.array([0.0, 0.5, 1.0])
+        sparse_v = np.array([0.0, 1.0, 0.0])
+        gen = np.array([0.25])   # falls inside the 0.5-day gap
+        out = resample_t(gen, sparse_v, sparse_t, interp_type='linear',
+                         max_gap=0.3, lead_trail=False)
+        self.assertTrue(np.isnan(out[0]))
+
+    def test_max_gap_string_masks_large_gap(self):
+        sparse_t = np.array([0.0, 0.5, 1.0])
+        sparse_v = np.array([0.0, 1.0, 0.0])
+        gen = np.array([0.25])
+        out = resample_t(gen, sparse_v, sparse_t, interp_type='linear',
+                         max_gap="6h", lead_trail=False)
+        self.assertTrue(np.isnan(out[0]))
+
+    def test_max_gap_timedelta_masks_large_gap(self):
+        sparse_t = np.array([0.0, 0.5, 1.0])
+        sparse_v = np.array([0.0, 1.0, 0.0])
+        gen = np.array([0.25])
+        out = resample_t(gen, sparse_v, sparse_t, interp_type='linear',
+                         max_gap=pd.Timedelta("6h"), lead_trail=False)
+        self.assertTrue(np.isnan(out[0]))
+
+    def test_max_gap_inf_no_masking(self):
+        sparse_t = np.array([0.0, 0.5, 1.0])
+        sparse_v = np.array([0.0, 1.0, 0.0])
+        gen = np.array([0.25])
+        out = resample_t(gen, sparse_v, sparse_t, interp_type='linear',
+                         max_gap=np.inf, lead_trail=False)
+        self.assertFalse(np.isnan(out[0]))
+
+    # --- NaN in input data ---
+
+    def test_nan_in_input_skipped(self):
+        values_nan = self.values.copy()
+        values_nan[2] = np.nan   # drop the middle knot
+        out = resample_t(self.gen_time, values_nan, self.data_time,
+                         interp_type='linear', lead_trail=True)
+        self.assertTrue(np.all(np.isfinite(out)))
+
+    # --- datetime-like data_time ---
+
+    def test_datetime_data_time(self):
+        base = pd.Timestamp("2024-01-01", tz="UTC")
+        dt_index = pd.DatetimeIndex([
+            base + pd.Timedelta(hours=h)
+            for h in [0, 6, 12, 18, 24]
+        ])
+        data_time_days = to_days(dt_index)
+        out_float = resample_t(self.gen_time + data_time_days[0],
+                               self.values, data_time_days)
+        out_dt = resample_t(self.gen_time + data_time_days[0],
+                            self.values, dt_index)
+        np.testing.assert_allclose(out_float, out_dt, atol=1e-12)
+
+    # --- auto-detection of data_time ---
+
+    def test_auto_detect_float_day_index_series(self):
+        s = pd.Series(self.values, index=self.data_time, name="Mel")
+        out_explicit = resample_t(self.gen_time, s, self.data_time)
+        out_auto = resample_t(self.gen_time, s)
+        np.testing.assert_allclose(out_explicit.to_numpy(),
+                                   out_auto.to_numpy(), atol=1e-12)
+
+    def test_auto_detect_datetime_index_series(self):
+        base = pd.Timestamp("2024-01-01", tz="UTC")
+        dt_index = pd.DatetimeIndex([
+            base + pd.Timedelta(hours=h * 6) for h in range(5)
+        ])
+        s = pd.Series(self.values, index=dt_index, name="Mel")
+        gen = to_days(dt_index)
+        out = resample_t(gen, s)
+        self.assertIsInstance(out, pd.Series)
+        np.testing.assert_allclose(out.to_numpy(), self.values, atol=1e-12)
+
+    def test_auto_detect_timestamp_column_dataframe(self):
+        base = pd.Timestamp("2024-01-01", tz="UTC")
+        timestamps = pd.DatetimeIndex([
+            base + pd.Timedelta(hours=h * 6) for h in range(5)
+        ])
+        df = pd.DataFrame({"Timestamp": timestamps, "Mel": self.values})
+        gen = to_days(timestamps)
+        out = resample_t(gen, df)
+        self.assertIsInstance(out, pd.DataFrame)
+        self.assertIn("Mel", out.columns)
+        np.testing.assert_allclose(out["Mel"].to_numpy(), self.values,
+                                   atol=1e-12)
+
+    def test_auto_detect_missing_raises_for_array(self):
+        with self.assertRaises(ValueError):
+            resample_t(self.gen_time, self.values)
+
+    def test_auto_detect_missing_raises_for_integer_indexed_df(self):
+        df = pd.DataFrame({"A": self.values})  # default integer index
+        with self.assertRaises(ValueError):
+            resample_t(self.gen_time, df)
+
+    # --- shape / dimension edge cases ---
+
+    def test_shape_mismatch_raises(self):
+        with self.assertRaises(ValueError):
+            resample_t(self.gen_time, np.zeros((3, 7)),
+                       self.data_time)   # neither dim matches len(data_time)=5
+
+    def test_all_nan_column_stays_nan(self):
+        data2d = np.column_stack([self.values, np.full(5, np.nan)])
+        out = resample_t(self.gen_time, data2d, self.data_time)
+        self.assertTrue(np.all(np.isnan(out[:, 1])))
 
 
 if __name__ == "__main__":
