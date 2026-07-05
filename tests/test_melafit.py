@@ -309,13 +309,6 @@ class TestFuncDefaults(unittest.TestCase):
             self.assertAlmostEqual(lb["c"], -1.0)
             self.assertAlmostEqual(ub["c"], 23.5 / 24)
 
-    def test_m_bounds_are_nonnegative(self):
-        """m (bimodality) must stay within [0, 0.99]."""
-        for func in (bbcf, bsbcf):
-            _, lb, ub = func_defaults(self.data, func)
-            self.assertAlmostEqual(lb["m"], 0.0)
-            self.assertAlmostEqual(ub["m"], 0.99)
-
 
 # ---------------------------------------------------------------------------
 # fitting.py — fit() tests

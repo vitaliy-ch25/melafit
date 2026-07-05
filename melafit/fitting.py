@@ -367,7 +367,7 @@ def _default_params(param_name: str, data_fit: np.ndarray) -> tuple[float, float
     elif param_name == "v":
         return 0.0, -1.0, 1.0
     elif param_name == "m":
-        return 0.0, 0.0, 0.99
+        return 0.0, 0.0, 1 - 1e-6
     else:
         minx = np.nanmin(data_fit)
         maxx = np.nanmax(data_fit)
