@@ -301,6 +301,14 @@ class TestFuncDefaults(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             func_defaults(self.data, my_func)
 
+    def test_c_bounds_keep_minimum_peak_width(self):
+        """c's upper bound should keep the peak at least 30 minutes wide,
+        avoiding the numerical instability of a near-zero-width peak."""
+        for func in (bcf, sbcf, bbcf, bsbcf):
+            _, lb, ub = func_defaults(self.data, func)
+            self.assertAlmostEqual(lb["c"], -1.0)
+            self.assertAlmostEqual(ub["c"], 23.5 / 24)
+
 
 # ---------------------------------------------------------------------------
 # fitting.py — fit() tests

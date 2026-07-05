@@ -49,7 +49,7 @@ import numpy as np
 import pandas as pd
 from collections.abc import Mapping
 from melafit.results import FitResult
-from melafit.utils import to_days
+from melafit.utils import string_to_phase, to_days
 
 # Parameter names for melatonin wave approximation functions
 BCF_PARAM_NAMES   = ["phi", "b", "H", "c"]
@@ -97,11 +97,12 @@ def bcf(t: np.ndarray,
     H = p[2]
     c = p[3]
 
-    phi = 2 * np.pi * phi
+    phi_ = 2 * np.pi * phi
     t = 2 * np.pi * t
 
-    bcf_val = b + H / (2 * (1 - c)) * (
-        np.cos(t - phi) - c + abs(np.cos(t - phi) - c))
+    x = np.cos(t - phi_) - c
+
+    bcf_val = b + H / (2 * (1 - c)) * (x + abs(x))
     
     return bcf_val
 
@@ -137,12 +138,12 @@ def sbcf(t: np.ndarray,
     c = p[3]
     v = p[4]
 
-    phi = 2 * np.pi * phi
+    phi_ = 2 * np.pi * phi
     t = 2 * np.pi * t
 
-    sbcf_val = b + H / (2 * (1 - c)) * (
-        np.cos(t - phi + v * np.cos(t - phi)) - c + 
-        abs(np.cos(t - phi + v * np.cos(t - phi)) - c))
+    x = np.cos(t - phi_ + v * np.cos(t - phi_)) - c
+
+    sbcf_val = b + H / (2 * (1 - c)) * (x + abs(x))
     
     return sbcf_val
 
@@ -178,12 +179,12 @@ def bbcf(t: np.ndarray,
     c = p[3]
     m = p[4]
 
-    phi = 2 * np.pi * phi
+    phi_ = 2 * np.pi * phi
     t = 2 * np.pi * t
 
-    bbcf_val = b + H / (2 * (1 - c)) * (
-        np.cos(t - phi) + m * np.cos(2 * t - 2 * phi - np.pi) - c + 
-        abs(np.cos(t - phi) + m * np.cos(2 * t - 2 * phi - np.pi) - c))
+    x = np.cos(t - phi_) + m * np.cos(2 * t - 2 * phi_ - np.pi) - c
+
+    bbcf_val = b + H / (2 * (1 - c)) * (x + abs(x))
 
     return bbcf_val
 
@@ -220,14 +221,12 @@ def bsbcf(t: np.ndarray,
     v = p[4]
     m = p[5]
 
-    phi = 2 * np.pi * phi
+    phi_ = 2 * np.pi * phi
     t = 2 * np.pi * t
 
-    bsbcf_val = b + H / (2 * (1 - c)) * (
-        np.cos(t - phi + v * np.cos(t - phi)) + 
-        m * np.cos(2 * t - 2 * phi - np.pi) - c + 
-        abs(np.cos(t - phi + v * np.cos(t - phi)) + 
-            m * np.cos(2 * t - 2 * phi - np.pi) - c))
+    x = np.cos(t - phi_ + v * np.cos(t - phi_)) + m * np.cos(2 * t - 2 * phi_ - np.pi) - c
+
+    bsbcf_val = b + H / (2 * (1 - c)) * (x + abs(x))
 
     return bsbcf_val
 
@@ -350,6 +349,37 @@ def rsquared(Y: np.ndarray,
 
     return r2
 
+def _default_params(param_name: str, data_fit: np.ndarray) -> tuple[float, float, float]:
+    """
+    Returns the initial guess, lower bound, and upper bound for the parameters
+    of the melatonin wave approximation functions.
+
+    Returns
+    -------
+        p0, lb, ub : float
+            Initial guess, lower bound, and upper bound
+    """
+
+    if param_name == "phi":
+        return 0.0, string_to_phase("-12:00"), string_to_phase("12:00")
+    elif param_name == "c": # Let the peak be minimum 30 minutes wide
+        return 0.0, string_to_phase("-24:00"), string_to_phase("23:30")
+    elif param_name == "v":
+        return 0.0, -1.0, 1.0
+    elif param_name == "m":
+        return 0.0, 0.0, 1 - 1e-6
+    else:
+        minx = np.nanmin(data_fit)
+        maxx = np.nanmax(data_fit)
+        data_range = (maxx - minx)
+
+        if param_name == "b":
+            return minx, minx, maxx
+        elif param_name == "H":
+            return data_range, 0.5 * data_range, 2 * data_range
+        else:
+            raise ValueError(f"Unknown parameter name '{param_name}'")
+
 def func_defaults(data_fit: np.ndarray,
                   f: callable) -> tuple[dict, dict, dict]:
     """
@@ -373,126 +403,17 @@ def func_defaults(data_fit: np.ndarray,
             Upper bounds for the function parameters
     """
 
-    minx = np.nanmin(data_fit)
-    maxx = np.nanmax(data_fit)
-
-    data_range = (maxx - minx)
-
-    if f==bcf:
-        # Initial guess for BCF parameters
-        p0 = [
-            0, # phi
-            minx, # b
-            (maxx-minx), # H
-            0 # c
-        ]
-            
-        # Lower bounds for BCF parameters
-        lb = [
-            -0.5, # phi
-            minx, # b
-            0.5 * data_range, # H
-            -1 # c
-        ]
-
-        # Upper bounds for BCF parameters
-        ub = [
-            0.5, # phi
-            maxx, # b
-            2 * data_range, # H
-            1 - 1e-6 # c
-        ]
-    elif f==sbcf:
-        # Initial guess for SBCF parameters
-        p0 = [
-            0, # phi
-            minx, # b
-            (maxx-minx), # H
-            0, # c
-            0 # v
-        ]
-            
-        # Lower bounds for SBCF parameters
-        lb = [
-            -0.5, # phi
-            minx, # b
-            0.5 * data_range, # H
-            -1, # c
-            -1 # v
-        ]
-
-        # Upper bounds for SBCF parameters
-        ub = [
-            0.5, # phi
-            maxx, # b
-            2 * data_range, # H
-            1 - 1e-6, # c
-            1 # v
-        ]
-    elif f==bbcf:
-        # Initial guess for BBCF parameters
-        p0 = [
-            0, # phi
-            minx, # b
-            (maxx-minx), # H
-            0, # c
-            0 # m
-        ]
-        
-        # Lower bounds for BBCF parameters
-        lb = [
-            -0.5, # phi
-            minx, # b
-            0.5 * data_range, # H
-            -1, # c
-            0 # m
-        ]
-
-        # Upper bounds for BBCF parameters
-        ub = [
-            0.5, # phi
-            maxx, # b
-            2 * data_range, # H
-            1 - 1e-6, # c
-            1 - 1e-6 # m
-        ]
-    elif f==bsbcf:
-        # Initial guess for BSBCF parameters
-        p0 = [
-            0, # phi
-            minx, # b
-            (maxx-minx), # H
-            0, # c
-            0, # v
-            0 # m
-        ]
-            
-        # Lower bounds for BSBCF parameters
-        lb = [
-            -0.5, # phi
-            minx, # b
-            0.5 * data_range, # H
-            -1, # c
-            -1, # v
-            0 # m
-        ]
-
-        # Upper bounds for BSBCF parameters
-        ub = [
-            0.5, # phi
-            maxx, # b
-            2 * data_range, # H
-            1 - 1e-6, # c
-            1, # v
-            1 - 1e-6 # m
-        ]
-    else:
+    if f not in BUILTIN_PARAM_NAMES.keys():
         raise NotImplementedError("Constraints and initial conditions for " + 
                                   f"function '{f.__name__}' are not defined!")
-    
-    return (array_to_params(p0, f),
-            array_to_params(lb, f),
-            array_to_params(ub, f))
+
+    defaults = { param: _default_params(param, data_fit) 
+                for param in BUILTIN_PARAM_NAMES[f] }
+    p0 = { param: defaults[param][0] for param in BUILTIN_PARAM_NAMES[f] }
+    lb = { param: defaults[param][1] for param in BUILTIN_PARAM_NAMES[f] }
+    ub = { param: defaults[param][2] for param in BUILTIN_PARAM_NAMES[f] }
+
+    return (p0, lb, ub)
 
 def fit(time_fit: np.ndarray | pd.Series | pd.DatetimeIndex,
         data_fit: np.ndarray | pd.Series,
