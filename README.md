@@ -318,7 +318,7 @@ DOI: https://doi.org/10.5281/zenodo.20573831
 ### [v0.6.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.6.1) - Fitting bounds and cleanup
 - Tightened the default upper bound on the `c` parameter so the fitted peak
   is never narrower than 30 minutes, avoiding numerical instability
-  - Refactored `func_defaults()` and the waveform functions (`bcf`, `sbcf`,
+- Refactored `func_defaults()` and the waveform functions (`bcf`, `sbcf`,
   `bbcf`, `bsbcf`) to remove duplicated code; no change to their public
   behavior
 - Added a unit test locking in the default `c` parameter bounds
