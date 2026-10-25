@@ -23,9 +23,9 @@ thresh_dlmo = 0.25
 
 participants = np.unique(data.Participant)
 
-for mel_func in mel_funcs:
-    os.makedirs(result_path, exist_ok=True)
+os.makedirs(result_path, exist_ok=True)
 
+for mel_func in mel_funcs:
     func_name = mel_func.__name__.upper()
     collector = mf.ResultsCollector()
 

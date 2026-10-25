@@ -315,6 +315,21 @@ DOI: https://doi.org/10.5281/zenodo.20573831
 <details markdown="1">
 <summary><strong>Click to expand</strong></summary>
 
+### [v0.6.2](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.6.2) - Two-stage fitting example and metadata polish
+- New example example_full_profile_two_stage.py: the waveform is first
+  fitted to data interpolated onto a 1-minute grid with resample_t()
+  (gaps longer than 1 h left unfilled, no lead/trail padding), and the
+  result is used as the initial guess for a second fit to the original
+  data; improves convergence for difficult or irregularly sampled profiles
+- Example scripts (example_dlmo.py, example_full_profile.py): result
+  directory created once before the loop over waveform functions instead
+  of on every iteration
+- .zenodo.json: description wording aligned with the package title
+  ("analysis" instead of "modeling")
+- Version bumped to 0.6.2 in _version.py and CITATION.cff
+  (version and date-released)
+- No changes to package functionality or API
+
 ### [v0.6.1](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.6.1) - Fitting bounds and cleanup
 - Tightened the default upper bound on the `c` parameter so the fitted peak
   is never narrower than 30 minutes, avoiding numerical instability
