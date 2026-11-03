@@ -316,11 +316,11 @@ DOI: https://doi.org/10.5281/zenodo.20573831
 <summary><strong>Click to expand</strong></summary>
 
 ### [v0.6.2](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.6.2) - Two-stage fitting example and metadata polish
-- New example example_full_profile_two_stage.py: the waveform is first
-  fitted to data interpolated onto a 1-minute grid with resample_t()
-  (gaps longer than 1 h left unfilled, no lead/trail padding), and the
-  result is used as the initial guess for a second fit to the original
-  data; improves convergence for difficult or irregularly sampled profiles
+- New example `example_two_stage_fit.py` with dataset `dummy_data_two_stage.xlsx`:
+  compares a one-stage and a two-stage SBCF fit for a profile without night
+  samples; in the two-stage fit, the curve is first fitted to data interpolated
+  onto a 1-minute grid with `resample_t()` and the result is used as the
+  initial guess for a second fit to the original data
 - Example scripts (example_dlmo.py, example_full_profile.py): result
   directory created once before the loop over waveform functions instead
   of on every iteration

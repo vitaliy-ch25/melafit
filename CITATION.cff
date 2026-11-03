@@ -5,7 +5,7 @@ message: >
   the GitHub repository page.
 title: "melafit: Python package for high-precision circadian melatonin profile analysis"
 version: 0.6.2
-date-released: 2026-10-25
+date-released: 2026-11-03
 license: MIT
 doi: 10.5281/zenodo.20573831
 repository-code: https://github.com/vitaliy-ch25/melafit
