@@ -316,11 +316,19 @@ DOI: https://doi.org/10.5281/zenodo.20573831
 <summary><strong>Click to expand</strong></summary>
 
 ### [v0.6.2](https://github.com/vitaliy-ch25/melafit/releases/tag/v0.6.2) - Two-stage fitting example and metadata polish
-- New example `example_two_stage_fit.py` with dataset `dummy_data_two_stage.xlsx`:
-  compares a one-stage and a two-stage SBCF fit for a profile without night
-  samples; in the two-stage fit, the curve is first fitted to data interpolated
-  onto a 1-minute grid with `resample_t()` and the result is used as the
-  initial guess for a second fit to the original data
+- New example `example_two_stage_fit.py` with dataset `dummy_data_two_stage.xlsx`
+  demonstrates a two-stage fitting strategy for profiles with a large night
+  gap (no samples during the night):
+  - The standard one-stage fit of such data may lead to incorrect results,
+    e.g. a narrow nocturnal peak and distorted phase markers, even when the
+    goodness of fit looks acceptable
+  - In the two-stage fit, the curve is first fitted to data interpolated onto
+    a 1-minute grid with `resample_t()`; the result is then used as the
+    initial guess for a second fit to the original data
+  - The two-stage fit delivers results close to the ground truth (plotted
+    for comparison) and is statistically sound, because the final fit is
+    based on the original data only; interpolated data serve solely to
+    provide the initial parameters
 - Example scripts (example_dlmo.py, example_full_profile.py): result
   directory created once before the loop over waveform functions instead
   of on every iteration
